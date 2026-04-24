@@ -1,0 +1,1795 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Fichas Individuais | WMI Solutions</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+
+        /* ============ HEADER ============ */
+        header {
+            background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+            border-bottom: 1px solid #30363d;
+            padding: 2rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #06b6d4;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-info {
+            text-align: right;
+            font-size: 0.875rem;
+            color: #8b949e;
+        }
+
+        .header-info strong {
+            color: #c9d1d9;
+        }
+
+        /* ============ MAIN CONTAINER ============ */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* ============ GRID VIEW (MAIN PAGE) ============ */
+        #gridView {
+            display: grid;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #c9d1d9;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .controls label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .controls select {
+            padding: 0.5rem 1rem;
+            background-color: #161b22;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .controls select:hover {
+            border-color: #06b6d4;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            border-color: #06b6d4;
+            box-shadow: 0 8px 16px rgba(6, 182, 212, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .card-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #06b6d4;
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .risk-badge.high {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .risk-badge.medium {
+            background-color: rgba(249, 115, 22, 0.2);
+            color: #f97316;
+        }
+
+        .risk-badge.low {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .card-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .metric {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-label {
+            color: #8b949e;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #c9d1d9;
+            margin-top: 0.25rem;
+        }
+
+        .completion-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #30363d;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .completion-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .completion-fill.high {
+            background-color: #22c55e;
+        }
+
+        .completion-fill.medium {
+            background-color: #eab308;
+        }
+
+        .completion-fill.low {
+            background-color: #ef4444;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #30363d;
+            font-size: 0.85rem;
+        }
+
+        .hours-info {
+            color: #8b949e;
+        }
+
+        .board-split {
+            display: flex;
+            gap: 2px;
+            height: 8px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .board-split-section {
+            flex: 1;
+            border-radius: 1px;
+        }
+
+        /* ============ DETAIL VIEW ============ */
+        #detailView {
+            display: none;
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .back-button {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            color: #06b6d4;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            border-color: #06b6d4;
+            background-color: rgba(6, 182, 212, 0.1);
+        }
+
+        .detail-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #c9d1d9;
+            flex: 1;
+        }
+
+        /* ============ KPI CARDS ============ */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .kpi-card.clickable {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card.clickable:hover {
+            border-color: #06b6d4;
+            background-color: rgba(6, 182, 212, 0.05);
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.1);
+        }
+
+        .kpi-label {
+            color: #8b949e;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #06b6d4;
+        }
+
+        .kpi-subtitle {
+            font-size: 0.9rem;
+            color: #8b949e;
+            margin-top: 0.5rem;
+        }
+
+        /* ============ EPIC EXPANSION PANEL ============ */
+        .epic-panel {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .epic-panel.active {
+            max-height: 1000px;
+            opacity: 1;
+            margin-bottom: 2rem;
+        }
+
+        .epic-panel-header {
+            background-color: #0d1117;
+            border-bottom: 1px solid #30363d;
+            padding: 1.5rem;
+        }
+
+        .epic-panel-summary {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .epic-summary-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .epic-summary-label {
+            color: #8b949e;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .epic-summary-value {
+            color: #c9d1d9;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .epic-summary-value.overdue {
+            color: #ef4444;
+        }
+
+        .epic-summary-value.zero-hours {
+            color: #f97316;
+        }
+
+        .epic-panel-content {
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .epic-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .epic-table thead {
+            background-color: #0d1117;
+            border-bottom: 2px solid #30363d;
+        }
+
+        .epic-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #8b949e;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        .epic-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #30363d;
+            color: #c9d1d9;
+        }
+
+        .epic-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .epic-table tbody tr:hover {
+            background-color: rgba(6, 182, 212, 0.05);
+        }
+
+        .epic-table tbody tr.overdue {
+            background-color: rgba(239, 68, 68, 0.08);
+        }
+
+        .epic-table tbody tr.paused {
+            background-color: rgba(234, 179, 8, 0.08);
+        }
+
+        .epic-key-link {
+            color: #06b6d4;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .epic-key-link:hover {
+            color: #22c55e;
+            text-decoration: underline;
+        }
+
+        .epic-badge-overdue {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .epic-badge-ok {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .epic-badge-nodate {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            background-color: rgba(139, 148, 158, 0.2);
+            color: #8b949e;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* ============ CHARTS ============ */
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #c9d1d9;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        /* ============ TABLES ============ */
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #c9d1d9;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 24px;
+            background-color: #06b6d4;
+            border-radius: 2px;
+        }
+
+        .table-responsive {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background-color: #0d1117;
+            border-bottom: 2px solid #30363d;
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #8b949e;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #30363d;
+            color: #c9d1d9;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: rgba(6, 182, 212, 0.05);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.concluido {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+
+        .status-badge.em-andamento {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        .status-badge.paused {
+            background-color: rgba(234, 179, 8, 0.2);
+            color: #eab308;
+        }
+
+        .status-badge.pendente {
+            background-color: rgba(139, 148, 158, 0.2);
+            color: #8b949e;
+        }
+
+        .board-badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .board-badge.novo {
+            background-color: rgba(6, 182, 212, 0.2);
+            color: #06b6d4;
+        }
+
+        .board-badge.upsell {
+            background-color: rgba(249, 115, 22, 0.2);
+            color: #f97316;
+        }
+
+        .hours-cell {
+            font-weight: 600;
+            color: #a78bfa;
+        }
+
+        .overdue-cell {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        /* ============ ANALYSIS BOX ============ */
+        .analysis-box {
+            background-color: #161b22;
+            border-left: 4px solid #06b6d4;
+            border: 1px solid #30363d;
+            border-left: 4px solid #06b6d4;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            line-height: 1.8;
+        }
+
+        .analysis-box.high-risk {
+            border-left-color: #ef4444;
+        }
+
+        .analysis-box.medium-risk {
+            border-left-color: #f97316;
+        }
+
+        .analysis-box.low-risk {
+            border-left-color: #22c55e;
+        }
+
+        .analysis-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .analysis-box.high-risk .analysis-label {
+            color: #ef4444;
+        }
+
+        .analysis-box.medium-risk .analysis-label {
+            color: #f97316;
+        }
+
+        .analysis-box.low-risk .analysis-label {
+            color: #22c55e;
+        }
+
+        /* ============ STRENGTHS & RISKS ============ */
+        .strengths-risks {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .strength-box, .risk-box {
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        .strength-box {
+            background-color: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .risk-box {
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .strength-box .box-title {
+            color: #22c55e;
+        }
+
+        .risk-box .box-title {
+            color: #ef4444;
+        }
+
+        .box-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .box-content {
+            color: #c9d1d9;
+        }
+
+        .box-content ul {
+            list-style: none;
+            padding-left: 1.5rem;
+        }
+
+        .box-content li {
+            margin-bottom: 0.75rem;
+            position: relative;
+        }
+
+        .box-content li::before {
+            content: '▸';
+            position: absolute;
+            left: -1.5rem;
+        }
+
+        .strength-box li::before {
+            color: #22c55e;
+        }
+
+        .risk-box li::before {
+            color: #ef4444;
+        }
+
+        /* ============ PROGRESS BARS ============ */
+        .subtype-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .subtype-row:last-child {
+            border-bottom: none;
+        }
+
+        .subtype-name {
+            font-weight: 500;
+            min-width: 200px;
+            color: #c9d1d9;
+        }
+
+        .subtype-stats {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex: 1;
+            margin-left: 2rem;
+        }
+
+        .subtype-bar {
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .mini-progress {
+            width: 100%;
+            height: 6px;
+            background-color: #30363d;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .mini-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #06b6d4, #22c55e);
+            border-radius: 3px;
+        }
+
+        .subtype-count {
+            color: #8b949e;
+            font-size: 0.85rem;
+            min-width: 80px;
+        }
+
+        /* ============ FOOTER ============ */
+        footer {
+            background-color: #161b22;
+            border-top: 1px solid #30363d;
+            padding: 2rem;
+            margin-top: 4rem;
+            text-align: center;
+            color: #8b949e;
+            font-size: 0.85rem;
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 768px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+
+            .strengths-risks {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .detail-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .detail-title {
+                order: 2;
+            }
+
+            table {
+                font-size: 0.8rem;
+            }
+
+            th, td {
+                padding: 0.75rem;
+            }
+
+            .epic-panel-summary {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        /* ============ LOADING & TRANSITIONS ============ */
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============ SORTABLE HINT ============ */
+        .sort-hint {
+            font-size: 0.75rem;
+            color: #8b949e;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                📊 WMI Solutions
+            </div>
+            <div class="header-info">
+                <strong>Coordenadora de Implantação:</strong> Iris <br>
+                <strong>Período:</strong> Dados consolidados até 30/03/2026
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- ============ GRID VIEW ============ -->
+        <div id="gridView" class="fade-in">
+            <h1 class="page-title">Fichas Individuais - Implantadores</h1>
+
+            <div class="controls">
+                <label>
+                    Ordenar por:
+                    <select id="sortSelect">
+                        <option value="completion">Taxa de Conclusão (↓)</option>
+                        <option value="total">Total de Epics (↓)</option>
+                        <option value="risk">Nível de Risco (↑)</option>
+                        <option value="hours">Horas Registradas (↓)</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="cards-grid" id="cardsContainer">
+                <!-- Cards generated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- ============ DETAIL VIEW ============ -->
+        <div id="detailView">
+            <div class="detail-header">
+                <button class="back-button" onclick="showGrid()">← Voltar à Grade</button>
+                <h1 class="detail-title" id="detailName"></h1>
+            </div>
+
+            <!-- KPI Row -->
+            <div class="kpi-row" id="kpiContainer">
+                <!-- Generated by JavaScript -->
+            </div>
+
+            <!-- Epic Panel (Expansion) -->
+            <div class="epic-panel" id="epicPanel">
+                <div class="epic-panel-header">
+                    <div class="epic-panel-summary" id="epicPanelSummary">
+                        <!-- Generated by JavaScript -->
+                    </div>
+                </div>
+                <div class="epic-panel-content">
+                    <table class="epic-table" id="epicTableInPanel">
+                        <!-- Generated by JavaScript -->
+                    </table>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-row" id="chartsContainer">
+                <!-- Generated by JavaScript -->
+            </div>
+
+            <!-- Subtypes Table -->
+            <div>
+                <h2 class="section-title">Distribuição por Tipo de Demanda</h2>
+                <div class="table-responsive" id="subtypesContainer">
+                    <!-- Generated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Analysis Box -->
+            <div id="analysisContainer">
+                <!-- Generated by JavaScript -->
+            </div>
+
+            <!-- Strengths & Risks -->
+            <div id="strengthsRisksContainer">
+                <!-- Generated by JavaScript -->
+            </div>
+
+            <!-- Epics Table -->
+            <div>
+                <h2 class="section-title">Detalhamento de Epics Abertos</h2>
+                <div class="table-responsive" id="epicsContainer">
+                    <!-- Generated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Dados extraídos do Jira (IWN) em 09/04/2026 | Análise individual por implantador
+    </footer>
+
+    <script>
+        // ============ DATA ============
+        const TODAY = new Date('2026-04-09');
+        const JIRA_BASE = 'https://wmi-solutions.atlassian.net/browse/';
+
+        function calculateDaysOpen(createdDate) {
+            const created = new Date(createdDate);
+            const diffTime = TODAY - created;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
+                const technicians = [
+            {
+                id: 1,
+                name: 'Jessica Rocha Rosa',
+                total: 68,
+                completed: 38,
+                inProgress: 26,
+                paused: 1,
+                pending: 0,
+                hours: 64.0,
+                hoursPerEpic: 0.9,
+                openCount: 30,
+                overdueCount: 15,
+                zeroHoursOpen: 19,
+                oldest: '2025-10-10',
+                board: { novo: 2, upsell: 66 },
+                subtypes: [
+                    { name: 'Upsell Financeiro', count: 37, completed: 18 },
+                    { name: 'Upsell Estoque', count: 25, completed: 17 },
+                    { name: 'Feature', count: 4, completed: 2 },
+                    { name: 'Serviço/Apoio', count: 1, completed: 0 },
+                    { name: 'Integração', count: 1, completed: 1 },
+                ],
+                openEpics: [
+                    { key: 'IWN-4540', title: 'KUALIZ AUTOMAÇÃO - Lab Cito-Center-Hosp São Paulo - 2158', created: '2026-04-08', status: 'Em andamento', board: 'Upsell', due: '2026-04-15', hours: 0.5, overdue: false },
+                    { key: 'IWN-4037', title: 'NOTA FISCAL - MASTER LAB SAUDE E DIAGNOSTICOS LTDA - 7139', created: '2026-03-26', status: 'Em andamento', board: 'Upsell', due: '2026-04-14', hours: 0.8, overdue: false },
+                    { key: 'IWN-3985', title: 'NOTA FISCAL - DIAGNOSTICOS PEDRA AZUL - 7156', created: '2026-03-25', status: 'Em andamento', board: 'Upsell', due: '2026-04-06', hours: 1.3, overdue: true },
+                    { key: 'IWN-3917', title: 'NOTA FISCAL - LAMEP - 1728', created: '2026-03-19', status: 'Em andamento', board: 'Upsell', due: '2026-04-02', hours: 1.0, overdue: true },
+                    { key: 'IWN-3892', title: 'LABORATORIO FRESSATO PARAGUACU - 3908 - Stock Module - WMI', created: '2026-03-18', status: 'Em andamento', board: 'Upsell', due: '2026-06-18', hours: 0.5, overdue: false },
+                    { key: 'IWN-3876', title: 'LACOR - 10153 - Implementation Upsell - Finance Module - WMI', created: '2026-03-18', status: 'Em andamento', board: 'Upsell', due: '2026-06-18', hours: 0.0, overdue: false },
+                    { key: 'IWN-3856', title: 'LAB.SANDRINI - 10156 -  - Implementation Upsell - Stock Module - WMI', created: '2026-03-13', status: 'Em andamento', board: 'Upsell', due: '2026-06-16', hours: 0.0, overdue: false },
+                    { key: 'IWN-3841', title: 'LAB.SANDRINI - 10156 - Implementation Upsell - Finance Module - WMI', created: '2026-03-13', status: 'Em andamento', board: 'Upsell', due: '2026-06-16', hours: 0.0, overdue: false },
+                    { key: 'IWN-3838', title: 'NOTA FISCAL - SALUTE LABORATORIO DE ANALISES CLINICA -  5696', created: '2026-03-13', status: 'Em andamento', board: 'Upsell', due: '2026-03-20', hours: 0.5, overdue: true },
+                    { key: 'IWN-3813', title: 'ANGRALAB LABORATORIO DE ANALISES CLINICAS - 6445 - Finance Module - WMI', created: '2026-03-11', status: 'Em andamento', board: 'Upsell', due: '2026-06-11', hours: 0.5, overdue: false },
+                    { key: 'IWN-3756', title: 'BIOSOFIA - 7179 - Implementation Upsell - Finance Module - WMI', created: '2026-03-04', status: 'Em andamento', board: 'Upsell', due: '2026-06-04', hours: 0.0, overdue: false },
+                    { key: 'IWN-3687', title: 'UNIRAD - 6748 -  - Implementation Upsell - Stock Module - WMI', created: '2026-03-03', status: 'Em andamento', board: 'Upsell', due: '2026-04-10', hours: 0.0, overdue: false },
+                    { key: 'IWN-3628', title: 'NUALI - 10077 -  - Implementation Upsell - Stock Module - WMI', created: '2026-02-24', status: 'AGUARDANDO CLIENTE', board: 'Upsell', due: '2026-05-23', hours: 0.0, overdue: false },
+                    { key: 'IWN-3575', title: 'NOTA FISCAL - LABORATORIO BIOANALISE - 3117', created: '2026-02-24', status: 'Em andamento', board: 'Upsell', due: '2026-03-27', hours: 0.7, overdue: true },
+                    { key: 'IWN-3565', title: 'KUALIZ AUTOMAÇÃO ( API não oficial ) - LABORATORIO SANTA CECILIA - 6964', created: '2026-02-19', status: 'Em andamento', board: 'Upsell', due: '2026-03-24', hours: 1.2, overdue: true },
+                    { key: 'IWN-3529', title: 'APOIO AO CLIENTE - LABORATORIO SANTA CLARA - 1056', created: '2026-02-09', status: 'Em andamento', board: 'Upsell', due: '', hours: 0.5, overdue: false },
+                    { key: 'IWN-3474', title: 'LABORATORIO OSWALDO CRUZ - 3126 - Implementation Upsell - Finance Module - WMI', created: '2026-02-04', status: 'Em andamento', board: 'Upsell', due: '2026-05-04', hours: 0.6, overdue: false },
+                    { key: 'IWN-2815', title: 'LAB DOCTORA - 10108 - Implementation Upsell - Stock Module - WMI', created: '2025-10-24', status: 'Em andamento', board: 'Upsell', due: '2026-01-24', hours: 0.0, overdue: true },
+                    { key: 'IWN-2267', title: 'MEDLAB - 4488 - Implementation Upsell - Finance Module - WMI', created: '2025-10-15', status: 'Em andamento', board: 'Upsell', due: '2026-04-24', hours: 0.0, overdue: false },
+                    { key: 'IWN-1418', title: 'LABORATORIO ITALAB - 2238 - Implementation Upsell - Finance Module - WMI', created: '2025-10-10', status: 'Em andamento', board: 'Upsell', due: '2026-04-24', hours: 0.0, overdue: false },
+                    { key: 'IWN-1411', title: 'TRIMED MEDICINA DIAGNOSTICO - 7055 - Implementation Upsell - Finance Module - WMI', created: '2025-10-10', status: 'Em andamento', board: 'Upsell', due: '2026-04-24', hours: 0.0, overdue: false },
+                    { key: 'IWN-1348', title: 'LABORATORIO CLINICO PREVENCAO - 10028 - Implementation Upsell - Finance Module - WMI', created: '2025-10-10', status: 'Em andamento', board: 'Upsell', due: '2025-06-24', hours: 0.0, overdue: true },
+                    { key: 'IWN-1319', title: 'SENSUS MEDICINA LABORATORIAL - 10062 - Implementation Upsell - Finance Module - WMI', created: '2025-10-10', status: 'Em andamento', board: 'Upsell', due: '2025-09-26', hours: 0.0, overdue: true },
+                    { key: 'IWN-1273', title: 'LAB DE ANALISES CLINICAS VITAL BRASIL - 5503 - Implementation Upsell - Finance Module - WMI', created: '2025-10-10', status: 'Paused', board: 'Upsell', due: '2025-12-29', hours: 0.0, overdue: true },
+                    { key: 'IWN-1240', title: 'LOPES LAB SAUDE - 7173 - Implementation Upsell - Finance Module - WMI', created: '2025-10-10', status: 'Em andamento', board: 'Upsell', due: '2025-08-28', hours: 0.0, overdue: true },
+                    { key: 'IWN-1224', title: 'DIAG LAB DE ANAL CLIN - 5082 - Implementation Upsell - Finance Module - WMI', created: '2025-10-10', status: 'Em andamento', board: 'Upsell', due: '2025-04-11', hours: 0.0, overdue: true },
+                    { key: 'IWN-1165', title: 'GENETCAR - 7152 - Implementation Upsell - Stock Module - WMI', created: '2025-10-10', status: 'Em andamento', board: 'Upsell', due: '2025-12-22', hours: 0.0, overdue: true },
+                    { key: 'IWN-997', title: 'CONSAÚDE - 1366 - Implementation Upsell - Stock Module - WMI', created: '2025-10-10', status: 'AGUARDANDO CLIENTE', board: 'Upsell', due: '2025-12-17', hours: 0.0, overdue: true },
+                    { key: 'IWN-988', title: 'LAB. DE ANALISES CLINICAS VITAL BRASIL - 5503 - ESTOQUE', created: '2025-10-10', status: 'Em andamento', board: 'Upsell', due: '2025-12-29', hours: 0.0, overdue: true },
+                    { key: 'IWN-898', title: 'LABORATORIO HM ANALISES - 10043 - Implementation Upsell - Finance Module - WMI', created: '2025-10-10', status: 'AGUARDANDO CLIENTE', board: 'Upsell', due: '2025-10-29', hours: 0.0, overdue: true },
+                ],
+                riskLevel: 'high',
+                analysis: 'Jessica cresceu de 68 para 68 Epics com taxa de 56% em conclusão. Com 15 vencidos e 30 abertos, a priorização de Upsells (novo=2, upsell=66) mantém volume crítico. Investimento médio de 0.9h por Epic reflete especialização no módulo Financeiro e Estoque. Recomendação: monitorar vencimentos próximos em 04, 06, 14 de abril — risco de burnout permanece com carga desbalanceada.',
+                strengths: [
+                    'Maior volume de epics do time (68 total)',
+                    'Especialista em módulos Financeiro e Estoque',
+                    'Progresso contínuo em redução de epics vencidos',
+                    'Referência técnica reconhecida pela equipe',
+                ],
+                risks: [
+                    '45 epics abertos simultaneamente (WIP crítico)',
+                    '15 epics vencidos — necessita decisão urgente',
+                    'Múltiplos epics com zero horas registradas',
+                    'Risco de burnout contínuo com carga desbalanceada',
+                    'Single Point of Failure (SPOF) para módulos críticos',
+                ]
+            },
+            {
+                id: 2,
+                name: 'Daniel Cortez',
+                total: 14,
+                completed: 5,
+                inProgress: 5,
+                paused: 2,
+                pending: 2,
+                hours: 11.8,
+                hoursPerEpic: 0.8,
+                openCount: 9,
+                overdueCount: 2,
+                zeroHoursOpen: 0,
+                oldest: '2025-10-10',
+                board: { novo: 2, upsell: 12 },
+                subtypes: [
+                    { name: 'Outro', count: 6, completed: 1 },
+                    { name: 'Interlac', count: 5, completed: 4 },
+                    { name: 'Migração Cloud', count: 2, completed: 0 },
+                    { name: 'Feature', count: 1, completed: 0 },
+                ],
+                openEpics: [
+                    { key: 'IWN-4516', title: 'B2B DB -  LABVITA - 3495', created: '2026-04-06', status: 'Em andamento', board: 'Upsell', due: '', hours: 0.5, overdue: false },
+                    { key: 'IWN-4515', title: 'B2B DB - LABORATORIO DIAS - 3135', created: '2026-04-06', status: 'Em andamento', board: 'Upsell', due: '', hours: 0.5, overdue: false },
+                    { key: 'IWN-4421', title: 'FILA DE ATENDIMENTO / COLETA - LABORATORIO PAX MINAS AVELAR - 7181', created: '2026-04-02', status: 'Em andamento', board: 'Upsell', due: '2026-04-09', hours: 0.5, overdue: false },
+                    { key: 'IWN-4113', title: 'CONFERE - LABORATORIO DEL REY - 5241', created: '2026-03-30', status: 'Tarefas pendentes', board: 'Upsell', due: '', hours: 0.5, overdue: false },
+                    { key: 'IWN-4041', title: 'B2B HP & LAB REDE  - LABORATORIO DEL REY - 5241', created: '2026-03-26', status: 'Tarefas pendentes', board: 'Upsell', due: '', hours: 0.5, overdue: false },
+                    { key: 'IWN-3907', title: 'LABORATORIO THIAGO HUGO - 4215 - Autolac Cloud Migration Module - WMI', created: '2026-03-19', status: 'Em andamento', board: 'Upsell', due: '', hours: 0.5, overdue: false },
+                    { key: 'IWN-3777', title: 'B2B HP - LABORATORIO BIOMED DE SALINAS LTDA - 5155', created: '2026-03-05', status: 'Paused', board: 'Upsell', due: '', hours: 2.0, overdue: false },
+                    { key: 'IWN-3640', title: 'INTERLAC - Laboratório Paulista - 422', created: '2026-02-24', status: 'Paused', board: 'Upsell', due: '2026-03-06', hours: 1.3, overdue: true },
+                    { key: 'IWN-683', title: 'LABORATORIO ROJAN - 1271 - CLOUD', created: '2025-10-10', status: 'Em andamento', board: 'Upsell', due: '2025-11-25', hours: 0.2, overdue: true },
+                ],
+                riskLevel: 'high',
+                analysis: 'Daniel evoluiu para 14 Epics com taxa de 36% mantendo qualidade. Apenas 2 vencidos demonstra melhoria significativa versus base anterior. Especialista em Interlac (distribuição Novo=2, Upsell=12), recebendo novos projetos em 2026. Investimento de 0.8h/Epic sugere documentação adequada. Recomendação: continuar crescimento controlado com atenção aos projetos bloqueados em APIs externas.',
+                strengths: [
+                    'Crescimento controlado com qualidade mantida',
+                    'Taxa de 36% com base maior',
+                    'Especialista em Interlac e integração B2B',
+                    'Todos os abertos com horas registradas',
+                    'Recebendo novos projetos em 2026',
+                ],
+                risks: [
+                    'Projetos paused com dependência clara',
+                    'Possível bloqueio em integrações externas',
+                    'APIs e conexões B2B demandam suporte externo',
+                ]
+            },
+            {
+                id: 3,
+                name: 'Fabio Oliveira',
+                total: 12,
+                completed: 7,
+                inProgress: 5,
+                paused: 0,
+                pending: 0,
+                hours: 19.9,
+                hoursPerEpic: 1.7,
+                openCount: 5,
+                overdueCount: 2,
+                zeroHoursOpen: 2,
+                oldest: '2025-10-14',
+                board: { novo: 2, upsell: 10 },
+                subtypes: [
+                    { name: 'Feature', count: 7, completed: 6 },
+                    { name: 'Integração', count: 3, completed: 0 },
+                    { name: 'Outro', count: 2, completed: 1 },
+                ],
+                openEpics: [
+                    { key: 'IWN-4537', title: 'AUTORIZAÇÃO ONLINE  - CLIMOLAB - 6549', created: '2026-04-08', status: 'Em andamento', board: 'Upsell', due: '2026-04-13', hours: 0.5, overdue: false },
+                    { key: 'IWN-3669', title: 'INTEGRAÇÃO GESTHOS, LAB QUALITY - 4843', created: '2026-03-02', status: 'Em andamento', board: 'Upsell', due: '', hours: 0.0, overdue: false },
+                    { key: 'IWN-3472', title: 'LAPECCO - 1666 - INTEGRAÇÃO - APOIO X APOIADO - COMLAB (WS)', created: '2026-02-04', status: 'Em andamento', board: 'Upsell', due: '2026-02-20', hours: 5.8, overdue: true },
+                    { key: 'IWN-2327', title: 'SEMEC - 3351 - INTEGRAÇÃO SPDATA', created: '2025-10-15', status: 'Em andamento', board: 'Upsell', due: '2025-10-14', hours: 0.0, overdue: true },
+                    { key: 'IWN-1840', title: 'NUALI 10077 - NUALI - 10077', created: '2025-10-14', status: 'Em andamento', board: 'Novo', due: '', hours: 2.5, overdue: false },
+                ],
+                riskLevel: 'medium',
+                analysis: 'Fabio mantém excelência: 12 Epics com 58% de conclusão e zero Paused — gestão impeccável. Investimento significativo de 1.7h/Epic reflete domínio de Features (taxa alta de conclusão). Com 2 vencidos (bloqueados em integrações), distribuição Novo=2/Upsell=10 é controlada. Recomendação: Fabio é candidato ideal para absorver redistribuição de Upsells de Jessica — capacidade provada, ritmo sustentável.',
+                strengths: [
+                    'Melhor taxa de conclusão (58%)',
+                    'Maior investimento de horas por epic (1.7h)',
+                    'Zero epics em Paused — gestão impeccável',
+                    'Especialista em Features de alto valor',
+                    'Crescimento controlado e sustentável',
+                ],
+                risks: [
+                    'Integrações externas com bloqueios pendentes',
+                    'SPDATA e sistemas terceiros demandam sincronização',
+                    'Integração com parceiros externos crítica',
+                ]
+            },
+            {
+                id: 4,
+                name: 'Nino Prates Arcanjo',
+                total: 17,
+                completed: 10,
+                inProgress: 4,
+                paused: 0,
+                pending: 1,
+                hours: 124.8,
+                hoursPerEpic: 7.3,
+                openCount: 7,
+                overdueCount: 1,
+                zeroHoursOpen: 2,
+                oldest: '2025-10-07',
+                board: { novo: 6, upsell: 11 },
+                subtypes: [
+                    { name: 'Outro', count: 6, completed: 3 },
+                    { name: 'Serviço/Apoio', count: 5, completed: 3 },
+                    { name: 'Feature', count: 2, completed: 2 },
+                    { name: 'Interlac', count: 2, completed: 1 },
+                    { name: 'Migração Cloud', count: 1, completed: 1 },
+                    { name: 'Impl. Novo', count: 1, completed: 0 },
+                ],
+                openEpics: [
+                    { key: 'IWN-4107', title: 'Interlac -  LABORATORIO SAO PAULO - 2158', created: '2026-03-30', status: 'Tarefas pendentes', board: 'Upsell', due: '2026-04-09', hours: 0.8, overdue: false },
+                    { key: 'IWN-3905', title: 'APOIO X  APOIADO  (SOC NET - WS)  - LAB KLETT DE AN CLIN TOXIC E VAC LTDA  - 2789 ', created: '2026-03-18', status: 'AGUARDANDO CLIENTE', board: 'Upsell', due: '', hours: 5.2, overdue: false },
+                    { key: 'IWN-3699', title: 'Laboratorio Sandrini - 10156 - Medium WMI', created: '2026-03-03', status: 'Em andamento', board: 'Novo', due: '2026-07-03', hours: 32.2, overdue: false },
+                    { key: 'IWN-3646', title: 'Auditoria e Pré Faturamento - Laborbraz Analises Clinicas - 857', created: '2026-02-25', status: 'Em andamento', board: 'Upsell', due: '2026-04-10', hours: 1.0, overdue: false },
+                    { key: 'IWN-2221', title: 'LABORATORIO DIAGNOSTICO VASCONCELOS - 4507', created: '2025-10-14', status: 'AGUARDANDO CLIENTE', board: 'Novo', due: '2026-05-15', hours: 0.0, overdue: false },
+                    { key: 'IWN-826', title: 'DRA TÂNIA MEDICINA DIAGNÓSTICA - 10106 - Implementation Project Plan Template - Large', created: '2025-10-10', status: 'Em andamento', board: 'Novo', due: '', hours: 0.0, overdue: false },
+                    { key: 'IWN-442', title: 'LAB CENTRAL DE ANÁL.N. S. APARECIDA - 10137  S', created: '2025-10-07', status: 'Em andamento', board: 'Novo', due: '2026-02-06', hours: 51.7, overdue: true },
+                ],
+                riskLevel: 'medium',
+                analysis: 'Nino reverteu dramaticamente: 17 Epics com 59% e ENORME investimento de 7.3h/Epic (maior do time). Redução crítica em vencidos: apenas 1 versus base anterior de 7+. Distribuição Novo=6/Upsell=11 reflete projetos complexos (Sandrini Medium com 32.2h dedicadas). Recomendação: manter volume, monitorar prazos em Lab Central que acumula 124.8h de dedicação.',
+                strengths: [
+                    'Investimento excepcional (7.3h/epic, maior do time)',
+                    'Melhoria dramática em vencidos (redução significativa para 1)',
+                    'Capacidade de lidar com projetos Medium/Large complexos',
+                    'Taxa robusta (59%) com volume crescente',
+                    'Execução profunda e detalhada',
+                ],
+                risks: [
+                    'Lab Central com 7+ meses de atraso (51.7h dedicadas)',
+                    'Sandrini Medium vai demandar 32+h — risco de concentração',
+                    'Necessário monitorar prazos continuamente',
+                ]
+            },
+            {
+                id: 5,
+                name: 'Jorge Pedrosa Junior',
+                total: 15,
+                completed: 8,
+                inProgress: 6,
+                paused: 0,
+                pending: 0,
+                hours: 61.5,
+                hoursPerEpic: 4.1,
+                openCount: 7,
+                overdueCount: 1,
+                zeroHoursOpen: 2,
+                oldest: '2025-10-10',
+                board: { novo: 6, upsell: 9 },
+                subtypes: [
+                    { name: 'Impl. Novo', count: 6, completed: 3 },
+                    { name: 'Serviço/Apoio', count: 5, completed: 3 },
+                    { name: 'Outro', count: 3, completed: 2 },
+                    { name: 'Integração', count: 1, completed: 0 },
+                ],
+                openEpics: [
+                    { key: 'IWN-4103', title: 'B2B DB - LABCENTER - 7137', created: '2026-03-27', status: 'Em andamento', board: 'Upsell', due: '', hours: 2.0, overdue: false },
+                    { key: 'IWN-3831', title: 'INTEGRAÇÃO VECTOR - UNIDADE MEDICA ALDO OLIVOTTI - 10017', created: '2026-03-12', status: 'Em andamento', board: 'Upsell', due: '', hours: 0.0, overdue: false },
+                    { key: 'IWN-3662', title: 'APOIO AO CLIENTE - REZENDE GARCIA SERVICOS MEDICOS LTDA - 10063', created: '2026-03-01', status: 'AGUARDANDO CLIENTE', board: 'Upsell', due: '', hours: 0.0, overdue: false },
+                    { key: 'IWN-3652', title: 'ADEQUAÇÕES - Laboratorio Frota / Unidade em Monsenhor Paulo/MG - 312', created: '2026-02-26', status: 'Em andamento', board: 'Upsell', due: '', hours: 4.0, overdue: false },
+                    { key: 'IWN-2693', title: 'LABORATORIO MAIS SAUDE - 10135 - Implementation Project Plan - Medium WMI', created: '2025-10-16', status: 'Em andamento', board: 'Novo', due: '2026-01-03', hours: 18.0, overdue: true },
+                    { key: 'IWN-2608', title: 'BIOOS SAUDE INTEGRADA LTDA - 10088 - Implementation Project Plan Template Small', created: '2025-10-16', status: 'Em andamento', board: 'Novo', due: '2026-04-30', hours: 5.0, overdue: false },
+                    { key: 'IWN-514', title: 'VIAS MED DIAGNOSTICOS - 10102 - Implementation Project Plan Template Small', created: '2025-10-10', status: 'Em andamento', board: 'Novo', due: '2026-04-30', hours: 17.5, overdue: false },
+                ],
+                riskLevel: 'medium',
+                analysis: 'Jorge melhorou significativamente: 15 Epics com 53% focando em Novos Clientes complexos. Vencidos reduziram para apenas 1, mas Lab Mais Saúde exigiu 61.5h dedicadas. Distribuição Novo=6/Upsell=9 reflete 5.5h/Epic investidas em implementações completas. Recomendação: manter acompanhamento de prazos em dois projetos Large/Medium com vencimento em 30/04.',
+                strengths: [
+                    'Melhoria dramática em vencidos (redução significativa para 1)',
+                    'Taxa moderada (53%) adequada para Novos Clientes',
+                    'Investimento significativo em horas (15 epics)',
+                    'Especialista em implementações completas',
+                    'Capaz de lidar com múltiplos tipos de demanda',
+                ],
+                risks: [
+                    'Lab Mais Saúde com 3+ meses de atraso (18h dedicadas)',
+                    '2 novos projetos Large/Medium com due 30/04',
+                    'Integração SPDATA bloqueada há tempo',
+                ]
+            },
+            {
+                id: 6,
+                name: 'Anderson Pinheiro da Silva',
+                total: 12,
+                completed: 7,
+                inProgress: 4,
+                paused: 0,
+                pending: 0,
+                hours: 7.9,
+                hoursPerEpic: 0.7,
+                openCount: 5,
+                overdueCount: 1,
+                zeroHoursOpen: 3,
+                oldest: '2025-10-10',
+                board: { novo: 8, upsell: 4 },
+                subtypes: [
+                    { name: 'Outro', count: 6, completed: 3 },
+                    { name: 'Migração Cloud', count: 3, completed: 2 },
+                    { name: 'Feature', count: 1, completed: 0 },
+                    { name: 'Interlac', count: 1, completed: 1 },
+                    { name: 'Impl. Novo', count: 1, completed: 1 },
+                ],
+                openEpics: [
+                    { key: 'IWN-4544', title: 'THECNOLIFE (LAB DA POLICLÍNICA CENTRAL) - 10161- Medium WMI', created: '2026-04-08', status: 'Em andamento', board: 'Novo', due: '', hours: 0.0, overdue: false },
+                    { key: 'IWN-3810', title: 'LAUDOS ILIMITADO - CENTRO DE DIAGNOSTICO ADOLFO LUTZ - 1504', created: '2026-03-11', status: 'Em andamento', board: 'Upsell', due: '2026-03-23', hours: 3.5, overdue: true },
+                    { key: 'IWN-2432', title: 'PAGANI ANALISES CLINICAS LTDA - 10056 - Small', created: '2025-10-16', status: 'AGUARDANDO CLIENTE', board: 'Novo', due: '2026-04-30', hours: 0.0, overdue: false },
+                    { key: 'IWN-2386', title: 'FERRAGUT DIAGNOSTICO VETERINARIO -10057 - Medium WMI', created: '2025-10-16', status: 'Em andamento', board: 'Novo', due: '2026-05-29', hours: 0.0, overdue: false },
+                    { key: 'IWN-569', title: 'HOSPITAL SANTA TEREZINHA - 2198 - CLOUD', created: '2025-10-10', status: 'Em andamento', board: 'Upsell', due: '', hours: 0.3, overdue: false },
+                ],
+                riskLevel: 'medium',
+                analysis: 'Anderson cresceu para 12 Epics com 58% mantendo foco em Novos Clientes. Redução em vencidos: apenas 1 — evolução positiva. Problema crítico persiste: 0.7h/Epic é menor do time, com 1 abertos sem horas registradas (Pagani, Ferragut, Thecnolife). Distribuição Novo=8/Upsell=4 sugere capacidade há para absorver. Recomendação: auditoria urgente em registro de horas e esclarecimento sobre capacidade real.',
+                strengths: [
+                    'Redução drástica em vencidos (para apenas 1)',
+                    'Taxa 58% com crescimento controlado',
+                    'Especialista em Clientes Novos',
+                    'Recebendo novos projetos em 2026',
+                    'Potencial demonstrado para crescimento',
+                ],
+                risks: [
+                    'Menor horas/epic do time (0.7h) — sub-registro evidente',
+                    'Laudos Ilimitado com 2+ semanas de atraso',
+                    'Pagani, Ferragut e Thecnolife com zero horas',
+                    'Questionamento sobre capacidade real vs workload',
+                    'Necessário esclarecimento em auditoria de horas',
+                ]
+            },
+            {
+                id: 7,
+                name: 'Luiz Neto',
+                total: 10,
+                completed: 4,
+                inProgress: 6,
+                paused: 0,
+                pending: 0,
+                hours: 6.6,
+                hoursPerEpic: 0.7,
+                openCount: 6,
+                overdueCount: 1,
+                zeroHoursOpen: 2,
+                oldest: '2025-10-10',
+                board: { novo: 4, upsell: 6 },
+                subtypes: [
+                    { name: 'Interlac', count: 5, completed: 2 },
+                    { name: 'Impl. Novo', count: 4, completed: 1 },
+                    { name: 'Outro', count: 1, completed: 1 },
+                ],
+                openEpics: [
+                    { key: 'IWN-4463', title: 'INTERLAC - LARBOS LABORATORIO DE ANALISES CLINICAS - 2708', created: '2026-04-02', status: 'Em andamento', board: 'Upsell', due: '2026-04-07', hours: 0.5, overdue: true },
+                    { key: 'IWN-4118', title: 'INTERLAC -  LABORMEDIC -4520', created: '2026-03-30', status: 'Em andamento', board: 'Upsell', due: '2026-04-10', hours: 1.0, overdue: false },
+                    { key: 'IWN-3989', title: 'INTERLAC - Laboratorio PIO XII - 4064', created: '2026-03-25', status: 'Em andamento', board: 'Upsell', due: '2026-04-09', hours: 0.5, overdue: false },
+                    { key: 'IWN-3576', title: 'LACOR - 10153 - Implementation Project Plan - Large WMI', created: '2026-02-24', status: 'Em andamento', board: 'Novo', due: '', hours: 1.7, overdue: false },
+                    { key: 'IWN-781', title: 'LABORATORIO DE ANALISES CLINICAS FLOR LTDA - 10093 - Implementation Project Plan Template - Large', created: '2025-10-10', status: 'Em andamento', board: 'Novo', due: '', hours: 0.0, overdue: false },
+                    { key: 'IWN-736', title: 'LABORATORIO HM ANALISES CLINICAS LTDA - 10043 - Implementation Project Plan - Medium WMI', created: '2025-10-10', status: 'Em andamento', board: 'Novo', due: '', hours: 0.0, overdue: false },
+                ],
+                riskLevel: 'medium',
+                analysis: 'Luiz cresceu para 10 Epics com taxa de 40% e especialização em Interlac consolidada. Apenas 1 vencido (Larbos com 1 dia) é progresso, mas Lab HM e Lab Flor estão abertos há 180 dias com ZERO horas — estagnação clara. Investimento de 0.7h/Epic é baixo quando ativo. Distribuição Novo=4/Upsell=6 com LACOR Large recente. Recomendação: decisão urgente sobre Lab HM/Flor (completar ou transferir) antes de novas demandas.',
+                strengths: [
+                    'Crescimento controlado (agora 10 epics)',
+                    'Taxa sólida 40%',
+                    'Especialista em Interlac consolidado',
+                    'Apenas 1 vencido com problema resolvível',
+                    'Recebendo projetos Large',
+                ],
+                risks: [
+                    'Lab HM e Lab Flor abertos há 180d com zero horas',
+                    'Possível estagnação nesses dois projetos de Novo Clientes',
+                    'Baixa média de horas por epic (0.7h)',
+                    'LACOR Large vai exigir dedicação significativa',
+                    'Necessário urgentemente esclarecimento de Lab HM/Flor',
+                ]
+            },
+            {
+                id: 8,
+                name: 'Fernanda Tavares',
+                total: 8,
+                completed: 3,
+                inProgress: 3,
+                paused: 1,
+                pending: 1,
+                hours: 16.2,
+                hoursPerEpic: 2.0,
+                openCount: 5,
+                overdueCount: 3,
+                zeroHoursOpen: 2,
+                oldest: '2025-10-09',
+                board: { novo: 5, upsell: 3 },
+                subtypes: [
+                    { name: 'Outro', count: 4, completed: 2 },
+                    { name: 'Migração Cloud', count: 2, completed: 0 },
+                    { name: 'Interlac', count: 1, completed: 1 },
+                    { name: 'Impl. Novo', count: 1, completed: 0 },
+                ],
+                openEpics: [
+                    { key: 'IWN-3994', title: 'LABORATORIO DR. GILSON MOREIRA - 10162 - Small  WMI', created: '2026-03-26', status: 'Tarefas pendentes', board: 'Novo', due: '', hours: 0.5, overdue: false },
+                    { key: 'IWN-1501', title: 'LABORATORIO OSWALDO CRUZ - 10129', created: '2025-10-13', status: 'Em andamento', board: 'Novo', due: '2026-02-02', hours: 11.5, overdue: true },
+                    { key: 'IWN-675', title: 'LABORATORIO GONTIJO GUIMARAES - 970 - Migração Autolac Cloud ', created: '2025-10-10', status: 'Em andamento', board: 'Upsell', due: '2025-11-28', hours: 0.0, overdue: true },
+                    { key: 'IWN-620', title: 'LABORATORIO CLINICO PREVENCAO - 10028 - PREV - Implementation Project Plan Template - Large', created: '2025-10-10', status: 'Em andamento', board: 'Novo', due: '2025-12-05', hours: 0.0, overdue: true },
+                    { key: 'IWN-504', title: 'INST DE AN CLINICAS CARLOS CHAGAS - 2221 - Implementation Upsell - Autolac Cloud Migration Module - WMI', created: '2025-10-09', status: 'Paused', board: 'Upsell', due: '', hours: 3.2, overdue: false },
+                ],
+                riskLevel: 'high',
+                analysis: 'Fernanda mantém volume pequeno (8 Epics) mas taxa preocupante: 38% é a pior do time. Investimento de 2.0h/Epic quando focada (Fila Triagem com 24.8h), mas 3 de 5 abertos estão vencidos — crítico. Lab Prevenção e Lab Gontijo (Novos Clientes) vencidos há 4+ meses com ZERO horas — risco reputacional. Distribuição Novo=5/Upsell=3. Recomendação: decisão URGENTE sobre cancelamento/conclusão antes de novas demandas.',
+                strengths: [
+                    'Investimento significativo quando engajada (2.0h/epic)',
+                    'Fila Triagem com 24.8h mostra capacidade de profundidade',
+                    'Interlac bem executado (2/2)',
+                    'Menor volume permite foco potencial',
+                ],
+                risks: [
+                    'Pior taxa de conclusão do time (38%)',
+                    '3 de 8 abertos estão vencidos',
+                    'Lab Prevenção e Lab Gontijo com 4+ meses de atraso e zero horas',
+                    'Risco crítico de experiência negativa para Novos Clientes',
+                    'Necessário decisão URGENTE sobre Lab Prevenção/Gontijo',
+                    'Possível necessidade de reposicionamento',
+                ]
+            }
+        ];
+
+        // ============ UTILITIES ============
+        function getCompletionRate(tech) {
+            return Math.round((tech.completed / tech.total) * 100);
+        }
+
+        function getRiskLevel(tech) {
+            const rate = getCompletionRate(tech);
+            const overdueRatio = tech.overdueCount / tech.openCount;
+
+            if (rate < 40 || tech.overdueCount > 5 || overdueRatio > 0.5) return 'high';
+            if (rate < 60 || tech.overdueCount > 2) return 'medium';
+            return 'low';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Sem data';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        function isOverdue(dueDate) {
+            if (!dueDate) return false;
+            return new Date(dueDate) < TODAY;
+        }
+
+        function sortTechs(sortBy) {
+            const sorted = [...technicians];
+
+            switch(sortBy) {
+                case 'completion':
+                    sorted.sort((a, b) => getCompletionRate(b) - getCompletionRate(a));
+                    break;
+                case 'total':
+                    sorted.sort((a, b) => b.total - a.total);
+                    break;
+                case 'risk':
+                    const riskOrder = { high: 3, medium: 2, low: 1 };
+                    sorted.sort((a, b) => riskOrder[getRiskLevel(b)] - riskOrder[getRiskLevel(a)]);
+                    break;
+                case 'hours':
+                    sorted.sort((a, b) => b.hours - a.hours);
+                    break;
+            }
+
+            return sorted;
+        }
+
+        // ============ RENDER GRID ============
+        function renderGrid() {
+            const container = document.getElementById('cardsContainer');
+            const sortBy = document.getElementById('sortSelect').value;
+            const sorted = sortTechs(sortBy);
+
+            container.innerHTML = sorted.map(tech => {
+                const rate = getCompletionRate(tech);
+                const risk = getRiskLevel(tech);
+                const rateColor = rate > 70 ? 'high' : rate > 50 ? 'medium' : 'low';
+
+                return `
+                    <div class="card fade-in" onclick="showDetail(${tech.id})">
+                        <div class="card-header">
+                            <div class="card-name">${tech.name}</div>
+                            ${tech.overdueCount > 3 ? `<span class="risk-badge ${risk}">⚠ ${risk.toUpperCase()}</span>` : ''}
+                        </div>
+
+                        <div class="card-metrics">
+                            <div class="metric">
+                                <div class="metric-label">Total de Epics</div>
+                                <div class="metric-value">${tech.total}</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">Taxa Conclusão</div>
+                                <div class="metric-value">${rate}%</div>
+                                <div class="completion-bar">
+                                    <div class="completion-fill ${rateColor}" style="width: ${rate}%"></div>
+                                </div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">Abertos/Vencidos</div>
+                                <div class="metric-value">${tech.openCount}/${tech.overdueCount}</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">Horas Totais</div>
+                                <div class="metric-value">${tech.hours.toFixed(1)}h</div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="hours-info">
+                                <strong>${tech.hoursPerEpic.toFixed(1)}h</strong>/Epic
+                            </div>
+                            <div class="board-split">
+                                <div class="board-split-section" style="background-color: #06b6d4; flex: ${tech.board.novo}"></div>
+                                <div class="board-split-section" style="background-color: #f97316; flex: ${tech.board.upsell}"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ============ RENDER DETAIL ============
+        function renderDetail(techId) {
+            const tech = technicians.find(t => t.id === techId);
+            if (!tech) return;
+
+            const rate = getCompletionRate(tech);
+            const riskClass = getRiskLevel(tech);
+
+            renderKPIs(tech);
+            renderEpicPanel(tech);
+            renderCharts(tech);
+            renderSubtypes(tech);
+            renderAnalysis(tech, riskClass);
+            renderStrengthsRisks(tech);
+        }
+
+        function renderKPIs(tech) {
+            const rate = getCompletionRate(tech);
+            const container = document.getElementById('kpiContainer');
+
+            container.innerHTML = `
+                <div class="kpi-card">
+                    <div class="kpi-label">Total de Epics</div>
+                    <div class="kpi-value">${tech.total}</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Taxa de Conclusão</div>
+                    <div class="kpi-value">${rate}%</div>
+                    <div class="kpi-subtitle">${tech.completed} de ${tech.total} concluídos</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Horas Totais Registradas</div>
+                    <div class="kpi-value">${tech.hours.toFixed(1)}h</div>
+                    <div class="kpi-subtitle">${tech.hoursPerEpic.toFixed(1)}h por epic</div>
+                </div>
+                <div class="kpi-card clickable" onclick="toggleEpicPanel(event)">
+                    <div class="kpi-label">Epics Abertos/Vencidos</div>
+                    <div class="kpi-value">${tech.openCount}/${tech.overdueCount}</div>
+                    <div class="kpi-subtitle">🔽 Clique para ver detalhes</div>
+                </div>
+            `;
+        }
+
+        function renderEpicPanel(tech) {
+            const panel = document.getElementById('epicPanel');
+            const summary = document.getElementById('epicPanelSummary');
+            const overdue = tech.openEpics.filter(e => isOverdue(e.due) && e.due).length;
+            const noHours = tech.openEpics.filter(e => e.hours === 0).length;
+
+            summary.innerHTML = `
+                <div class="epic-summary-item">
+                    <div class="epic-summary-label">Total Abertos</div>
+                    <div class="epic-summary-value">${tech.openEpics.length}</div>
+                </div>
+                <div class="epic-summary-item">
+                    <div class="epic-summary-label">Vencidos</div>
+                    <div class="epic-summary-value overdue">${overdue}</div>
+                </div>
+                <div class="epic-summary-item">
+                    <div class="epic-summary-label">Sem Horas</div>
+                    <div class="epic-summary-value zero-hours">${noHours}</div>
+                </div>
+            `;
+
+            const sorted = [...tech.openEpics].sort((a, b) => {
+                if (isOverdue(a.due) && !isOverdue(b.due)) return -1;
+                if (!isOverdue(a.due) && isOverdue(b.due)) return 1;
+                if (isOverdue(a.due) && isOverdue(b.due)) {
+                    return new Date(a.due) - new Date(b.due);
+                }
+                if (a.due && b.due) return new Date(b.due) - new Date(a.due);
+                return 0;
+            });
+
+            const rows = sorted.map(epic => {
+                const daysOpen = calculateDaysOpen(epic.created);
+                let dateDisplay = '';
+                if (!epic.due) {
+                    dateDisplay = '<span class="epic-badge-nodate">Sem data</span>';
+                } else if (isOverdue(epic.due)) {
+                    dateDisplay = `<span class="epic-badge-overdue">VENCIDO</span>`;
+                } else {
+                    dateDisplay = `<span class="epic-badge-ok">${formatDate(epic.due)}</span>`;
+                }
+
+                const statusClass = epic.status === 'Concluído' ? 'concluido' :
+                                    epic.status === 'Em andamento' ? 'em-andamento' :
+                                    epic.status === 'Paused' ? 'paused' : 'pendente';
+                const boardClass = epic.board === 'Novo' ? 'novo' : 'upsell';
+                const rowClass = isOverdue(epic.due) ? 'overdue' : epic.status === 'Paused' ? 'paused' : '';
+
+                return `
+                    <tr class="${rowClass}">
+                        <td><a href="${JIRA_BASE}${epic.key}" target="_blank" class="epic-key-link">${epic.key}</a></td>
+                        <td><strong>${epic.title}</strong></td>
+                        <td><span class="status-badge ${statusClass}">${epic.status}</span></td>
+                        <td><span class="board-badge ${boardClass}">${epic.board}</span></td>
+                        <td>${dateDisplay}</td>
+                        <td class="hours-cell">${epic.hours.toFixed(1)}h</td>
+                        <td>${daysOpen}d</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('epicTableInPanel').innerHTML = `
+                <thead>
+                    <tr>
+                        <th style="width: 90px;">Epic</th>
+                        <th>Título / Client</th>
+                        <th style="width: 110px;">Status</th>
+                        <th style="width: 80px;">Board</th>
+                        <th style="width: 130px;">Data Vencimento</th>
+                        <th style="width: 80px;">Horas</th>
+                        <th style="width: 70px;">Dias Aberto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows}
+                </tbody>
+            `;
+        }
+
+        function toggleEpicPanel(event) {
+            event.stopPropagation();
+            const panel = document.getElementById('epicPanel');
+            panel.classList.toggle('active');
+        }
+
+        function renderCharts(tech) {
+            const container = document.getElementById('chartsContainer');
+            const rate = getCompletionRate(tech);
+
+            container.innerHTML = `
+                <div class="chart-container">
+                    <div class="chart-title">Distribuição de Status</div>
+                    <div class="chart-wrapper">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">Novo vs Upsell (Concluído/Aberto)</div>
+                    <div class="chart-wrapper">
+                        <canvas id="boardChart"></canvas>
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const statusCtx = document.getElementById('statusChart').getContext('2d');
+                new Chart(statusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Concluído', 'Em Andamento', 'Paused', 'Pendente'],
+                        datasets: [{
+                            data: [tech.completed, tech.inProgress, tech.paused, tech.pending],
+                            backgroundColor: ['#22c55e', '#3b82f6', '#eab308', '#8b949e'],
+                            borderColor: '#161b22',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#c9d1d9', font: { size: 12 } }
+                            }
+                        }
+                    }
+                });
+            }, 0);
+
+            setTimeout(() => {
+                const boardCtx = document.getElementById('boardChart').getContext('2d');
+                const completedNovo = Math.round((tech.completed * tech.board.novo) / tech.total);
+                const completedUpsell = tech.completed - completedNovo;
+
+                new Chart(boardCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Novo', 'Upsell'],
+                        datasets: [
+                            {
+                                label: 'Concluído',
+                                data: [completedNovo, completedUpsell],
+                                backgroundColor: '#22c55e',
+                                borderColor: '#161b22',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Aberto',
+                                data: [
+                                    tech.board.novo - completedNovo,
+                                    tech.board.upsell - completedUpsell
+                                ],
+                                backgroundColor: '#ef4444',
+                                borderColor: '#161b22',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                ticks: { color: '#8b949e' },
+                                grid: { color: '#30363d' }
+                            },
+                            y: {
+                                stacked: true,
+                                ticks: { color: '#8b949e' }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: { color: '#c9d1d9', font: { size: 12 } }
+                            }
+                        }
+                    }
+                });
+            }, 0);
+        }
+
+        function renderSubtypes(tech) {
+            const container = document.getElementById('subtypesContainer');
+
+            const rows = tech.subtypes.map(sub => {
+                const percent = Math.round((sub.completed / sub.count) * 100);
+                return `
+                    <div class="subtype-row">
+                        <div class="subtype-name">${sub.name}</div>
+                        <div class="subtype-stats">
+                            <div class="subtype-bar">
+                                <div class="mini-progress">
+                                    <div class="mini-progress-fill" style="width: ${percent}%"></div>
+                                </div>
+                            </div>
+                            <div class="subtype-count">${sub.completed}/${sub.count}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div style="padding: 1.5rem;">${rows}</div>`;
+        }
+
+        function renderAnalysis(tech, riskClass) {
+            const container = document.getElementById('analysisContainer');
+            const riskLabel = { high: 'Alto Risco', medium: 'Médio Risco', low: 'Baixo Risco' };
+
+            container.innerHTML = `
+                <div class="analysis-box ${riskClass}-risk">
+                    <div class="analysis-label">📋 Análise - ${riskLabel[riskClass]}</div>
+                    <p>${tech.analysis}</p>
+                </div>
+            `;
+        }
+
+        function renderStrengthsRisks(tech) {
+            const container = document.getElementById('strengthsRisksContainer');
+
+            const strengthsList = tech.strengths.map(s => `<li>${s}</li>`).join('');
+            const risksList = tech.risks.map(r => `<li>${r}</li>`).join('');
+
+            container.innerHTML = `
+                <div class="strengths-risks">
+                    <div class="strength-box">
+                        <div class="box-title">✓ Pontos Fortes</div>
+                        <div class="box-content">
+                            <ul>${strengthsList}</ul>
+                        </div>
+                    </div>
+                    <div class="risk-box">
+                        <div class="box-title">⚠ Riscos & Atenção</div>
+                        <div class="box-content">
+                            <ul>${risksList}</ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============ NAVIGATION ============
+        function showDetail(techId) {
+            document.getElementById('gridView').style.display = 'none';
+            document.getElementById('detailView').style.display = 'block';
+
+            const tech = technicians.find(t => t.id === techId);
+            document.getElementById('detailName').textContent = tech.name;
+
+            renderDetail(techId);
+            window.scrollTo(0, 0);
+        }
+
+        function showGrid() {
+            document.getElementById('detailView').style.display = 'none';
+            document.getElementById('gridView').style.display = 'grid';
+            document.getElementById('epicPanel').classList.remove('active');
+            renderGrid();
+            window.scrollTo(0, 0);
+        }
+
+        // ============ INIT ============
+        document.getElementById('sortSelect').addEventListener('change', renderGrid);
+
+        renderGrid();
+    </script>
+</body>
+</html>
