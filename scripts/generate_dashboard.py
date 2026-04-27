@@ -64,16 +64,16 @@ class JiraClient:
         while True:
             try:
                 url = f"{self.base_url}/rest/api/3/search/jql"
-                payload = {
+                params = {
                     'jql': jql,
                     'maxResults': max_results,
-                    'fields': fields
+                    'fields': ','.join(fields)
                 }
 
                 if next_page_token:
-                    payload['nextPageToken'] = next_page_token
+                    params['nextPageToken'] = next_page_token
 
-                response = requests.post(url, headers=self.headers, json=payload, timeout=30)
+                response = requests.get(url, headers=self.headers, params=params, timeout=30)
                 response.raise_for_status()
 
                 data = response.json()
