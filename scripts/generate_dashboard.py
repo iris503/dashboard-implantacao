@@ -47,8 +47,8 @@ class JiraClient:
     def get_epics(self) -> List[Dict]:
         """Fetch all epics from project IWN with pagination"""
         epics = []
-        start_at = 0
         max_results = 100
+        next_page_token = None
 
         jql = 'project = IWN AND issuetype = Epic'
         fields = [
@@ -63,15 +63,17 @@ class JiraClient:
 
         while True:
             try:
-                url = f"{self.base_url}/rest/api/2/search"
-                params = {
+                url = f"{self.base_url}/rest/api/3/search/jql"
+                payload = {
                     'jql': jql,
-                    'startAt': start_at,
                     'maxResults': max_results,
-                    'fields': ','.join(fields)
+                    'fields': fields
                 }
 
-                response = requests.get(url, headers=self.headers, params=params, timeout=30)
+                if next_page_token:
+                    payload['nextPageToken'] = next_page_token
+
+                response = requests.post(url, headers=self.headers, json=payload, timeout=30)
                 response.raise_for_status()
 
                 data = response.json()
@@ -82,11 +84,10 @@ class JiraClient:
 
                 epics.extend(issues)
 
-                # Check if there are more results
-                if len(issues) < max_results:
+                # Check for next page token
+                next_page_token = data.get('nextPageToken')
+                if not next_page_token:
                     break
-
-                start_at += max_results
 
             except requests.exceptions.RequestException as e:
                 print(f"Error fetching epics: {e}", file=sys.stderr)
