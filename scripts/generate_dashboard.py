@@ -101,16 +101,16 @@ def classify_epic(epic: Dict) -> str:
     tipo_negocio = fields.get('customfield_10800')
 
     if tipo_negocio is None:
-        return 'Upsell'  # Default to Upsell if empty
+        return 'upsell'  # Default to Upsell if empty
 
     tipo_str = str(tipo_negocio).lower()
 
     if 'empresa nova' in tipo_str:
-        return 'Novo'
+        return 'novo'
     elif 'empresa existente' in tipo_str:
-        return 'Upsell'
+        return 'upsell'
     else:
-        return 'Upsell'  # Default to Upsell
+        return 'upsell'  # Default to Upsell
 
 def get_status_category(status: str) -> str:
     """Map Jira status to internal status categories"""
@@ -241,12 +241,12 @@ def generate_html_dashboard(metrics: Dict) -> str:
 
     # Average hours per epic
     novo_avg_hours = round((sum([m['novo']['total'] for m in metrics['implementers'].values()]) > 0 and
-                            sum([sum([e.get('hours', 0) for e in m['epics'] if e['classificacao'] == 'Novo'])
+                            sum([sum([e.get('hours', 0) for e in m['epics'] if e['classificacao'] == 'novo'])
                                 for m in metrics['implementers'].values()]) /
                             sum([m['novo']['total'] for m in metrics['implementers'].values()]) or 0), 1)
 
     upsell_avg_hours = round((sum([m['upsell']['total'] for m in metrics['implementers'].values()]) > 0 and
-                              sum([sum([e.get('hours', 0) for e in m['epics'] if e['classificacao'] == 'Upsell'])
+                              sum([sum([e.get('hours', 0) for e in m['epics'] if e['classificacao'] == 'upsell'])
                                   for m in metrics['implementers'].values()]) /
                               sum([m['upsell']['total'] for m in metrics['implementers'].values()]) or 0), 1)
 
