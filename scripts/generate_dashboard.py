@@ -63,15 +63,15 @@ class JiraClient:
 
         while True:
             try:
-                url = f"{self.base_url}/rest/api/3/search"
-                params = {
+                url = f"{self.base_url}/rest/api/3/search/jql"
+                payload = {
                     'jql': jql,
                     'startAt': start_at,
                     'maxResults': max_results,
-                    'fields': ','.join(fields)
+                    'fields': fields
                 }
 
-                response = requests.get(url, headers=self.headers, params=params, timeout=30)
+                response = requests.post(url, headers=self.headers, json=payload, timeout=30)
                 response.raise_for_status()
 
                 data = response.json()
