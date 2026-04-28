@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Performance Time | WMI Solutions</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
+            border-bottom: 2px solid #30363d;
+            padding: 30px 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #06b6d4, #f97316);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header .subtitle {
+            color: #8b949e;
+            font-size: 1.1em;
+        }
+
+        header .meta-info {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 0.95em;
+            color: #8b949e;
+            flex-wrap: wrap;
+        }
+
+        header .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge {
+            background: #30363d;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #79c0ff;
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #30363d;
+            overflow-x: auto;
+            padding-bottom: 0;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #8b949e;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: #c9d1d9;
+            border-bottom-color: #30363d;
+        }
+
+        .tab-btn.active {
+            color: #06b6d4;
+            border-bottom-color: #06b6d4;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #f0883e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 30px;
+            background: #f97316;
+            border-radius: 2px;
+        }
+
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #c9d1d9;
+            font-weight: 600;
+        }
+
+        .insight-box {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-left: 4px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+            line-height: 1.7;
+        }
+
+        .insight-box.positive {
+            border-left-color: #22c55e;
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .insight-box.critical {
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .insight-box.warning {
+            border-left-color: #f97316;
+            background: rgba(249, 115, 22, 0.05);
+        }
+
+        .insight-box.info {
+            border-left-color: #06b6d4;
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        .insight-box strong {
+            color: #c9d1d9;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #161b22;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: #0d1117;
+            border-bottom: 2px solid #30363d;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #79c0ff;
+            font-size: 0.95em;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        tbody tr:nth-child(even) {
+            background: rgba(22, 27, 34, 0.5);
+        }
+
+        tbody tr:hover {
+            background: rgba(22, 27, 34, 0.8);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            font-weight: 600;
+            text-align: center;
+            min-width: 70px;
+        }
+
+        .status-completed {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .status-progress {
+            background: rgba(6, 182, 212, 0.15);
+            color: #06b6d4;
+        }
+
+        .status-paused {
+            background: rgba(249, 115, 22, 0.15);
+            color: #f97316;
+        }
+
+        .status-pending {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            height: 400px;
+        }
+
+        .chart-container.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-container canvas {
+            max-height: 100%;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #06b6d4;
+            margin-bottom: 8px;
+        }
+
+        .metric-label {
+            color: #8b949e;
+            font-size: 0.95em;
+        }
+
+        footer {
+            background: #0d1117;
+            border-top: 1px solid #30363d;
+            padding: 20px;
+            text-align: center;
+            color: #8b949e;
+            margin-top: 50px;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #30363d;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #06b6d4, #22c55e);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .scope-info {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #c9d1d9;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .controls select {
+            padding: 0.5rem 1rem;
+            background-color: #161b22;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .controls select:hover {
+            border-color: #06b6d4;
+        }
+
+        .fichas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .ficha-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .ficha-card:hover {
+            border-color: #06b6d4;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.1);
+        }
+
+        .ficha-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #06b6d4;
+            margin-bottom: 1rem;
+        }
+
+        .ficha-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .ficha-metric {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ficha-metric-label {
+            color: #8b949e;
+            font-size: 0.8rem;
+        }
+
+        .ficha-metric-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #c9d1d9;
+            margin-top: 0.25rem;
+        }
+
+        .ficha-footer {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 1rem;
+            border-top: 1px solid #30363d;
+            color: #8b949e;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <script>const DATA = __DASHBOARD_DATA__;</script>
+
+    <div class="container">
+        <header>
+            <h1>Performance Dashboard Time</h1>
+            <p class="subtitle">Visão consolidada de carga de trabalho por tipo de negócio (Novo Cliente vs Upsell)</p>
+            <div class="meta-info">
+                <div class="meta-item">
+                    <span>Data:</span>
+                    <span class="badge" id="headerTimestamp">—</span>
+                </div>
+                <div class="meta-item">
+                    <span>Total Implantadores:</span>
+                    <span class="badge" id="headerTechCount">—</span>
+                </div>
+                <div class="meta-item">
+                    <span>Total Epics Ativos:</span>
+                    <span class="badge" id="headerEpicCount">—</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('visao-geral')">Visão Geral Comparativa</button>
+            <button class="tab-btn" onclick="switchTab('novos-clientes')">Quadro Clientes Novos</button>
+            <button class="tab-btn" onclick="switchTab('upsell')">Quadro Upsell/Existentes</button>
+            <button class="tab-btn" onclick="switchTab('comportamento')">Comparativo de Comportamento</button>
+            <button class="tab-btn" onclick="switchTab('riscos')">Riscos & Recomendações</button>
+            <button class="tab-btn" onclick="switchTab('backlog')">Backlog & Capacity</button>
+            <button class="tab-btn" onclick="switchTab('fichas')">Fichas Individuais</button>
+        </div>
+
+        <!-- TAB 1: Visão Geral -->
+        <div id="visao-geral" class="tab-content active">
+            <div class="section">
+                <h2 class="section-title">Visão Geral: Carga de Trabalho por Tempo (Epics Ativos)</h2>
+
+                <div class="metrics-grid" id="overview-kpi-row1"></div>
+                <div class="metrics-grid" id="overview-kpi-row2"></div>
+
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="doughnutChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container full-width">
+                        <canvas id="workloadPerTechChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container full-width">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container full-width">
+                        <canvas id="completionChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="overview-insights"></div>
+
+                <div class="section">
+                    <h3 class="section-title">Fila Yasmin (Aguardando)</h3>
+                    <div class="table-wrapper" id="yasmin-queue-table"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Novo -->
+        <div id="novos-clientes" class="tab-content">
+            <div class="section">
+                <h2 class="section-title" id="novo-title">Quadro Clientes Novos</h2>
+                <div class="scope-info" id="novo-scope"></div>
+
+                <h3 class="section-title">Resumo por Implantador</h3>
+                <div class="table-wrapper" id="novo-summary-table"></div>
+
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <canvas id="novosCompletionChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="novosHoursChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="novo-insights"></div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Upsell -->
+        <div id="upsell" class="tab-content">
+            <div class="section">
+                <h2 class="section-title" id="upsell-title">Quadro Upsell/Existentes</h2>
+                <div class="scope-info" id="upsell-scope"></div>
+
+                <div class="metrics-grid" id="upsell-kpis"></div>
+
+                <h3 class="section-title">Resumo por Implantador</h3>
+                <div class="table-wrapper" id="upsell-summary-table"></div>
+
+                <div class="section">
+                    <h3 class="section-title">Migração Cloud</h3>
+                    <div class="table-wrapper" id="cloud-migration-table"></div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <canvas id="upsellCompletionChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="upsellStackedChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="upsell-insights"></div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Comportamento -->
+        <div id="comportamento" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">Comparativo de Comportamento</h2>
+
+                <div class="metrics-grid" id="comportamento-metrics"></div>
+
+                <div class="charts-grid">
+                    <div class="chart-container full-width">
+                        <canvas id="volumeQualityChart"></canvas>
+                    </div>
+                </div>
+
+                <div id="comportamento-insights"></div>
+            </div>
+        </div>
+
+        <!-- TAB 5: Riscos -->
+        <div id="riscos" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">Riscos & Recomendações</h2>
+
+                <div class="metrics-grid" id="risk-kpis"></div>
+
+                <h3 class="section-title">Riscos por Implantador</h3>
+                <div class="table-wrapper" id="risk-table"></div>
+
+                <div id="risk-insights"></div>
+            </div>
+        </div>
+
+        <!-- TAB 6: Backlog & Capacity -->
+        <div id="backlog" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">Backlog & Capacity</h2>
+
+                <div class="charts-grid">
+                    <div class="chart-container full-width">
+                        <canvas id="backlogCapacityChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3 class="section-title">Fila Yasmin</h3>
+                    <div class="table-wrapper" id="backlog-yasmin-table"></div>
+                </div>
+
+                <div class="section">
+                    <h3 class="section-title">Migração Cloud</h3>
+                    <div class="table-wrapper" id="backlog-cloud-table"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 7: Fichas Individuais -->
+        <div id="fichas" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">Fichas Individuais - Implantadores</h2>
+
+                <div class="controls">
+                    <label>
+                        Ordenar por:
+                        <select id="fichas-sort" onchange="renderFichas()">
+                            <option value="total">Total de Epics</option>
+                            <option value="rate">Taxa de Conclusão</option>
+                            <option value="open">Epics Abertos</option>
+                            <option value="overdue">Epics Vencidos</option>
+                            <option value="hours">Horas Totais</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="fichas-grid" id="fichas-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Dashboard atualizado em: <span id="footerTimestamp">—</span></p>
+    </footer>
+
+    <script>
+        const COLORS = {
+            novo: '#06b6d4',
+            upsell: '#f97316',
+            success: '#22c55e',
+            warning: '#facc15',
+            danger: '#ef4444',
+            info: '#79c0ff'
+        };
+
+        function formatHours(h) {
+            if (!h || h === 0) return '0h';
+            const rounded = h.toFixed(1);
+            const parts = rounded.split('.');
+            const whole = parseInt(parts[0]).toLocaleString('pt-BR');
+            return whole + ',' + parts[1] + 'h';
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function getCompletionRate(tech) {
+            if (tech.total === 0) return 0;
+            return Math.round((tech.completed / tech.total) * 100);
+        }
+
+        function sortTechs(sortBy) {
+            const arr = [...DATA.technicians];
+            switch(sortBy) {
+                case 'total': return arr.sort((a, b) => b.total - a.total);
+                case 'rate': return arr.sort((a, b) => getCompletionRate(b) - getCompletionRate(a));
+                case 'open': return arr.sort((a, b) => b.openCount - a.openCount);
+                case 'overdue': return arr.sort((a, b) => b.overdueCount - a.overdueCount);
+                case 'hours': return arr.sort((a, b) => b.hours - a.hours);
+                default: return arr;
+            }
+        }
+
+        function renderOverview() {
+            const totHoras = DATA.technicians.reduce((s, t) => s + t.hours, 0);
+            const novoHoras = DATA.technicians.reduce((s, t) => s + t.novoHours, 0);
+            const upsellHoras = DATA.technicians.reduce((s, t) => s + t.upsellHours, 0);
+            const pctNovo = totHoras > 0 ? Math.round((novoHoras / totHoras) * 100) : 0;
+            const pctUpsell = 100 - pctNovo;
+
+            const totEpics = DATA.technicians.reduce((s, t) => s + t.total, 0);
+            const totNovoEpics = DATA.technicians.reduce((s, t) => s + t.board.novo, 0);
+            const totUpsellEpics = DATA.technicians.reduce((s, t) => s + t.board.upsell, 0);
+            const avgHPerNovoEpic = totNovoEpics > 0 ? (novoHoras / totNovoEpics).toFixed(1) : 0;
+            const avgHPerUpsellEpic = totUpsellEpics > 0 ? (upsellHoras / totUpsellEpics).toFixed(1) : 0;
+
+            document.getElementById('overview-kpi-row1').innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-value">${formatHours(totHoras)}</div>
+                    <div class="metric-label">Total Horas Ativas</div>
+                </div>
+                <div class="metric-card" style="border-left: 3px solid #06b6d4;">
+                    <div class="metric-value" style="color:#06b6d4;">${formatHours(novoHoras)}</div>
+                    <div class="metric-label">Novo Cliente</div>
+                </div>
+                <div class="metric-card" style="border-left: 3px solid #f97316;">
+                    <div class="metric-value" style="color:#f97316;">${formatHours(upsellHoras)}</div>
+                    <div class="metric-label">Upsell/Existente</div>
+                </div>
+                <div class="metric-card" style="border-left: 3px solid #06b6d4;">
+                    <div class="metric-value" style="color:#06b6d4;">${pctNovo}%</div>
+                    <div class="metric-label">Tempo em Novo</div>
+                </div>
+                <div class="metric-card" style="border-left: 3px solid #f97316;">
+                    <div class="metric-value" style="color:#f97316;">${pctUpsell}%</div>
+                    <div class="metric-label">Tempo em Upsell</div>
+                </div>
+            `;
+
+            document.getElementById('overview-kpi-row2').innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-value">${totEpics}</div>
+                    <div class="metric-label">Total Epics Ativos</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${totNovoEpics}</div>
+                    <div class="metric-label">Epics Novo</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${totUpsellEpics}</div>
+                    <div class="metric-label">Epics Upsell</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color:#06b6d4;">${avgHPerNovoEpic}h</div>
+                    <div class="metric-label">Média h/Epic Novo</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color:#f97316;">${avgHPerUpsellEpic}h</div>
+                    <div class="metric-label">Média h/Epic Upsell</div>
+                </div>
+            `;
+
+            const techNames = DATA.technicians.map(t => t.name.split(' ')[0]);
+            const novoData = DATA.technicians.map(t => t.novoHours);
+            const upsellData = DATA.technicians.map(t => t.upsellHours);
+
+            const ctx1 = document.getElementById('distributionChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: techNames,
+                    datasets: [
+                        { label: 'Novo', data: novoData, backgroundColor: COLORS.novo, borderRadius: 4 },
+                        { label: 'Upsell', data: upsellData, backgroundColor: COLORS.upsell, borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Distribuição de Horas: Novo vs Upsell por Pessoa', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                        legend: { labels: { color: '#c9d1d9', padding: 15 } }
+                    },
+                    scales: {
+                        x: { stacked: true, ticks: { color: '#8b949e' }, grid: { display: false } },
+                        y: { stacked: true, ticks: { color: '#8b949e', callback: function(v) { return v + 'h'; } }, grid: { color: '#30363d' } }
+                    }
+                }
+            });
+
+            const ctx2 = document.getElementById('doughnutChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Novo', 'Upsell'],
+                    datasets: [{
+                        data: [novoHoras, upsellHoras],
+                        backgroundColor: [COLORS.novo, COLORS.upsell],
+                        borderColor: '#0d1117',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Proporção de Horas: Novo vs Upsell', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                        legend: { labels: { color: '#c9d1d9', padding: 15 } }
+                    }
+                }
+            });
+
+            const ctx3 = document.getElementById('workloadPerTechChart').getContext('2d');
+            new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: techNames,
+                    datasets: [
+                        { label: 'Novo', data: novoData, backgroundColor: COLORS.novo, borderRadius: 4 },
+                        { label: 'Upsell', data: upsellData, backgroundColor: COLORS.upsell, borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        title: { display: true, text: 'Carga de Trabalho por Técnico', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                        legend: { labels: { color: '#c9d1d9', padding: 15 } }
+                    },
+                    scales: {
+                        x: { stacked: true, ticks: { color: '#8b949e', callback: function(v) { return v + 'h'; } }, grid: { color: '#30363d' } },
+                        y: { stacked: true, ticks: { color: '#8b949e' }, grid: { display: false } }
+                    }
+                }
+            });
+
+            const completedData = DATA.technicians.map(t => t.completed);
+            const inProgressData = DATA.technicians.map(t => t.inProgress);
+            const pausedData = DATA.technicians.map(t => t.paused);
+            const pendingData = DATA.technicians.map(t => t.pending);
+
+            const ctx4 = document.getElementById('statusChart').getContext('2d');
+            new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: techNames,
+                    datasets: [
+                        { label: 'Concluído', data: completedData, backgroundColor: COLORS.success, borderRadius: 4 },
+                        { label: 'Em Andamento', data: inProgressData, backgroundColor: COLORS.novo, borderRadius: 4 },
+                        { label: 'Paused', data: pausedData, backgroundColor: COLORS.warning, borderRadius: 4 },
+                        { label: 'Pendente', data: pendingData, backgroundColor: COLORS.danger, borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Status dos Epics por Técnico', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                        legend: { labels: { color: '#c9d1d9', padding: 15 } }
+                    },
+                    scales: {
+                        x: { stacked: true, ticks: { color: '#8b949e' }, grid: { display: false } },
+                        y: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+                    }
+                }
+            });
+
+            const ctx5 = document.getElementById('completionChart').getContext('2d');
+            new Chart(ctx5, {
+                type: 'bar',
+                data: {
+                    labels: techNames,
+                    datasets: [
+                        { label: 'Concluído', data: completedData, backgroundColor: COLORS.success, borderRadius: 4 },
+                        { label: 'Aberto', data: DATA.technicians.map(t => t.total - t.completed), backgroundColor: COLORS.danger, borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Taxa de Conclusão por Técnico', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                        legend: { labels: { color: '#c9d1d9', padding: 15 } }
+                    },
+                    scales: {
+                        x: { stacked: true, ticks: { color: '#8b949e' }, grid: { display: false } },
+                        y: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+                    }
+                }
+            });
+
+            const highOverdueCount = DATA.technicians.filter(t => t.overdueCount > 3).length;
+            const insights = [];
+            if (highOverdueCount > 0) {
+                insights.push(`<div class="insight-box critical"><strong>Atenção:</strong> ${highOverdueCount} técnico(s) com mais de 3 epics vencidos.</div>`);
+            }
+            if (pctNovo > 70) {
+                insights.push(`<div class="insight-box positive"><strong>Foco em Novo:</strong> ${pctNovo}% das horas estão alocadas em clientes novos.</div>`);
+            }
+            if (insights.length === 0) {
+                insights.push(`<div class="insight-box info"><strong>Status:</strong> Dashboard em dia com ${totEpics} epics ativos.</div>`);
+            }
+            document.getElementById('overview-insights').innerHTML = insights.join('');
+
+            renderYasminQueue();
+        }
+
+        function renderYasminQueue() {
+            const yasmin = DATA.yasminQueue || [];
+            if (yasmin.length === 0) {
+                document.getElementById('yasmin-queue-table').innerHTML = '<p style="text-align:center;color:#8b949e;">Nenhum item na fila Yasmin.</p>';
+                return;
+            }
+            let html = '<table><thead><tr><th>Chave</th><th>Resumo</th><th>Status</th><th>Horas</th><th>Criado</th><th>Vencimento</th></tr></thead><tbody>';
+            yasmin.forEach(item => {
+                html += `<tr>
+                    <td><a href="https://wmi-solutions.atlassian.net/browse/${item.key}" target="_blank" style="color:#06b6d4;">${item.key}</a></td>
+                    <td>${item.summary}</td>
+                    <td><span class="status-badge status-pending">${item.status}</span></td>
+                    <td>${item.hours ? formatHours(item.hours) : '—'}</td>
+                    <td>${item.created}</td>
+                    <td>${item.duedate || '—'}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('yasmin-queue-table').innerHTML = html;
+        }
+
+        function renderNovoTab() {
+            const novo = DATA.novoSummary;
+            document.getElementById('novo-title').textContent = `Quadro Clientes Novos (${novo.total} epics)`;
+            document.getElementById('novo-scope').innerHTML = `<strong>Escopo Novo:</strong> Total ${novo.total} epics | Concluídos ${novo.completed} | Em Andamento ${novo.inProgress} | ${formatHours(novo.totalHours)} distribuídas`;
+
+            let tableHtml = '<table><thead><tr><th>Implantador</th><th>Em Andamento</th><th>Concluído</th><th>Paused</th><th>Pendente</th><th>Taxa %</th><th>Horas</th><th>h/Epic</th><th>Total</th></tr></thead><tbody>';
+
+            const techWithNovo = DATA.technicians.filter(t => t.novoStats && t.novoStats.total > 0);
+            let tAnd = 0, tConcl = 0, tPaused = 0, tPend = 0, tHrs = 0, tTotal = 0;
+
+            techWithNovo.forEach(tech => {
+                const ns = tech.novoStats;
+                const rate = ns.total > 0 ? Math.round((ns.completed / ns.total) * 100) : 0;
+                const hPerEpic = ns.total > 0 ? (ns.hours / ns.total).toFixed(1) : '0';
+
+                tableHtml += `<tr>
+                    <td><strong>${tech.name}</strong></td>
+                    <td>${ns.inProgress}</td>
+                    <td><span class="status-badge status-completed">${ns.completed}</span></td>
+                    <td>${ns.paused}</td>
+                    <td>${ns.pending + (ns.waiting || 0)}</td>
+                    <td><strong>${rate}%</strong></td>
+                    <td>${formatHours(ns.hours)}</td>
+                    <td>${hPerEpic}h</td>
+                    <td>${ns.total}</td>
+                </tr>`;
+
+                tAnd += ns.inProgress;
+                tConcl += ns.completed;
+                tPaused += ns.paused;
+                tPend += ns.pending + (ns.waiting || 0);
+                tHrs += ns.hours;
+                tTotal += ns.total;
+            });
+
+            const totalRate = tTotal > 0 ? Math.round((tConcl / tTotal) * 100) : 0;
+            tableHtml += `<tr style="background: #0d1117; font-weight: 600;">
+                <td><strong>TOTAL</strong></td>
+                <td><strong>${tAnd}</strong></td>
+                <td><strong><span class="status-badge status-completed">${tConcl}</span></strong></td>
+                <td><strong>${tPaused}</strong></td>
+                <td><strong>${tPend}</strong></td>
+                <td><strong>${totalRate}%</strong></td>
+                <td><strong>${formatHours(tHrs)}</strong></td>
+                <td><strong>${tTotal > 0 ? (tHrs / tTotal).toFixed(1) : 0}h</strong></td>
+                <td><strong>${tTotal}</strong></td>
+            </tr>`;
+
+            tableHtml += '</tbody></table>';
+            document.getElementById('novo-summary-table').innerHTML = tableHtml;
+
+            const techNames = techWithNovo.map(t => t.name.split(' ')[0]);
+
+            const ctx1 = document.getElementById('novosCompletionChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: techNames,
+                    datasets: [
+                        { label: 'Concluído', data: techWithNovo.map(t => t.completed), backgroundColor: COLORS.success, borderRadius: 4 },
+                        { label: 'Aberto', data: techWithNovo.map(t => t.board.novo), backgroundColor: COLORS.novo, borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Novo: Conclusão por Técnico', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                        legend: { labels: { color: '#c9d1d9' } }
+                    },
+                    scales: {
+                        y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+                        x: { ticks: { color: '#8b949e' } }
+                    }
+                }
+            });
+
+            const ctx2 = document.getElementById('novosHoursChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: techNames,
+                    datasets: [{
+                        label: 'Horas/Epic',
+                        data: techWithNovo.map(t => (t.novoHours / Math.max(1, t.board.novo)).toFixed(1)),
+                        borderColor: COLORS.novo,
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Novo: Horas/Epic por Técnico', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                        legend: { labels: { color: '#c9d1d9' } }
+                    },
+                    scales: {
+                        y: { ticks: { color: '#8b949e', callback: v => v + 'h' }, grid: { color: '#30363d' } },
+                        x: { ticks: { color: '#8b949e' } }
+                    }
+                }
+            });
+
+            document.getElementById('novo-insights').innerHTML = '<div class="insight-box info"><strong>Resumo Novo:</strong> ' + novo.total + ' epics em curso com ' + formatHours(novo.totalHours) + ' alocadas.</div>';
+        }
+
+        function renderUpsellTab() {
+            const upsell = DATA.upsellSummary;
+            document.getElementById('upsell-title').textContent = `Quadro Upsell/Existentes (${upsell.total} epics)`;
+            document.getElementById('upsell-scope').innerHTML = `<strong>Escopo Upsell:</strong> Total ${upsell.total} epics | Concluídos ${upsell.completed} | Em Andamento ${upsell.inProgress} | ${formatHours(upsell.totalHours)} distribuídas`;
+
+            document.getElementById('upsell-kpis').innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-value">${upsell.total}</div>
+                    <div class="metric-label">Total Epics</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${upsell.completed}</div>
+                    <div class="metric-label">Concluídos</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${upsell.inProgress}</div>
+                    <div class="metric-label">Em Andamento</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${Math.round((upsell.completed / upsell.total) * 100)}%</div>
+                    <div class="metric-label">Taxa Conclusão</div>
+                </div>
+            `;
+
+            let tableHtml = '<table><thead><tr><th>Implantador</th><th>Em Andamento</th><th>Concluído</th><th>Paused</th><th>Pendente</th><th>Taxa %</th><th>Horas</th><th>h/Epic</th><th>Total</th></tr></thead><tbody>';
+
+            const techWithUpsell = DATA.technicians.filter(t => t.upsellStats && t.upsellStats.total > 0);
+            let tAnd = 0, tConcl = 0, tPaused = 0, tPend = 0, tHrs = 0, tTotal = 0;
+
+            techWithUpsell.forEach(tech => {
+                const us = tech.upsellStats;
+                const rate = us.total > 0 ? Math.round((us.completed / us.total) * 100) : 0;
+                const hPerEpic = us.total > 0 ? (us.hours / us.total).toFixed(1) : '0';
+
+                tableHtml += `<tr>
+                    <td><strong>${tech.name}</strong></td>
+                    <td>${us.inProgress}</td>
+                    <td><span class="status-badge status-completed">${us.completed}</span></td>
+                    <td>${us.paused}</td>
+                    <td>${us.pending + (us.waiting || 0)}</td>
+                    <td><strong>${rate}%</strong></td>
+                    <td>${formatHours(us.hours)}</td>
+                    <td>${hPerEpic}h</td>
+                    <td>${us.total}</td>
+                </tr>`;
+
+                tAnd += us.inProgress;
+                tConcl += us.completed;
+                tPaused += us.paused;
+                tPend += us.pending + (us.waiting || 0);
+                tHrs += us.hours;
+                tTotal += us.total;
+            });
+
+            const totalRate = tTotal > 0 ? Math.round((tConcl / tTotal) * 100) : 0;
+            tableHtml += `<tr style="background: #0d1117; font-weight: 600;">
+                <td><strong>TOTAL</strong></td>
+                <td><strong>${tAnd}</strong></td>
+                <td><strong><span class="status-badge status-completed">${tConcl}</span></strong></td>
+                <td><strong>${tPaused}</strong></td>
+                <td><strong>${tPend}</strong></td>
+                <td><strong>${totalRate}%</strong></td>
+                <td><strong>${formatHours(tHrs)}</strong></td>
+                <td><strong>${tTotal > 0 ? (tHrs / tTotal).toFixed(1) : 0}h</strong></td>
+                <td><strong>${tTotal}</strong></td>
+            </tr>`;
+
+            tableHtml += '</tbody></table>';
+            document.getElementById('upsell-summary-table').innerHTML = tableHtml;
+
+            const cloudMig = DATA.migracaoCloud || [];
+            let cloudHtml = '<table><thead><tr><th>Chave</th><th>Resumo</th><th>Assignee</th><th>Status</th><th>Horas</th></tr></thead><tbody>';
+            if (cloudMig.length === 0) {
+                cloudHtml += '<tr><td colspan="5" style="text-align:center;color:#8b949e;">Nenhum item em migração cloud.</td></tr>';
+            } else {
+                cloudMig.forEach(item => {
+                    cloudHtml += `<tr>
+                        <td><a href="https://wmi-solutions.atlassian.net/browse/${item.key}" target="_blank" style="color:#06b6d4;">${item.key}</a></td>
+                        <td>${item.summary}</td>
+                        <td>${item.assignee}</td>
+                        <td><span class="status-badge status-progress">${item.status}</span></td>
+                        <td>${item.hours ? formatHours(item.hours) : '—'}</td>
+                    </tr>`;
+                });
+            }
+            cloudHtml += '</tbody></table>';
+            document.getElementById('cloud-migration-table').innerHTML = cloudHtml;
+
+            const techNames = techWithUpsell.map(t => t.name.split(' ')[0]);
+
+            const ctx1 = document.getElementById('upsellCompletionChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: techNames,
+                    datasets: [
+                        { label: 'Concluído', data: techWithUpsell.map(t => t.completed), backgroundColor: COLORS.success, borderRadius: 4 },
+                        { label: 'Aberto', data: techWithUpsell.map(t => t.board.upsell), backgroundColor: COLORS.upsell, borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Upsell: Conclusão por Técnico', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                        legend: { labels: { color: '#c9d1d9' } }
+                    },
+                    scales: {
+                        y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+                        x: { ticks: { color: '#8b949e' } }
+                    }
+                }
+            });
+
+            const ctx2 = document.getElementById('upsellStackedChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: techNames,
+                    datasets: [
+                        { label: 'Concluído', data: techWithUpsell.map(t => t.completed), backgroundColor: COLORS.success, borderRadius: 4 },
+                        { label: 'Em Andamento', data: techWithUpsell.map(t => t.inProgress), backgroundColor: COLORS.novo, borderRadius: 4 },
+                        { label: 'Pendente', data: techWithUpsell.map(t => t.pending), backgroundColor: COLORS.danger, borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Upsell: Status dos Epics', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                        legend: { labels: { color: '#c9d1d9' } }
+                    },
+                    scales: {
+                        x: { stacked: true, ticks: { color: '#8b949e' } },
+                        y: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
+                    }
+                }
+            });
+
+            document.getElementById('upsell-insights').innerHTML = '<div class="insight-box warning"><strong>Resumo Upsell:</strong> ' + upsell.total + ' epics em curso com ' + formatHours(upsell.totalHours) + ' alocadas.</div>';
+        }
+
+        function renderComportamento() {
+            const novoAvgRate = Math.round(DATA.technicians.filter(t => t.board.novo > 0).reduce((s, t) => s + getCompletionRate(t), 0) / Math.max(1, DATA.technicians.filter(t => t.board.novo > 0).length));
+            const upsellAvgRate = Math.round(DATA.technicians.filter(t => t.board.upsell > 0).reduce((s, t) => s + getCompletionRate(t), 0) / Math.max(1, DATA.technicians.filter(t => t.board.upsell > 0).length));
+
+            document.getElementById('comportamento-metrics').innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-value" style="color:#06b6d4;">${novoAvgRate}%</div>
+                    <div class="metric-label">Taxa Média Novo</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color:#f97316;">${upsellAvgRate}%</div>
+                    <div class="metric-label">Taxa Média Upsell</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${DATA.technicians.filter(t => t.board.novo > 0).length}</div>
+                    <div class="metric-label">Técnicos Novo</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${DATA.technicians.filter(t => t.board.upsell > 0).length}</div>
+                    <div class="metric-label">Técnicos Upsell</div>
+                </div>
+            `;
+
+            const ctx = document.getElementById('volumeQualityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Novo',
+                            data: DATA.technicians.filter(t => t.board.novo > 0).map(t => ({ x: t.openCount, y: getCompletionRate(t), name: t.name })),
+                            backgroundColor: COLORS.novo + '80',
+                            borderColor: COLORS.novo,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Upsell',
+                            data: DATA.technicians.filter(t => t.board.upsell > 0).map(t => ({ x: t.openCount, y: getCompletionRate(t), name: t.name })),
+                            backgroundColor: COLORS.upsell + '80',
+                            borderColor: COLORS.upsell,
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Volume vs Qualidade: Epics Abertos vs Taxa de Conclusão', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                        legend: { labels: { color: '#c9d1d9' } }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Epics Abertos', color: '#8b949e' }, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+                        y: { title: { display: true, text: 'Taxa de Conclusão %', color: '#8b949e' }, ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, max: 100 }
+                    }
+                }
+            });
+
+            document.getElementById('comportamento-insights').innerHTML = '<div class="insight-box info"><strong>Análise Comparativa:</strong> Taxa média ' + Math.min(novoAvgRate, upsellAvgRate) + '% a ' + Math.max(novoAvgRate, upsellAvgRate) + '% entre tipos.</div>';
+        }
+
+        function renderRiscos() {
+            const highRiskCount = DATA.technicians.filter(t => t.overdueCount > 3).length;
+            const mediumRiskCount = DATA.technicians.filter(t => t.overdueCount > 1 && t.overdueCount <= 3).length;
+            const lowRiskCount = DATA.technicians.length - highRiskCount - mediumRiskCount;
+
+            document.getElementById('risk-kpis').innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-value" style="color:#ef4444;">${highRiskCount}</div>
+                    <div class="metric-label">Alto Risco</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color:#f97316;">${mediumRiskCount}</div>
+                    <div class="metric-label">Risco Médio</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color:#22c55e;">${lowRiskCount}</div>
+                    <div class="metric-label">Baixo Risco</div>
+                </div>
+            `;
+
+            let riskTableHtml = '<table><thead><tr><th>Implantador</th><th>Vencidos</th><th>Abertos</th><th>Taxa %</th><th>Risco</th></tr></thead><tbody>';
+            DATA.technicians.forEach(tech => {
+                const rate = getCompletionRate(tech);
+                const risk = tech.overdueCount > 3 ? 'Alto' : tech.overdueCount > 1 ? 'Médio' : 'Baixo';
+                const riskColor = risk === 'Alto' ? '#ef4444' : risk === 'Médio' ? '#f97316' : '#22c55e';
+
+                riskTableHtml += `<tr>
+                    <td><strong>${tech.name}</strong></td>
+                    <td>${tech.overdueCount}</td>
+                    <td>${tech.openCount}</td>
+                    <td>${rate}%</td>
+                    <td><span style="color:${riskColor};font-weight:600;">${risk}</span></td>
+                </tr>`;
+            });
+            riskTableHtml += '</tbody></table>';
+            document.getElementById('risk-table').innerHTML = riskTableHtml;
+
+            const insightText = highRiskCount > 0 ? `<div class="insight-box critical"><strong>Alerta:</strong> ${highRiskCount} técnico(s) em situação de alto risco.</div>` : '<div class="insight-box positive"><strong>Situação Controlada:</strong> Nenhum técnico em alto risco.</div>';
+            document.getElementById('risk-insights').innerHTML = insightText;
+        }
+
+        function renderBacklog() {
+            const ctx = document.getElementById('backlogCapacityChart').getContext('2d');
+            const techNames = DATA.technicians.map(t => t.name.split(' ')[0]);
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: techNames,
+                    datasets: [
+                        { label: 'Novo', data: DATA.technicians.map(t => t.novoHours), backgroundColor: COLORS.novo, borderRadius: 4 },
+                        { label: 'Upsell', data: DATA.technicians.map(t => t.upsellHours), backgroundColor: COLORS.upsell, borderRadius: 4 },
+                        { label: 'Capacity (140h)', data: Array(DATA.technicians.length).fill(140), type: 'line', borderColor: COLORS.danger, borderDash: [5, 5], borderWidth: 2, pointRadius: 0, fill: false }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: { display: true, text: 'Backlog vs Capacity Mensal (140h)', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                        legend: { labels: { color: '#c9d1d9' } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#8b949e' } },
+                        y: { ticks: { color: '#8b949e', callback: v => v + 'h' }, grid: { color: '#30363d' } }
+                    }
+                }
+            });
+
+            renderYasminQueue();
+            document.getElementById('backlog-yasmin-table').innerHTML = document.getElementById('yasmin-queue-table').innerHTML;
+
+            const cloudMig = DATA.migracaoCloud || [];
+            let cloudHtml = '<table><thead><tr><th>Chave</th><th>Resumo</th><th>Assignee</th><th>Status</th><th>Horas</th></tr></thead><tbody>';
+            if (cloudMig.length === 0) {
+                cloudHtml += '<tr><td colspan="5" style="text-align:center;color:#8b949e;">Nenhum item em migração cloud.</td></tr>';
+            } else {
+                cloudMig.forEach(item => {
+                    cloudHtml += `<tr>
+                        <td><a href="https://wmi-solutions.atlassian.net/browse/${item.key}" target="_blank" style="color:#06b6d4;">${item.key}</a></td>
+                        <td>${item.summary}</td>
+                        <td>${item.assignee}</td>
+                        <td><span class="status-badge status-progress">${item.status}</span></td>
+                        <td>${item.hours ? formatHours(item.hours) : '—'}</td>
+                    </tr>`;
+                });
+            }
+            cloudHtml += '</tbody></table>';
+            document.getElementById('backlog-cloud-table').innerHTML = cloudHtml;
+        }
+
+        function renderFichas() {
+            const sortBy = document.getElementById('fichas-sort').value;
+            const sorted = sortTechs(sortBy);
+
+            let html = '';
+            sorted.forEach(tech => {
+                const rate = getCompletionRate(tech);
+                html += `
+                    <div class="ficha-card">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
+                            <div class="ficha-name">${tech.name}</div>
+                            <span class="badge">${rate}%</span>
+                        </div>
+                        <div class="ficha-metrics">
+                            <div class="ficha-metric">
+                                <div class="ficha-metric-label">Total</div>
+                                <div class="ficha-metric-value">${tech.total}</div>
+                            </div>
+                            <div class="ficha-metric">
+                                <div class="ficha-metric-label">Abertos</div>
+                                <div class="ficha-metric-value">${tech.openCount}</div>
+                            </div>
+                            <div class="ficha-metric">
+                                <div class="ficha-metric-label">Vencidos</div>
+                                <div class="ficha-metric-value" style="color:#ef4444;">${tech.overdueCount}</div>
+                            </div>
+                            <div class="ficha-metric">
+                                <div class="ficha-metric-label">Horas</div>
+                                <div class="ficha-metric-value" style="color:#79c0ff;">${formatHours(tech.hours)}</div>
+                            </div>
+                        </div>
+                        <div class="ficha-footer">
+                            <span>${(tech.hours/Math.max(1,tech.total)).toFixed(1)}h/Epic</span>
+                            <span>${tech.board.novo} Novo | ${tech.board.upsell} Upsell</span>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('fichas-container').innerHTML = `<div class="fichas-grid">${html}</div>`;
+        }
+
+        function initDashboard() {
+            document.getElementById('headerTimestamp').textContent = DATA.timestamp || '—';
+            document.getElementById('headerTechCount').textContent = DATA.technicians.length || 0;
+            document.getElementById('headerEpicCount').textContent = DATA.technicians.reduce((s, t) => s + t.total, 0) || 0;
+            document.getElementById('footerTimestamp').textContent = DATA.timestamp || '—';
+
+            renderOverview();
+            renderNovoTab();
+            renderUpsellTab();
+            renderComportamento();
+            renderRiscos();
+            renderBacklog();
+            renderFichas();
+        }
+
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>
