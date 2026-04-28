@@ -516,7 +516,7 @@ def main():
     html = template.replace('__DASHBOARD_DATA__', data_json)
 
     # Write output
-    output_path = os.path.join(script_dir, '../../index.html')
+    output_path = os.path.join(script_dir, '../index.html')
     output_path = os.path.normpath(output_path)
 
     with open(output_path, 'w', encoding='utf-8') as f:
