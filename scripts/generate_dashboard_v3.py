@@ -424,17 +424,19 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
     # Sort by gasto descending
     novo_with_data.sort(key=lambda x: x['gasto'], reverse=True)
 
-    # Filter to only open novos
-    novo_open = [e for e in novo_with_data if e['statusPrazoType'] != 'noporte' or e['status'] not in ['Concluído', 'Cancelado']]
+    # Filter to only open novos (exclude completed/cancelled)
+    novo_open = [e for e in novo_with_data if e['status'] not in STATUS_COMPLETED]
 
-    # Build filaYasmin - epics not assigned or in Yasmin queue
+    # Build filaYasmin - epics not assigned or in Yasmin queue (exclude completed)
     fila_yasmin = []
     for epic in epics:
         fields = epic.get('fields', {})
+        status = fields.get('status', {}).get('name', 'Unknown')
+        if status in STATUS_COMPLETED:
+            continue
         key = epic.get('key', '')
         summary = fields.get('summary', '')
         assignee = fields.get('assignee')
-        status = fields.get('status', {}).get('name', 'Unknown')
         created = parse_date(fields.get('created', ''))
         duedate = parse_date(fields.get('duedate', ''))
         time_spent = fields.get('aggregatetimespent', 0) or 0
@@ -468,8 +470,8 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
                 'sugestao': sugestao
             })
 
-    # Calculate summary metrics
-    total_novo_restante = sum(e['restante'] for e in novo_with_data)
+    # Calculate summary metrics (only open epics)
+    total_novo_restante = sum(e['restante'] for e in novo_open)
     upsell_restante = sum(
         max(12 - (e.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600, 0)
         for e in upsell_epics if e.get('fields', {}).get('status', {}).get('name', '') not in STATUS_COMPLETED
@@ -495,7 +497,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         upsell_count = tech.get('board', {}).get('upsell', 0)
         epics_str = f"{novo_count + upsell_count} ({novo_count}N + {upsell_count}U)"
 
-        novo_rest = sum(e['restante'] for e in novo_with_data if e['assignee'] == tech_name)
+        novo_rest = sum(e['restante'] for e in novo_open if e['assignee'] == tech_name)
         upsell_rest = sum(
             max(12 - (ep.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600, 0)
             for ep in upsell_epics
@@ -507,7 +509,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
 
         # Count Novos em andamento
         novos_em_andamento = sum(
-            1 for e in novo_with_data
+            1 for e in novo_open
             if e['assignee'] == tech_name and e['status'] == 'Em andamento'
         )
         novos_str = f"{novos_em_andamento} em andamento" if novos_em_andamento > 0 else "0"
@@ -533,7 +535,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
     # Generate insights
     insights = []
 
-    overdue_novos = sum(1 for e in novo_with_data if e['statusPrazoType'] == 'overdue')
+    overdue_novos = sum(1 for e in novo_open if e['statusPrazoType'] == 'overdue')
     if overdue_novos > 0:
         insights.append({
             'title': f'{overdue_novos} Novo epics com porte estão ATRASADOS',
