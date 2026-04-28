@@ -56,7 +56,8 @@ class JiraClient:
         jql = 'project = IWN AND issuetype = Epic'
         fields = [
             'summary', 'status', 'assignee', 'customfield_10800',
-            'aggregatetimespent', 'created', 'duedate', 'timetracking', 'updated'
+            'aggregatetimespent', 'created', 'duedate', 'timetracking', 'updated',
+            'customfield_10015'
         ]
 
         while True:
@@ -373,6 +374,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         assignee = fields.get('assignee')
         status = fields.get('status', {}).get('name', 'Unknown')
         status_cat = fields.get('status', {}).get('statusCategory', {}).get('key', '')
+        start_date = fields.get('customfield_10015', '')  # Start Date
         created = parse_date(fields.get('created', ''))
         duedate = parse_date(fields.get('duedate', ''))
         time_spent = fields.get('aggregatetimespent', 0) or 0
@@ -392,8 +394,10 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         status_prazo = 'Sem porte'
         status_prazo_type = 'noporte'
 
-        if days > 0 and created:
-            deadline = datetime.strptime(created, '%Y-%m-%d') + timedelta(days=days)
+        # Use Start Date if available, otherwise fall back to created date
+        base_date = start_date if start_date else created
+        if days > 0 and base_date:
+            deadline = datetime.strptime(base_date, '%Y-%m-%d') + timedelta(days=days)
             prazo_wmi = deadline.strftime('%d/%m/%Y')
             today_dt = datetime.strptime(today, '%Y-%m-%d')
             days_diff = (today_dt - deadline).days
