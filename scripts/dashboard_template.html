@@ -625,20 +625,55 @@
             <div class="section">
                 <h2 class="section-title">Backlog & Capacity</h2>
 
+                <div class="insight-box info" style="margin-bottom: 30px;">
+                    <strong>Metodologia:</strong>
+                    Tempo de referência WMI por porte. <strong>Small: 150h / 60 dias</strong> | <strong>Medium: 200h / 90 dias</strong> | <strong>Large: 400h / 120 dias</strong> | <strong>Sem porte: 100h</strong> | <strong>Upsell: 12h/epic</strong>.
+                    Capacidade: <strong>140h/mês</strong> por implantador (7h/dia útil). Dedicação por cliente: <strong>2-4h/dia</strong> → máx. <strong>2-3 Novos simultâneos</strong>.
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="metrics-grid" id="backlog-kpi-cards"></div>
+
+                <!-- Capacity por Implantador -->
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-title">Capacity por Implantador (140h/mês)</div>
+                    <div class="table-wrapper" id="backlog-capacity-table"></div>
+                </div>
+
+                <!-- Charts -->
                 <div class="charts-grid">
-                    <div class="chart-container full-width">
+                    <div class="chart-container">
                         <canvas id="backlogCapacityChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="backlogTimelineChart"></canvas>
                     </div>
                 </div>
 
-                <div class="section">
-                    <h3 class="section-title">Fila Yasmin</h3>
+                <!-- Backlog Detalhado: Novo Cliente -->
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-title" id="backlog-novo-title">Backlog Detalhado: Novo Cliente</div>
+                    <div class="table-wrapper" id="backlog-novo-table"></div>
+                </div>
+
+                <!-- Fila Yasmin -->
+                <div class="card" style="margin-top: 20px; border-left: 3px solid #f59e0b;">
+                    <div class="card-title" style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:1.2em;">📋</span> Fila para Distribuir (Yasmin) — Impacto no Capacity
+                        <span id="backlog-yasmin-badge" style="background:rgba(245,158,11,0.2); color:#f59e0b; padding:2px 10px; border-radius:12px; font-size:0.85em; margin-left:auto;">—</span>
+                    </div>
+
+                    <div class="insight-box warning" style="margin: 15px 0;">
+                        <strong>Essas demandas estão aguardando distribuição e precisam entrar no capacity dos implantadores.</strong>
+                    </div>
+
                     <div class="table-wrapper" id="backlog-yasmin-table"></div>
                 </div>
 
-                <div class="section">
-                    <h3 class="section-title">Migração Cloud</h3>
-                    <div class="table-wrapper" id="backlog-cloud-table"></div>
+                <!-- Insights -->
+                <div class="card" style="margin-top: 20px;">
+                    <div class="card-title">Insights de Capacity</div>
+                    <div id="backlog-insights"></div>
                 </div>
             </div>
         </div>
@@ -1291,15 +1326,96 @@
         }
 
         function renderBacklog() {
-            const ctx = document.getElementById('backlogCapacityChart').getContext('2d');
+            if (!DATA.backlogSummary) {
+                console.warn('No backlog data available');
+                return;
+            }
+
+            const summary = DATA.backlogSummary;
+
+            // Render KPI Cards
+            const kpiHtml = `
+                <div class="metric-card">
+                    <div class="metric-value" style="color: #06b6d4;">${formatHours(summary.totalRestante)}</div>
+                    <div class="metric-label">Total Restante Estimado</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color: #f97316;">${formatHours(summary.novoRestante)}</div>
+                    <div class="metric-label">Novo Cliente (${summary.novoPercent}%)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color: #22c55e;">${formatHours(summary.upsellRestante)}</div>
+                    <div class="metric-label">Upsell Atribuído (${summary.upsellPercent}%)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color: #f59e0b;">${formatHours(summary.yasminHours)}</div>
+                    <div class="metric-label">Fila Yasmin — ${summary.yasminEpics} epics (${summary.yasminPercent}%)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color: #a78bfa;">${summary.backlogMonths.toFixed(1)} meses</div>
+                    <div class="metric-label">Backlog / Capacity Equipe</div>
+                </div>
+            `;
+            document.getElementById('backlog-kpi-cards').innerHTML = kpiHtml;
+
+            // Render Capacity Table
+            if (DATA.capacityTable && DATA.capacityTable.length > 0) {
+                let capTableHtml = '<table><thead><tr><th>Implantador</th><th>Epics Abertos</th><th>Horas Restantes (Novo)</th><th>Horas Restantes (Upsell)</th><th>Total Restante</th><th>Meses Necessários</th><th>Novos Simultâneos</th><th>Ocupação Trimestre</th><th>Risco</th></tr></thead><tbody>';
+
+                DATA.capacityTable.forEach(tech => {
+                    const riskColor = tech.risco === 'ALTO' ? '#ef4444' : tech.risco === 'MÉDIO' ? '#f59e0b' : '#22c55e';
+                    const riskBg = tech.risco === 'ALTO' ? 'rgba(239,68,68,0.15)' : tech.risco === 'MÉDIO' ? 'rgba(245,158,11,0.15)' : 'rgba(34,197,94,0.15)';
+                    const mesesColor = tech.meses > 2.5 ? '#ef4444' : tech.meses > 1.5 ? '#f59e0b' : '#22c55e';
+                    const ocupacaoColor = tech.ocupacao > 100 ? '#ef4444' : tech.ocupacao > 50 ? '#f59e0b' : '#22c55e';
+
+                    capTableHtml += `<tr>
+                        <td><strong>${tech.name}</strong></td>
+                        <td>${tech.epicsAbertos}</td>
+                        <td>${formatHours(tech.horasNovo)}</td>
+                        <td>${formatHours(tech.horasUpsell)}</td>
+                        <td><strong>${formatHours(tech.totalRestante)}</strong></td>
+                        <td><span style="color:${mesesColor};font-weight:600;">${tech.meses.toFixed(1)} meses</span></td>
+                        <td><span style="color:${tech.novosSimultaneos.includes('0') ? '#22c55e' : '#f59e0b'};font-weight:600;">${tech.novosSimultaneos}</span></td>
+                        <td><span style="color:${ocupacaoColor};font-weight:600;">${tech.ocupacao.toFixed(0)}%</span></td>
+                        <td><span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:${riskBg};color:${riskColor};">${tech.risco}</span></td>
+                    </tr>`;
+                });
+
+                // Add TOTAL row
+                const totals = DATA.capacityTable.reduce((acc, t) => ({
+                    epicsAbertos: (acc.epicsAbertos || '') + (typeof t.epicsAbertos === 'string' ? parseInt(t.epicsAbertos.split(' ')[0]) || 0 : 0),
+                    horasNovo: (acc.horasNovo || 0) + t.horasNovo,
+                    horasUpsell: (acc.horasUpsell || 0) + t.horasUpsell,
+                    totalRestante: (acc.totalRestante || 0) + t.totalRestante,
+                    meses: (acc.meses || 0) + t.meses,
+                    novosSimultaneos: (acc.novosSimultaneos || 0) + (parseInt(t.novosSimultaneos.split(' ')[0]) || 0)
+                }), {});
+
+                capTableHtml += `<tr style="background: #0d1117; font-weight: 600;">
+                    <td><strong>TOTAL</strong></td>
+                    <td><strong>${summary.yasminEpics + DATA.technicians.reduce((s,t) => s + (t.total - t.completed), 0)}</strong></td>
+                    <td><strong>${formatHours(summary.novoRestante)}</strong></td>
+                    <td><strong>${formatHours(summary.upsellRestante)}</strong></td>
+                    <td><strong>${formatHours(summary.totalRestante)}</strong></td>
+                    <td><strong>${summary.backlogMonths.toFixed(1)} meses</strong></td>
+                    <td><strong>${totals.novosSimultaneos} em andamento</strong></td>
+                    <td><strong>—</strong></td>
+                    <td><strong>—</strong></td>
+                </tr>`;
+                capTableHtml += '</tbody></table>';
+                document.getElementById('backlog-capacity-table').innerHTML = capTableHtml;
+            }
+
+            // Render Capacity Chart
             const techNames = DATA.technicians.map(t => t.name.split(' ')[0]);
-            new Chart(ctx, {
+            const ctx1 = document.getElementById('backlogCapacityChart').getContext('2d');
+            new Chart(ctx1, {
                 type: 'bar',
                 data: {
                     labels: techNames,
                     datasets: [
-                        { label: 'Novo', data: DATA.technicians.map(t => t.novoHours), backgroundColor: COLORS.novo, borderRadius: 4 },
-                        { label: 'Upsell', data: DATA.technicians.map(t => t.upsellHours), backgroundColor: COLORS.upsell, borderRadius: 4 },
+                        { label: 'Novo', data: DATA.technicians.map(t => t.novoHours || 0), backgroundColor: COLORS.novo, borderRadius: 4 },
+                        { label: 'Upsell', data: DATA.technicians.map(t => t.upsellHours || 0), backgroundColor: COLORS.upsell, borderRadius: 4 },
                         { label: 'Capacity (140h)', data: Array(DATA.technicians.length).fill(140), type: 'line', borderColor: COLORS.danger, borderDash: [5, 5], borderWidth: 2, pointRadius: 0, fill: false }
                     ]
                 },
@@ -1307,7 +1423,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        title: { display: true, text: 'Backlog vs Capacity Mensal (140h)', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                        title: { display: true, text: 'Backlog Restante vs Capacity Mensal (140h)', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
                         legend: { labels: { color: '#c9d1d9' } }
                     },
                     scales: {
@@ -1317,26 +1433,117 @@
                 }
             });
 
-            renderYasminQueue();
-            document.getElementById('backlog-yasmin-table').innerHTML = document.getElementById('yasmin-queue-table').innerHTML;
+            // Render Timeline Chart
+            if (DATA.capacityTable && DATA.capacityTable.length > 0) {
+                const timelineData = DATA.capacityTable.map(t => ({
+                    name: t.name.split(' ')[0],
+                    meses: t.meses,
+                    risco: t.risco
+                })).sort((a, b) => b.meses - a.meses);
 
-            const cloudMig = DATA.migracaoCloud || [];
-            let cloudHtml = '<table><thead><tr><th>Chave</th><th>Resumo</th><th>Assignee</th><th>Status</th><th>Horas</th></tr></thead><tbody>';
-            if (cloudMig.length === 0) {
-                cloudHtml += '<tr><td colspan="5" style="text-align:center;color:#8b949e;">Nenhum item em migração cloud.</td></tr>';
-            } else {
-                cloudMig.forEach(item => {
-                    cloudHtml += `<tr>
-                        <td><a href="https://wmi-solutions.atlassian.net/browse/${item.key}" target="_blank" style="color:#06b6d4;">${item.key}</a></td>
-                        <td>${item.summary}</td>
-                        <td>${item.assignee}</td>
-                        <td><span class="status-badge status-progress">${item.status}</span></td>
-                        <td>${item.hours ? formatHours(item.hours) : '—'}</td>
-                    </tr>`;
+                const ctx2 = document.getElementById('backlogTimelineChart').getContext('2d');
+                new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: timelineData.map(t => t.name),
+                        datasets: [{
+                            label: 'Meses',
+                            data: timelineData.map(t => t.meses),
+                            backgroundColor: timelineData.map(t =>
+                                t.risco === 'ALTO' ? '#ef4444' : t.risco === 'MÉDIO' ? '#f59e0b' : '#22c55e'
+                            ),
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: {
+                            title: { display: true, text: 'Projeção de Conclusão do Backlog (meses)', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
+                            legend: { labels: { color: '#c9d1d9' } }
+                        },
+                        scales: {
+                            x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+                            y: { ticks: { color: '#8b949e' }, grid: { display: false } }
+                        }
+                    }
                 });
             }
-            cloudHtml += '</tbody></table>';
-            document.getElementById('backlog-cloud-table').innerHTML = cloudHtml;
+
+            // Render Backlog Novo Table
+            if (DATA.backlogNovo && DATA.backlogNovo.length > 0) {
+                document.getElementById('backlog-novo-title').textContent = `Backlog Detalhado: Novo Cliente (${DATA.backlogNovo.length} epics abertos)`;
+
+                let novoTableHtml = '<table><thead><tr><th>Epic</th><th>Cliente</th><th>Implantador</th><th>Porte</th><th>Status</th><th>Gasto</th><th>Meta</th><th>Restante Est.</th><th>Progresso</th><th>Criação</th><th>Prazo WMI</th><th>Status Prazo</th></tr></thead><tbody>';
+
+                DATA.backlogNovo.forEach(epic => {
+                    const progressPct = epic.progresso * 100;
+                    const progColor = progressPct >= 80 ? '#22c55e' : progressPct >= 40 ? '#facc15' : '#ef4444';
+                    let statusPrazoHtml = '';
+
+                    if (epic.statusPrazoType === 'overdue') {
+                        statusPrazoHtml = `<span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(239,68,68,0.15);color:#ef4444;">⚠️ ${epic.statusPrazo}</span>`;
+                    } else if (epic.statusPrazoType === 'noporte') {
+                        statusPrazoHtml = `<span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(107,114,128,0.15);color:#9ca3af;">Sem porte</span>`;
+                    } else if (epic.statusPrazoType === 'ok') {
+                        statusPrazoHtml = `<span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(34,197,94,0.15);color:#22c55e;">${epic.statusPrazo}</span>`;
+                    } else if (epic.statusPrazoType === 'warning') {
+                        statusPrazoHtml = `<span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(245,158,11,0.15);color:#f59e0b;">${epic.statusPrazo}</span>`;
+                    }
+
+                    novoTableHtml += `<tr>
+                        <td><a href="https://wmi-solutions.atlassian.net/browse/${epic.key}" target="_blank" style="color:#58a6ff;">${epic.key}</a></td>
+                        <td>${epic.summary}</td>
+                        <td>${epic.assignee}</td>
+                        <td>${epic.porte}</td>
+                        <td><span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(59,130,246,0.15);color:#3b82f6;">${epic.status}</span></td>
+                        <td>${formatHours(epic.gasto)}</td>
+                        <td>${formatHours(epic.meta)}</td>
+                        <td>${formatHours(epic.restante)}</td>
+                        <td><div style="height:8px;background:#21262d;border-radius:4px;overflow:hidden;width:80px;"><div style="height:100%;width:${progressPct}%;background:${progColor};border-radius:4px;"></div></div></td>
+                        <td style="color:#8b949e;">${epic.criacao}</td>
+                        <td style="color:#8b949e;">${epic.prazoWmi}</td>
+                        <td>${statusPrazoHtml}</td>
+                    </tr>`;
+                });
+
+                novoTableHtml += '</tbody></table>';
+                document.getElementById('backlog-novo-table').innerHTML = novoTableHtml;
+            }
+
+            // Render Fila Yasmin
+            if (DATA.filaYasmin && DATA.filaYasmin.length > 0) {
+                document.getElementById('backlog-yasmin-badge').innerHTML = `${DATA.filaYasmin.length} epics | ${formatHours(summary.yasminHours)}`;
+
+                let filaTableHtml = '<table><thead><tr><th>Epic</th><th>Demanda</th><th>Tipo</th><th>Status</th><th>Horas</th><th>Criado</th><th>Due Date</th><th>Sugestão Destino</th></tr></thead><tbody>';
+
+                DATA.filaYasmin.forEach(item => {
+                    filaTableHtml += `<tr>
+                        <td><a href="https://wmi-solutions.atlassian.net/browse/${item.key}" target="_blank" style="color:#58a6ff;">${item.key}</a></td>
+                        <td>${item.summary}</td>
+                        <td>${item.tipo}</td>
+                        <td><span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(59,130,246,0.15);color:#3b82f6;">${item.status}</span></td>
+                        <td style="font-weight:600;color:#f59e0b;">${formatHours(item.hours)}</td>
+                        <td>${item.criado}</td>
+                        <td style="color:#8b949e;">${item.dueDate || '—'}</td>
+                        <td><span style="color:#22c55e;">${item.sugestao}</span></td>
+                    </tr>`;
+                });
+
+                filaTableHtml += '</tbody></table>';
+                document.getElementById('backlog-yasmin-table').innerHTML = filaTableHtml;
+            }
+
+            // Render Insights
+            if (DATA.backlogInsights && DATA.backlogInsights.length > 0) {
+                let insightsHtml = '';
+                DATA.backlogInsights.forEach(insight => {
+                    const boxClass = insight.level === 'danger' ? 'critical' : insight.level === 'warning' ? 'warning' : 'positive';
+                    insightsHtml += `<div class="insight-box ${boxClass}"><strong>${insight.title}</strong> ${insight.text}</div>`;
+                });
+                document.getElementById('backlog-insights').innerHTML = insightsHtml;
+            }
         }
 
         function renderFichas() {

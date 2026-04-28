@@ -342,6 +342,248 @@ def calculate_prazo_metrics(tech: Dict, today: str) -> Dict:
             'desvioMedio': 37, 'antecipados': 0, 'noPrazo': 0, 'atrasados': 0, 'pctNoPrazo': 0}
 
 
+def detect_porte(summary: str) -> Tuple[str, int, int]:
+    """Detect porte from epic summary. Returns (porte_name, hours_meta, days_deadline)"""
+    summary_lower = summary.lower()
+
+    if 'large' in summary_lower or 'grande' in summary_lower:
+        return ('Large', 400, 120)
+    elif 'medium' in summary_lower or 'médio' in summary_lower:
+        return ('Medium', 200, 90)
+    elif 'small' in summary_lower or 'pequeno' in summary_lower:
+        return ('Small', 150, 60)
+    else:
+        return ('N/D', 100, 0)
+
+
+def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str) -> Dict:
+    """Generate backlog-specific data for capacity planning"""
+    CAPACITY_MONTHLY = 140
+
+    # Separate novo and upsell epics
+    novo_epics = [e for e in epics if classify_epic(e) == 'Novo']
+    upsell_epics = [e for e in epics if classify_epic(e) == 'Upsell']
+
+    # Calculate remaining hours per epic
+    novo_with_data = []
+    for epic in novo_epics:
+        fields = epic.get('fields', {})
+        key = epic.get('key', '')
+        summary = fields.get('summary', '')
+        assignee = fields.get('assignee')
+        status = fields.get('status', {}).get('name', 'Unknown')
+        created = parse_date(fields.get('created', ''))
+        duedate = parse_date(fields.get('duedate', ''))
+        time_spent = fields.get('aggregatetimespent', 0) or 0
+        gasto = time_spent / 3600
+
+        # Detect porte
+        porte, meta, days = detect_porte(summary)
+        restante = max(meta - gasto, 10) if gasto < meta else max(meta - gasto, 10)
+        progresso = (gasto / meta) if meta > 0 else 0
+
+        # Calculate prazo
+        prazo_wmi = 'N/D'
+        status_prazo = 'Sem porte'
+        status_prazo_type = 'noporte'
+
+        if days > 0 and created:
+            deadline = datetime.strptime(created, '%Y-%m-%d') + timedelta(days=days)
+            prazo_wmi = deadline.strftime('%d/%m/%Y')
+            today_dt = datetime.strptime(today, '%Y-%m-%d')
+            days_diff = (today_dt - deadline).days
+
+            if days_diff > 0:
+                status_prazo = f'+{days_diff} dias'
+                status_prazo_type = 'overdue'
+            elif days_diff < -90:
+                status_prazo = f'{-days_diff} dias'
+                status_prazo_type = 'ok'
+            else:
+                status_prazo = f'{-days_diff} dias'
+                status_prazo_type = 'warning'
+
+        impl = extract_implementer_name(assignee)
+
+        novo_with_data.append({
+            'key': key,
+            'summary': summary,
+            'assignee': impl or 'Yasmin',
+            'porte': porte,
+            'status': status,
+            'gasto': round(gasto, 1),
+            'meta': float(meta),
+            'restante': round(restante, 1),
+            'progresso': round(progresso, 2),
+            'criacao': created,
+            'prazoWmi': prazo_wmi,
+            'statusPrazo': status_prazo,
+            'statusPrazoType': status_prazo_type
+        })
+
+    # Sort by gasto descending
+    novo_with_data.sort(key=lambda x: x['gasto'], reverse=True)
+
+    # Filter to only open novos
+    novo_open = [e for e in novo_with_data if e['statusPrazoType'] != 'noporte' or e['status'] not in ['Concluído', 'Cancelado']]
+
+    # Build filaYasmin - epics not assigned or in Yasmin queue
+    fila_yasmin = []
+    for epic in epics:
+        fields = epic.get('fields', {})
+        key = epic.get('key', '')
+        summary = fields.get('summary', '')
+        assignee = fields.get('assignee')
+        status = fields.get('status', {}).get('name', 'Unknown')
+        created = parse_date(fields.get('created', ''))
+        duedate = parse_date(fields.get('duedate', ''))
+        time_spent = fields.get('aggregatetimespent', 0) or 0
+        hours = time_spent / 3600
+
+        impl = extract_implementer_name(assignee)
+
+        # Add to fila if not assigned to implementer or is in waiting
+        if not impl or impl in EXCLUDE_ASSIGNEES:
+            # Extract tipo from summary
+            tipo = 'Upsell'
+            if 'interlac' in summary.lower():
+                tipo = 'Interlac'
+            elif 'nota fiscal' in summary.lower() or 'nf' in summary.lower():
+                tipo = 'NF'
+            elif 'cloud' in summary.lower() or 'migração' in summary.lower():
+                tipo = 'Cloud'
+
+            # Find suggested assignee (lowest workload)
+            min_tech = min(technicians_dict.values(), key=lambda t: t.get('total', 0), default=None)
+            sugestao = min_tech.get('name', 'Pendente') if min_tech else 'Pendente'
+
+            fila_yasmin.append({
+                'key': key,
+                'summary': summary,
+                'tipo': tipo,
+                'status': status,
+                'hours': round(hours, 1),
+                'criado': created,
+                'dueDate': duedate or '—',
+                'sugestao': sugestao
+            })
+
+    # Calculate summary metrics
+    total_novo_restante = sum(e['restante'] for e in novo_with_data)
+    upsell_restante = sum(
+        max(12 - (e.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600, 0)
+        for e in upsell_epics if e.get('fields', {}).get('status', {}).get('name', '') not in STATUS_COMPLETED
+    )
+    yasmin_hours = sum(e['hours'] for e in fila_yasmin)
+    total_restante = total_novo_restante + upsell_restante + yasmin_hours
+
+    num_techs = len([t for t in technicians_dict.values() if t.get('total', 0) > 0])
+    backlog_months = total_restante / (CAPACITY_MONTHLY * max(1, num_techs)) if num_techs > 0 else 0
+
+    novo_pct = int((total_novo_restante / total_restante) * 100) if total_restante > 0 else 0
+    upsell_pct = int((upsell_restante / total_restante) * 100) if total_restante > 0 else 0
+    yasmin_pct = int((yasmin_hours / total_restante) * 100) if total_restante > 0 else 0
+
+    # Build capacity table per technician
+    capacity_table = []
+    for tech_name in IMPLEMENTERS:
+        tech = technicians_dict.get(tech_name, {})
+        if tech.get('total', 0) == 0:
+            continue
+
+        novo_count = tech.get('board', {}).get('novo', 0)
+        upsell_count = tech.get('board', {}).get('upsell', 0)
+        epics_str = f"{novo_count + upsell_count} ({novo_count}N + {upsell_count}U)"
+
+        novo_rest = sum(e['restante'] for e in novo_with_data if e['assignee'] == tech_name)
+        upsell_rest = sum(
+            max(12 - (ep.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600, 0)
+            for ep in upsell_epics
+            if extract_implementer_name(ep.get('fields', {}).get('assignee')) == tech_name
+        )
+        total_rest = novo_rest + upsell_rest
+
+        meses = total_rest / CAPACITY_MONTHLY if total_rest > 0 else 0
+
+        # Count Novos em andamento
+        novos_em_andamento = sum(
+            1 for e in novo_with_data
+            if e['assignee'] == tech_name and e['status'] == 'Em andamento'
+        )
+        novos_str = f"{novos_em_andamento} em andamento" if novos_em_andamento > 0 else "0"
+
+        ocupacao = (total_rest / (CAPACITY_MONTHLY * 3)) * 100 if total_rest > 0 else 0
+        risco = 'ALTO' if ocupacao > 100 else 'MÉDIO' if ocupacao > 50 else 'BAIXO'
+
+        capacity_table.append({
+            'name': tech_name,
+            'epicsAbertos': epics_str,
+            'horasNovo': round(novo_rest, 1),
+            'horasUpsell': round(upsell_rest, 1),
+            'totalRestante': round(total_rest, 1),
+            'meses': round(meses, 1),
+            'novosSimultaneos': novos_str,
+            'ocupacao': round(ocupacao, 1),
+            'risco': risco
+        })
+
+    # Sort by total restante descending
+    capacity_table.sort(key=lambda x: x['totalRestante'], reverse=True)
+
+    # Generate insights
+    insights = []
+
+    overdue_novos = sum(1 for e in novo_with_data if e['statusPrazoType'] == 'overdue')
+    if overdue_novos > 0:
+        insights.append({
+            'title': f'{overdue_novos} Novo epics com porte estão ATRASADOS',
+            'text': f'Dos epics Novo com porte definido, {overdue_novos} já ultrapassaram o prazo WMI.',
+            'level': 'danger'
+        })
+
+    high_risk_techs = [t['name'] for t in capacity_table if t['risco'] == 'ALTO']
+    if high_risk_techs:
+        insights.append({
+            'title': f'{len(high_risk_techs)} técnico(s) acima da capacidade trimestral',
+            'text': f'{", ".join(high_risk_techs)} têm ocupação >100%.',
+            'level': 'danger'
+        })
+
+    parallel_risk = [t['name'] for t in capacity_table if '3 em andamento' in t['novosSimultaneos']]
+    if parallel_risk:
+        insights.append({
+            'title': f'Paralelismo no limite: {", ".join(parallel_risk)}',
+            'text': 'Tocar 3 Novos simultâneos com 2-4h/dia cada pode pressionar a agenda.',
+            'level': 'warning'
+        })
+
+    available_techs = [t['name'] for t in capacity_table if t['ocupacao'] < 30]
+    if available_techs:
+        insights.append({
+            'title': f'Capacidade disponível: {", ".join(available_techs)}',
+            'text': f'Estes técnicos têm espaço para absorver mais Novos.',
+            'level': 'success'
+        })
+
+    return {
+        'backlogSummary': {
+            'totalRestante': round(total_restante, 1),
+            'novoRestante': round(total_novo_restante, 1),
+            'novoPercent': novo_pct,
+            'upsellRestante': round(upsell_restante, 1),
+            'upsellPercent': upsell_pct,
+            'yasminEpics': len(fila_yasmin),
+            'yasminHours': round(yasmin_hours, 1),
+            'yasminPercent': yasmin_pct,
+            'backlogMonths': round(backlog_months, 1)
+        },
+        'capacityTable': capacity_table,
+        'backlogNovo': novo_open,
+        'filaYasmin': fila_yasmin,
+        'backlogInsights': insights
+    }
+
+
 def generate_dashboard_data(epics: List[Dict]) -> Dict:
     """Generate complete DATA object for dashboard"""
     today = datetime.now().strftime('%Y-%m-%d')
@@ -399,13 +641,21 @@ def generate_dashboard_data(epics: List[Dict]) -> Dict:
         if summary['total'] > 0:
             summary['avgHoursPerEpic'] = round(summary['totalHours'] / summary['total'], 1)
 
+    # Generate backlog data
+    backlog_data = generate_backlog_data(technicians, epics, today)
+
     return {
         'timestamp': timestamp,
         'technicians': technicians_array,
         'yasminQueue': yasmin_queue,
         'migracaoCloud': cloud_migrations,
         'novoSummary': novo_summary,
-        'upsellSummary': upsell_summary
+        'upsellSummary': upsell_summary,
+        'backlogSummary': backlog_data['backlogSummary'],
+        'capacityTable': backlog_data['capacityTable'],
+        'backlogNovo': backlog_data['backlogNovo'],
+        'filaYasmin': backlog_data['filaYasmin'],
+        'backlogInsights': backlog_data['backlogInsights']
     }
 
 
@@ -464,6 +714,38 @@ def generate_mock_data() -> Dict:
                             'hours': round((hours - novo_hours) * 1.2, 1), 'hoursPerEpic': round((hours - novo_hours) / max(1, upsell), 1)}
         })
 
+    # Mock backlog data
+    mock_backlog = {
+        'backlogSummary': {
+            'totalRestante': 2378.0,
+            'novoRestante': 1935.0,
+            'novoPercent': 81,
+            'upsellRestante': 367.0,
+            'upsellPercent': 15,
+            'yasminEpics': 23,
+            'yasminHours': 75.8,
+            'yasminPercent': 3,
+            'backlogMonths': 2.0
+        },
+        'capacityTable': [
+            {'name': 'Anderson', 'epicsAbertos': '7 (4N + 3U)', 'horasNovo': 540.0, 'horasUpsell': 6.0, 'totalRestante': 546.0, 'meses': 3.9, 'novosSimultaneos': '2 em andamento', 'ocupacao': 130.0, 'risco': 'ALTO'},
+            {'name': 'Luiz', 'epicsAbertos': '4 (3N + 1U)', 'horasNovo': 537.0, 'horasUpsell': 2.0, 'totalRestante': 539.0, 'meses': 3.9, 'novosSimultaneos': '3 em andamento', 'ocupacao': 128.0, 'risco': 'ALTO'},
+            {'name': 'Jorge', 'epicsAbertos': '8 (3N + 5U)', 'horasNovo': 326.0, 'horasUpsell': 22.0, 'totalRestante': 348.0, 'meses': 2.5, 'novosSimultaneos': '3 em andamento', 'ocupacao': 83.0, 'risco': 'MÉDIO'},
+        ],
+        'backlogNovo': [
+            {'key': 'IWN-826', 'summary': 'DRA TÂNIA', 'assignee': 'Nino', 'porte': 'Large', 'status': 'Em andamento', 'gasto': 483.9, 'meta': 400.0, 'restante': 40.0, 'progresso': 1.21, 'criacao': '2025-10-10', 'prazoWmi': '2026-02-07', 'statusPrazo': '+72 dias', 'statusPrazoType': 'overdue'},
+        ],
+        'filaYasmin': [
+            {'key': 'IWN-3256', 'summary': 'VITALABOR - Fila / Interlac', 'tipo': 'Interlac', 'status': 'Em andamento', 'hours': 49.3, 'criado': '2025-12-11', 'dueDate': '2026-01-16', 'sugestao': 'Daniel / Fabio'},
+        ],
+        'backlogInsights': [
+            {'title': '8 Novo epics com porte estão ATRASADOS', 'text': 'Dos epics Novo com porte definido, 8 já ultrapassaram o prazo WMI.', 'level': 'danger'},
+            {'title': 'Anderson e Luiz Neto: 3.9 meses de backlog cada', 'text': 'Acima da capacidade trimestral (130% e 128%).', 'level': 'danger'},
+            {'title': 'Paralelismo no limite', 'text': 'Luiz, Jorge e Nino tocam 3 Novos simultâneos.', 'level': 'warning'},
+            {'title': 'Capacidade disponível', 'text': 'Daniel e Fabio têm espaço para absorver mais Novos.', 'level': 'success'},
+        ]
+    }
+
     return {
         'timestamp': timestamp, 'technicians': technicians_array,
         'yasminQueue': [{'key': 'IWN-4723', 'summary': 'INFLUENCIADORES - Setup',
@@ -475,7 +757,8 @@ def generate_mock_data() -> Dict:
         'novoSummary': {'total': 37, 'completed': 19, 'inProgress': 13, 'paused': 0, 'pending': 5,
                         'totalHours': 3264.0, 'activeHours': 1019.0, 'avgHoursPerEpic': 88.2},
         'upsellSummary': {'total': 185, 'completed': 132, 'inProgress': 40, 'paused': 8, 'pending': 5,
-                          'totalHours': 1946.0, 'activeHours': 591.0, 'avgHoursPerEpic': 10.5}
+                          'totalHours': 1946.0, 'activeHours': 591.0, 'avgHoursPerEpic': 10.5},
+        **mock_backlog
     }
 
 
