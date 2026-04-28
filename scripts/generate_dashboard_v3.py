@@ -372,10 +372,15 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         summary = fields.get('summary', '')
         assignee = fields.get('assignee')
         status = fields.get('status', {}).get('name', 'Unknown')
+        status_cat = fields.get('status', {}).get('statusCategory', {}).get('key', '')
         created = parse_date(fields.get('created', ''))
         duedate = parse_date(fields.get('duedate', ''))
         time_spent = fields.get('aggregatetimespent', 0) or 0
         gasto = time_spent / 3600
+
+        # Skip completed/cancelled epics (use category 'done' to avoid encoding issues)
+        if status_cat == 'done' or status.lower().replace('í','i') in ('concluido', 'cancelado'):
+            continue
 
         # Detect porte
         porte, meta, days = detect_porte(summary)
@@ -432,7 +437,8 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
     for epic in epics:
         fields = epic.get('fields', {})
         status = fields.get('status', {}).get('name', 'Unknown')
-        if status in STATUS_COMPLETED:
+        status_cat = fields.get('status', {}).get('statusCategory', {}).get('key', '')
+        if status_cat == 'done' or status.lower().replace('í','i') in ('concluido', 'cancelado'):
             continue
         key = epic.get('key', '')
         summary = fields.get('summary', '')
