@@ -465,10 +465,6 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             elif 'cloud' in summary.lower() or 'migração' in summary.lower():
                 tipo = 'Cloud'
 
-            # Find suggested assignee (lowest workload)
-            min_tech = min(technicians_dict.values(), key=lambda t: t.get('total', 0), default=None)
-            sugestao = min_tech.get('name', 'Pendente') if min_tech else 'Pendente'
-
             fila_yasmin.append({
                 'key': key,
                 'summary': summary,
@@ -476,8 +472,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
                 'status': status,
                 'hours': round(hours, 1),
                 'criado': created,
-                'dueDate': duedate or '—',
-                'sugestao': sugestao
+                'dueDate': duedate or '—'
             })
 
     # Calculate summary metrics (only open epics)

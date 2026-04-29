@@ -1516,7 +1516,7 @@
             if (DATA.filaYasmin && DATA.filaYasmin.length > 0) {
                 document.getElementById('backlog-yasmin-badge').innerHTML = `${DATA.filaYasmin.length} epics | ${formatHours(summary.yasminHours)}`;
 
-                let filaTableHtml = '<table><thead><tr><th>Epic</th><th>Demanda</th><th>Tipo</th><th>Status</th><th>Horas</th><th>Criado</th><th>Due Date</th><th>Sugestão Destino</th></tr></thead><tbody>';
+                let filaTableHtml = '<table><thead><tr><th>Epic</th><th>Demanda</th><th>Tipo</th><th>Status</th><th>Horas</th><th>Criado</th><th>Due Date</th></tr></thead><tbody>';
 
                 DATA.filaYasmin.forEach(item => {
                     filaTableHtml += `<tr>
@@ -1527,7 +1527,6 @@
                         <td style="font-weight:600;color:#f59e0b;">${formatHours(item.hours)}</td>
                         <td>${item.criado}</td>
                         <td style="color:#8b949e;">${item.dueDate || '—'}</td>
-                        <td><span style="color:#22c55e;">${item.sugestao}</span></td>
                     </tr>`;
                 });
 
