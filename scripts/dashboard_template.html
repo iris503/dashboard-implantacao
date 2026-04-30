@@ -401,8 +401,9 @@
 
         .fichas-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .ficha-card {
@@ -411,27 +412,48 @@
             border-radius: 8px;
             padding: 1.5rem;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
 
         .ficha-card:hover {
             border-color: #06b6d4;
-            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.1);
+            box-shadow: 0 8px 16px rgba(6, 182, 212, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .ficha-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
         }
 
         .ficha-name {
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: #06b6d4;
-            margin-bottom: 1rem;
         }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .risk-badge.high { background-color: rgba(239,68,68,0.2); color: #ef4444; }
+        .risk-badge.medium { background-color: rgba(249,115,22,0.2); color: #f97316; }
+        .risk-badge.low { background-color: rgba(34,197,94,0.2); color: #22c55e; }
 
         .ficha-metrics {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 0.8rem;
-            font-size: 0.9rem;
+            gap: 1rem;
             margin-bottom: 1rem;
+            font-size: 0.9rem;
         }
 
         .ficha-metric {
@@ -442,22 +464,158 @@
         .ficha-metric-label {
             color: #8b949e;
             font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .ficha-metric-value {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: #c9d1d9;
             margin-top: 0.25rem;
         }
 
+        .completion-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #30363d;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .completion-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease; }
+        .completion-fill.high { background-color: #22c55e; }
+        .completion-fill.medium { background-color: #eab308; }
+        .completion-fill.low { background-color: #ef4444; }
+
         .ficha-footer {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding-top: 1rem;
             border-top: 1px solid #30363d;
             color: #8b949e;
             font-size: 0.85rem;
+        }
+
+        .board-split {
+            display: flex;
+            width: 80px;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            gap: 1px;
+        }
+        .board-split-section { height: 100%; }
+
+        /* Detail View */
+        .fichas-detail-view { display: none; }
+        .fichas-detail-view.active { display: block; }
+        .fichas-grid-view.hidden { display: none; }
+
+        .detail-back-btn {
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #58a6ff;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+        .detail-back-btn:hover { background: #30363d; }
+
+        .detail-title {
+            font-size: 1.5rem;
+            color: #06b6d4;
+            margin-bottom: 1.5rem;
+        }
+
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+        .kpi-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 0.8rem;
+            text-align: center;
+        }
+        .kpi-card .kpi-label { font-size: 0.7rem; color: #8b949e; margin-bottom: 0.3rem; }
+        .kpi-card .kpi-value { font-size: 1.3rem; font-weight: 700; color: #e6edf3; }
+
+        .detail-section { margin-bottom: 1.5rem; }
+        .detail-section-title {
+            font-size: 1.1rem;
+            color: #e6edf3;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .strengths-risks-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .sr-box {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        .sr-box h4 { font-size: 0.85rem; margin-bottom: 0.6rem; }
+        .sr-box ul { list-style: none; padding: 0; }
+        .sr-box ul li { padding: 0.3rem 0; font-size: 0.85rem; color: #c9d1d9; }
+        .sr-box ul li::before { margin-right: 0.4rem; }
+        .sr-box.strengths h4 { color: #22c55e; }
+        .sr-box.strengths ul li::before { content: '✓'; color: #22c55e; }
+        .sr-box.risks h4 { color: #ef4444; }
+        .sr-box.risks ul li::before { content: '⚠'; color: #ef4444; }
+
+        .epic-detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .epic-detail-table th {
+            padding: 0.5rem;
+            text-align: left;
+            color: #8b949e;
+            border-bottom: 1px solid #30363d;
+            font-size: 0.8rem;
+        }
+        .epic-detail-table td {
+            padding: 0.4rem 0.5rem;
+            border-bottom: 1px solid #21262d;
+            color: #c9d1d9;
+        }
+        .epic-detail-table a { color: #58a6ff; text-decoration: none; font-weight: 600; }
+        .epic-detail-table a:hover { text-decoration: underline; }
+
+        .prazo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+        .prazo-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 0.8rem;
+            text-align: center;
+        }
+        .prazo-card .prazo-label { font-size: 0.7rem; color: #8b949e; margin-bottom: 0.3rem; }
+        .prazo-card .prazo-value { font-size: 1.2rem; font-weight: 700; }
+
+        @media (max-width: 768px) {
+            .fichas-grid { grid-template-columns: 1fr; }
+            .strengths-risks-grid { grid-template-columns: 1fr; }
+            .kpi-row { grid-template-columns: repeat(3, 1fr); }
         }
     </style>
 </head>
@@ -680,23 +838,67 @@
 
         <!-- TAB 7: Fichas Individuais -->
         <div id="fichas" class="tab-content">
-            <div class="section">
-                <h2 class="section-title">Fichas Individuais - Implantadores</h2>
+            <!-- Grid View -->
+            <div id="fichas-grid-view" class="fichas-grid-view">
+                <div class="section">
+                    <h2 class="section-title">Fichas Individuais - Implantadores</h2>
 
-                <div class="controls">
-                    <label>
-                        Ordenar por:
-                        <select id="fichas-sort" onchange="renderFichas()">
-                            <option value="total">Total de Epics</option>
-                            <option value="rate">Taxa de Conclusão</option>
-                            <option value="open">Epics Abertos</option>
-                            <option value="overdue">Epics Vencidos</option>
-                            <option value="hours">Horas Totais</option>
-                        </select>
-                    </label>
+                    <div class="controls">
+                        <label>
+                            Ordenar por:
+                            <select id="fichas-sort" onchange="renderFichasGrid()">
+                                <option value="rate">Taxa de Conclusão</option>
+                                <option value="total">Total de Epics</option>
+                                <option value="risk">Nível de Risco</option>
+                                <option value="hours">Horas Totais</option>
+                                <option value="overdue">Epics Vencidos</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <div class="fichas-grid" id="fichas-container"></div>
+                </div>
+            </div>
+
+            <!-- Detail View -->
+            <div id="fichas-detail-view" class="fichas-detail-view">
+                <button class="detail-back-btn" onclick="fichasShowGrid()">← Voltar à Grade</button>
+                <h2 class="detail-title" id="fichas-detail-name"></h2>
+
+                <!-- KPIs Row -->
+                <div class="kpi-row" id="fichas-kpi-row"></div>
+
+                <!-- Epic Panel (summary + table) -->
+                <div class="detail-section" id="fichas-epic-section">
+                    <h3 class="detail-section-title">Detalhamento de Epics Abertos</h3>
+                    <div class="table-responsive" id="fichas-epic-table-container"></div>
                 </div>
 
-                <div class="fichas-grid" id="fichas-container"></div>
+                <!-- Charts Row: Status + Novo vs Upsell -->
+                <div class="detail-section" id="fichas-charts-section">
+                    <div id="fichas-charts-container"></div>
+                </div>
+
+                <!-- Prazo Previsto vs Realizado -->
+                <div class="detail-section" id="fichas-prazo-section">
+                    <div id="fichas-prazo-container"></div>
+                </div>
+
+                <!-- Distribuição por Tipo de Demanda -->
+                <div class="detail-section" id="fichas-subtypes-section">
+                    <h3 class="detail-section-title">Distribuição por Tipo de Demanda</h3>
+                    <div class="table-responsive" id="fichas-subtypes-container"></div>
+                </div>
+
+                <!-- Análise do Coordenador (Risk box) -->
+                <div class="detail-section" id="fichas-analysis-section">
+                    <div id="fichas-analysis-container"></div>
+                </div>
+
+                <!-- Pontos Fortes & Riscos -->
+                <div class="detail-section" id="fichas-sr-section">
+                    <div id="fichas-sr-container"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -728,6 +930,7 @@
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             event.target.classList.add('active');
+            if (tabId === 'fichas') { fichasShowGrid(); }
         }
 
         function getCompletionRate(tech) {
@@ -1545,46 +1748,371 @@
             }
         }
 
-        function renderFichas() {
+        function getFichasRiskLevel(tech) {
+            if (tech.riskLevel) return tech.riskLevel;
+            if (tech.overdueCount > 5 || (tech.openCount > 8 && getCompletionRate(tech) < 40)) return 'high';
+            if (tech.overdueCount > 3 || tech.openCount > 6) return 'medium';
+            return 'low';
+        }
+
+        function fichasSortTechs(sortBy) {
+            const arr = [...DATA.technicians];
+            switch(sortBy) {
+                case 'total': return arr.sort((a,b) => b.total - a.total);
+                case 'rate': return arr.sort((a,b) => getCompletionRate(b) - getCompletionRate(a));
+                case 'open': return arr.sort((a,b) => b.openCount - a.openCount);
+                case 'overdue': return arr.sort((a,b) => b.overdueCount - a.overdueCount);
+                case 'hours': return arr.sort((a,b) => b.hours - a.hours);
+                case 'risk': return arr.sort((a,b) => {
+                    const riskOrder = {high:3, medium:2, low:1};
+                    return (riskOrder[getFichasRiskLevel(b)]||0) - (riskOrder[getFichasRiskLevel(a)]||0);
+                });
+                default: return arr.sort((a,b) => b.total - a.total);
+            }
+        }
+
+        function getStatusStyle(status) {
+            if (!status) return 'background:rgba(139,148,158,0.2);color:#8b949e;';
+            const s = status.toLowerCase();
+            if (s === 'em andamento') return 'background:rgba(59,130,246,0.25);color:#60a5fa;';
+            if (s.includes('conclu')) return 'background:rgba(163,230,53,0.2);color:#a3e635;';
+            if (s === 'cancelado') return 'background:rgba(239,68,68,0.2);color:#ef4444;';
+            if (s === 'paused' || s === 'pausado') return 'background:rgba(96,165,250,0.15);color:#93c5fd;';
+            if (s.includes('pendente')) return 'background:rgba(96,165,250,0.2);color:#60a5fa;';
+            if (s.includes('aguardando')) return 'background:rgba(139,148,158,0.2);color:#8b949e;';
+            return 'background:rgba(139,148,158,0.2);color:#8b949e;';
+        }
+
+        function renderFichasGrid() {
             const sortBy = document.getElementById('fichas-sort').value;
-            const sorted = sortTechs(sortBy);
+            const sorted = fichasSortTechs(sortBy);
 
             let html = '';
             sorted.forEach(tech => {
                 const rate = getCompletionRate(tech);
+                const risk = getFichasRiskLevel(tech);
+                const rateColor = rate > 70 ? 'high' : rate > 50 ? 'medium' : 'low';
+                const riskBadge = tech.overdueCount > 3 ? `<span class="risk-badge ${risk}">${risk.toUpperCase()}</span>` : '';
+
                 html += `
-                    <div class="ficha-card">
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
+                    <div class="ficha-card" onclick="fichasShowDetail(${tech.id})">
+                        <div class="ficha-card-header">
                             <div class="ficha-name">${tech.name}</div>
-                            <span class="badge">${rate}%</span>
+                            ${riskBadge}
                         </div>
+
                         <div class="ficha-metrics">
                             <div class="ficha-metric">
-                                <div class="ficha-metric-label">Total</div>
+                                <div class="ficha-metric-label">Total de Epics</div>
                                 <div class="ficha-metric-value">${tech.total}</div>
                             </div>
                             <div class="ficha-metric">
-                                <div class="ficha-metric-label">Abertos</div>
-                                <div class="ficha-metric-value">${tech.openCount}</div>
+                                <div class="ficha-metric-label">Taxa Conclusão</div>
+                                <div class="ficha-metric-value">${rate}%</div>
+                                <div class="completion-bar">
+                                    <div class="completion-fill ${rateColor}" style="width:${rate}%"></div>
+                                </div>
                             </div>
                             <div class="ficha-metric">
-                                <div class="ficha-metric-label">Vencidos</div>
-                                <div class="ficha-metric-value" style="color:#ef4444;">${tech.overdueCount}</div>
+                                <div class="ficha-metric-label">Abertos/Vencidos</div>
+                                <div class="ficha-metric-value">${tech.openCount}/<span style="color:${tech.overdueCount > 0 ? '#ef4444' : '#c9d1d9'}">${tech.overdueCount}</span></div>
                             </div>
                             <div class="ficha-metric">
-                                <div class="ficha-metric-label">Horas</div>
-                                <div class="ficha-metric-value" style="color:#79c0ff;">${formatHours(tech.hours)}</div>
+                                <div class="ficha-metric-label">Horas Totais</div>
+                                <div class="ficha-metric-value" style="color:#79c0ff;">${tech.hours.toFixed(1)}h</div>
                             </div>
                         </div>
+
                         <div class="ficha-footer">
-                            <span>${(tech.hours/Math.max(1,tech.total)).toFixed(1)}h/Epic</span>
-                            <span>${tech.board.novo} Novo | ${tech.board.upsell} Upsell</span>
+                            <div>
+                                <strong>${tech.hoursPerEpic.toFixed(1)}h</strong>/Epic
+                            </div>
+                            <div class="board-split">
+                                <div class="board-split-section" style="background:#06b6d4;flex:${tech.board.novo || 1}"></div>
+                                <div class="board-split-section" style="background:#f97316;flex:${tech.board.upsell || 1}"></div>
+                            </div>
                         </div>
                     </div>
                 `;
             });
-            document.getElementById('fichas-container').innerHTML = `<div class="fichas-grid">${html}</div>`;
+            document.getElementById('fichas-container').innerHTML = html;
         }
+
+        function fichasShowGrid() {
+            document.getElementById('fichas-grid-view').classList.remove('hidden');
+            document.getElementById('fichas-detail-view').classList.remove('active');
+        }
+
+        function fichasBuildBar(label, value, total, color) {
+            const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+            return `<div>
+                <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#8b949e;margin-bottom:0.2rem;">
+                    <span>${label}</span><span style="color:${color};font-weight:600;">${value} (${pct}%)</span>
+                </div>
+                <div style="height:8px;background:#21262d;border-radius:4px;overflow:hidden;">
+                    <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;"></div>
+                </div>
+            </div>`;
+        }
+
+        function fichasShowDetail(techId) {
+            const tech = DATA.technicians.find(t => t.id === techId);
+            if (!tech) return;
+
+            document.getElementById('fichas-grid-view').classList.add('hidden');
+            document.getElementById('fichas-detail-view').classList.add('active');
+            document.getElementById('fichas-detail-name').textContent = tech.name;
+            window.scrollTo(0, 0);
+
+            const rate = getCompletionRate(tech);
+            const rateColor = rate >= 70 ? '#22c55e' : rate >= 40 ? '#facc15' : '#ef4444';
+            const riskClass = getFichasRiskLevel(tech);
+
+            // ========== 1. KPIs ==========
+            const kpis = [
+                {label:'Total Epics', value:tech.total, icon:'📋'},
+                {label:'Concluídos', value:tech.completed, icon:'✅'},
+                {label:'Em Andamento', value:tech.inProgress, icon:'🔄'},
+                {label:'Pausados', value:tech.paused, icon:'⏸'},
+                {label:'Pendentes', value:tech.pending, icon:'⏳'},
+                {label:'Taxa Conclusão', value:rate+'%', icon:'📊', color:rateColor},
+                {label:'Horas Totais', value:tech.hours.toFixed(1)+'h', icon:'⏱'},
+                {label:'h/Epic', value:tech.hoursPerEpic.toFixed(1)+'h', icon:'📐'},
+                {label:'Abertos', value:tech.openCount, icon:'📂'},
+                {label:'Vencidos', value:tech.overdueCount, icon:'🚨', color:tech.overdueCount > 3 ? '#ef4444' : ''},
+                {label:'Novo', value:tech.board.novo, icon:'🆕'},
+                {label:'Upsell', value:tech.board.upsell, icon:'🔁'}
+            ];
+            document.getElementById('fichas-kpi-row').innerHTML = kpis.map(k =>
+                `<div class="kpi-card"><div class="kpi-label">${k.icon} ${k.label}</div><div class="kpi-value" style="color:${k.color||'#e6edf3'}">${k.value}</div></div>`
+            ).join('');
+
+            // ========== 2. Epic Table ==========
+            const epics = tech.openEpics || [];
+            if (epics.length > 0) {
+                document.getElementById('fichas-epic-section').style.display = 'block';
+                const overdueCount = epics.filter(e => e.overdue).length;
+                let tableHtml = `<p style="margin-bottom:0.8rem;font-size:0.9rem;color:#8b949e;"><span style="color:#ef4444;font-weight:600;">${overdueCount} vencidos</span> de ${epics.length} abertos</p>`;
+                tableHtml += `<table class="epic-detail-table"><thead><tr>
+                    <th>Epic</th><th>Título</th><th>Board</th><th>Status</th><th>Criado</th><th>Due Date</th><th style="text-align:right">Horas</th>
+                </tr></thead><tbody>`;
+                epics.forEach(e => {
+                    const rowBg = e.overdue ? 'rgba(239,68,68,0.08)' : 'transparent';
+                    const boardColor = e.board === 'Novo' ? '#06b6d4' : '#f97316';
+                    const dueColor = e.overdue ? '#ef4444' : '#8b949e';
+                    tableHtml += `<tr style="background:${rowBg}">
+                        <td><a href="https://wmi-solutions.atlassian.net/browse/${e.key}" target="_blank">${e.key}</a></td>
+                        <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title}</td>
+                        <td><span style="color:${boardColor};font-size:0.75rem;font-weight:600;">${e.board}</span></td>
+                        <td><span style="${getStatusStyle(e.status)}padding:3px 10px;border-radius:4px;font-weight:600;font-size:0.75rem;text-transform:uppercase;">${e.status}</span></td>
+                        <td style="color:#8b949e;font-size:0.75rem;">${e.created}</td>
+                        <td style="color:${dueColor};font-size:0.75rem;font-weight:${e.overdue?'600':'400'};">${e.due || '—'}</td>
+                        <td style="text-align:right">${e.hours.toFixed(1)}h</td>
+                    </tr>`;
+                });
+                tableHtml += '</tbody></table>';
+                document.getElementById('fichas-epic-table-container').innerHTML = tableHtml;
+            } else {
+                document.getElementById('fichas-epic-section').style.display = 'none';
+            }
+
+            // ========== 3. Charts: Status + Novo vs Upsell ==========
+            const novoP = tech.total > 0 ? Math.round((tech.board.novo / tech.total) * 100) : 0;
+            const upsellP = 100 - novoP;
+            document.getElementById('fichas-charts-container').innerHTML = `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1rem;">
+                        <h3 style="color:#e6edf3;font-size:0.85rem;margin-bottom:0.8rem;">Status dos Epics</h3>
+                        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                            ${fichasBuildBar('Concluído', tech.completed, tech.total, '#22c55e')}
+                            ${fichasBuildBar('Em Andamento', tech.inProgress, tech.total, '#3b82f6')}
+                            ${fichasBuildBar('Pausado', tech.paused, tech.total, '#facc15')}
+                            ${fichasBuildBar('Pendente', tech.pending, tech.total, '#6e7681')}
+                        </div>
+                    </div>
+                    <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1rem;">
+                        <h3 style="color:#e6edf3;font-size:0.85rem;margin-bottom:0.8rem;">Distribuição Novo vs Upsell</h3>
+                        <div style="display:flex;align-items:center;gap:1rem;margin-top:1.5rem;">
+                            <div style="flex:1;height:18px;border-radius:9px;overflow:hidden;display:flex;background:#21262d;">
+                                ${tech.board.novo > 0 ? `<div style="width:${novoP}%;background:#06b6d4;height:100%;"></div>` : ''}
+                                ${tech.board.upsell > 0 ? `<div style="width:${upsellP}%;background:#f97316;height:100%;"></div>` : ''}
+                            </div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-top:0.8rem;font-size:0.8rem;">
+                            <span style="color:#06b6d4;">🆕 Novo: ${tech.board.novo} (${novoP}%)</span>
+                            <span style="color:#f97316;">🔁 Upsell: ${tech.board.upsell} (${upsellP}%)</span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-top:1rem;font-size:0.8rem;">
+                            <div style="background:#0d1117;border-radius:6px;padding:0.6rem;text-align:center;">
+                                <div style="color:#8b949e;font-size:0.7rem;">Horas Novo</div>
+                                <div style="color:#06b6d4;font-weight:700;font-size:1.1rem;">${tech.novoHours}h</div>
+                            </div>
+                            <div style="background:#0d1117;border-radius:6px;padding:0.6rem;text-align:center;">
+                                <div style="color:#8b949e;font-size:0.7rem;">Horas Upsell</div>
+                                <div style="color:#f97316;font-weight:700;font-size:1.1rem;">${tech.upsellHours}h</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+            // ========== 4. Prazo Previsto vs Realizado ==========
+            const prazo = tech.prazo;
+            if (prazo && prazo.epics > 0) {
+                document.getElementById('fichas-prazo-section').style.display = 'block';
+                const desvioColor = prazo.desvioMedio <= 0 ? '#22c55e' : prazo.desvioMedio <= 7 ? '#facc15' : '#ef4444';
+                const pctColor = prazo.pctNoPrazo >= 50 ? '#22c55e' : prazo.pctNoPrazo >= 30 ? '#facc15' : '#ef4444';
+                const totalP = prazo.antecipados + prazo.noPrazo + prazo.atrasados;
+                const pctAnt = totalP > 0 ? Math.round((prazo.antecipados / totalP) * 100) : 0;
+                const pctNo = totalP > 0 ? Math.round((prazo.noPrazo / totalP) * 100) : 0;
+                const pctAt = totalP > 0 ? Math.round((prazo.atrasados / totalP) * 100) : 0;
+                const maxDays = Math.max(prazo.previstoMedio, prazo.realizadoMedio);
+                const prevW = Math.min(100, Math.round((prazo.previstoMedio / maxDays) * 100));
+                const realW = Math.min(100, Math.round((prazo.realizadoMedio / maxDays) * 100));
+
+                document.getElementById('fichas-prazo-container').innerHTML = `
+                    <div style="background:#161b22;border:1px solid #30363d;border-left:4px solid ${desvioColor};border-radius:8px;padding:1.2rem;">
+                        <h3 style="color:#e6edf3;font-size:0.95rem;margin:0 0 1rem 0;">📅 Prazo Previsto vs Realizado <span style="font-size:0.75rem;color:#8b949e;font-weight:400;">(${prazo.epics} epics concluídos com due date)</span></h3>
+                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.8rem;margin-bottom:1.2rem;">
+                            <div style="background:#0d1117;border-radius:6px;padding:0.8rem;text-align:center;">
+                                <div style="font-size:0.7rem;color:#8b949e;margin-bottom:0.2rem;">Prazo Previsto</div>
+                                <div style="font-size:1.3rem;font-weight:700;color:#58a6ff;">${prazo.previstoMedio}d</div>
+                            </div>
+                            <div style="background:#0d1117;border-radius:6px;padding:0.8rem;text-align:center;">
+                                <div style="font-size:0.7rem;color:#8b949e;margin-bottom:0.2rem;">Prazo Realizado</div>
+                                <div style="font-size:1.3rem;font-weight:700;color:#e6edf3;">${prazo.realizadoMedio}d</div>
+                            </div>
+                            <div style="background:#0d1117;border-radius:6px;padding:0.8rem;text-align:center;">
+                                <div style="font-size:0.7rem;color:#8b949e;margin-bottom:0.2rem;">Desvio Médio</div>
+                                <div style="font-size:1.3rem;font-weight:700;color:${desvioColor};">${prazo.desvioMedio > 0 ? '+' : ''}${prazo.desvioMedio}d</div>
+                            </div>
+                            <div style="background:#0d1117;border-radius:6px;padding:0.8rem;text-align:center;">
+                                <div style="font-size:0.7rem;color:#8b949e;margin-bottom:0.2rem;">No Prazo ou Antes</div>
+                                <div style="font-size:1.3rem;font-weight:700;color:${pctColor};">${prazo.pctNoPrazo}%</div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom:0.6rem;">
+                            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#8b949e;margin-bottom:0.3rem;">
+                                <span style="color:#22c55e;">Antecipados: ${prazo.antecipados}</span>
+                                <span style="color:#58a6ff;">No prazo: ${prazo.noPrazo}</span>
+                                <span style="color:#ef4444;">Atrasados: ${prazo.atrasados}</span>
+                            </div>
+                            <div style="height:12px;border-radius:6px;overflow:hidden;display:flex;background:#21262d;">
+                                ${pctAnt > 0 ? `<div style="width:${pctAnt}%;background:#22c55e;height:100%;"></div>` : ''}
+                                ${pctNo > 0 ? `<div style="width:${pctNo}%;background:#58a6ff;height:100%;"></div>` : ''}
+                                ${pctAt > 0 ? `<div style="width:${pctAt}%;background:#ef4444;height:100%;"></div>` : ''}
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.8rem;">
+                            <div style="flex:1;height:6px;background:#21262d;border-radius:3px;position:relative;">
+                                <div style="position:absolute;left:0;top:0;height:100%;width:${prevW}%;background:#58a6ff;border-radius:3px;"></div>
+                            </div>
+                            <span style="font-size:0.7rem;color:#58a6ff;min-width:80px;">Previsto ${prazo.previstoMedio}d</span>
+                        </div>
+                        <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.3rem;">
+                            <div style="flex:1;height:6px;background:#21262d;border-radius:3px;position:relative;">
+                                <div style="position:absolute;left:0;top:0;height:100%;width:${realW}%;background:${desvioColor};border-radius:3px;"></div>
+                            </div>
+                            <span style="font-size:0.7rem;color:${desvioColor};min-width:80px;">Realizado ${prazo.realizadoMedio}d</span>
+                        </div>
+                    </div>`;
+            } else {
+                document.getElementById('fichas-prazo-section').style.display = 'block';
+                document.getElementById('fichas-prazo-container').innerHTML = '<div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1.2rem;text-align:center;color:#8b949e;">Sem dados de prazo disponíveis (nenhum epic concluído com data de entrega definida).</div>';
+            }
+
+            // ========== 5. Distribuição por Tipo (Novo Stats + Upsell Stats) ==========
+            const ns = tech.novoStats;
+            const us = tech.upsellStats;
+            if (ns && us && (ns.total > 0 || us.total > 0)) {
+                document.getElementById('fichas-subtypes-section').style.display = 'block';
+                const types = [];
+                if (ns.total > 0) types.push({name:'Novo Cliente', ...ns});
+                if (us.total > 0) types.push({name:'Upsell/Existente', ...us});
+
+                let stHtml = '<table class="epic-detail-table"><thead><tr>' +
+                    '<th>Tipo</th><th style="text-align:center">Total</th><th style="text-align:center">Concluídos</th>' +
+                    '<th style="text-align:center">Em Aberto</th><th style="text-align:center">Taxa</th><th style="text-align:center">h/Epic</th><th>Progresso</th>' +
+                    '</tr></thead><tbody>';
+                types.forEach(s => {
+                    const open = s.total - s.completed;
+                    const pct = s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0;
+                    const barColor = pct >= 70 ? '#22c55e' : pct >= 40 ? '#facc15' : '#ef4444';
+                    stHtml += `<tr>
+                        <td style="font-weight:600;color:#e6edf3;">${s.name}</td>
+                        <td style="text-align:center">${s.total}</td>
+                        <td style="text-align:center;color:#22c55e;">${s.completed}</td>
+                        <td style="text-align:center;color:#f97316;">${open}</td>
+                        <td style="text-align:center;color:${barColor};font-weight:600;">${pct}%</td>
+                        <td style="text-align:center">${s.hoursPerEpic || 0}h</td>
+                        <td style="min-width:120px;">
+                            <div style="height:6px;background:#21262d;border-radius:3px;overflow:hidden;">
+                                <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;"></div>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+                stHtml += '</tbody></table>';
+                document.getElementById('fichas-subtypes-container').innerHTML = stHtml;
+            } else {
+                document.getElementById('fichas-subtypes-section').style.display = 'none';
+            }
+
+            // ========== 6. Análise do Coordenador (Risk Box) ==========
+            const borderColor = riskClass === 'high' ? '#ef4444' : riskClass === 'medium' ? '#facc15' : '#22c55e';
+            const bgColor = riskClass === 'high' ? 'rgba(239,68,68,0.06)' : riskClass === 'medium' ? 'rgba(250,204,21,0.06)' : 'rgba(34,197,94,0.06)';
+            const riskLabel = riskClass === 'high' ? '🔴 ALTO' : riskClass === 'medium' ? '🟡 MÉDIO' : '🟢 BAIXO';
+            const openCount = tech.openCount;
+            const horasAtivas = tech.totalHours;
+
+            // Auto-generate analysis text
+            let analysisText = `${tech.name} possui ${tech.total} epics no total, com taxa de conclusão de ${rate}%. `;
+            if (openCount > 0) {
+                analysisText += `Atualmente com ${openCount} epics abertos (${tech.board.novo} Novo, ${tech.board.upsell} Upsell) totalizando ${horasAtivas}h de carga ativa. `;
+            }
+            if (tech.overdueCount > 0) {
+                analysisText += `Atenção: ${tech.overdueCount} epic(s) vencido(s). `;
+            }
+            if (tech.zeroHoursOpen > 0) {
+                analysisText += `${tech.zeroHoursOpen} epic(s) aberto(s) sem apontamento de horas. `;
+            }
+            if (rate >= 70) {
+                analysisText += `Performance sólida com boa taxa de conclusão.`;
+            } else if (rate >= 40) {
+                analysisText += `Taxa de conclusão moderada — avaliar gargalos.`;
+            } else {
+                analysisText += `Taxa de conclusão baixa — necessita acompanhamento próximo.`;
+            }
+
+            document.getElementById('fichas-analysis-container').innerHTML = `
+                <div style="background:${bgColor};border-left:4px solid ${borderColor};border-radius:8px;padding:1.2rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+                        <h3 style="color:#e6edf3;font-size:0.9rem;margin:0;">Análise do Coordenador</h3>
+                        <span style="font-size:0.75rem;font-weight:700;color:${borderColor};">Risco: ${riskLabel}</span>
+                    </div>
+                    <p style="color:#c9d1d9;font-size:0.85rem;line-height:1.6;margin:0;">${analysisText}</p>
+                </div>`;
+
+            // ========== 7. Pontos Fortes & Riscos ==========
+            const strengths = tech.strengths || [];
+            const risks = tech.risks || [];
+            document.getElementById('fichas-sr-container').innerHTML = `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1rem;">
+                        <h3 style="color:#22c55e;font-size:0.85rem;margin-bottom:0.6rem;">💪 Pontos Fortes</h3>
+                        ${strengths.length > 0 ? strengths.map(s =>
+                            `<div style="display:flex;gap:0.4rem;padding:0.3rem 0;font-size:0.8rem;color:#c9d1d9;border-bottom:1px solid #21262d;"><span style="color:#22c55e;">✓</span><span>${s}</span></div>`
+                        ).join('') : '<div style="color:#8b949e;font-size:0.8rem;">—</div>'}
+                    </div>
+                    <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1rem;">
+                        <h3 style="color:#ef4444;font-size:0.85rem;margin-bottom:0.6rem;">⚠️ Riscos Identificados</h3>
+                        ${risks.length > 0 ? risks.map(r =>
+                            `<div style="display:flex;gap:0.4rem;padding:0.3rem 0;font-size:0.8rem;color:#c9d1d9;border-bottom:1px solid #21262d;"><span style="color:#ef4444;">!</span><span>${r}</span></div>`
+                        ).join('') : '<div style="color:#8b949e;font-size:0.8rem;">—</div>'}
+                    </div>
+                </div>`;
+        }
+
+        function renderFichas() { renderFichasGrid(); }
 
         function initDashboard() {
             document.getElementById('headerTimestamp').textContent = DATA.timestamp || '—';

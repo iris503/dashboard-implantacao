@@ -318,21 +318,37 @@ def generate_strengths_risks(tech: Dict) -> Tuple[List[str], List[str]]:
     total, completed = tech['total'], tech['completed']
     open_count = total - completed
     rate = (completed / total * 100) if total > 0 else 0
+    total_hours = tech['novoHours'] + tech['upsellHours']
 
-    strengths = [f"{int(rate)}% conclusão ({completed}/{total})"] if rate > 75 else []
-    if tech['zeroHoursOpen'] == 0:
-        strengths.append("Sem epics fantasma")
+    strengths = []
+    if rate >= 75:
+        strengths.append(f"{int(rate)}% de conclusão ({completed}/{total})")
     if tech['overdueCount'] == 0:
         strengths.append("Zero vencidos — fila saudável")
+    if tech['zeroHoursOpen'] == 0 and open_count > 0:
+        strengths.append("Todos os epics com apontamento de horas")
+    if tech['board']['novo'] > 0 and tech['board']['upsell'] > 0:
+        strengths.append(f"Mix equilibrado Novo ({tech['board']['novo']}) e Upsell ({tech['board']['upsell']})")
+    elif tech['board']['novo'] == 0 and tech['board']['upsell'] > 0:
+        strengths.append(f"Foco claro: 100% Upsell")
+    if tech['paused'] == 0 and open_count > 0:
+        strengths.append("Zero Paused — fluxo contínuo")
+    if total_hours < 100 and open_count > 0:
+        strengths.append(f"Carga leve ({total_hours:.0f}h) — disponível para absorver demandas")
 
     risks = []
     if tech['overdueCount'] > 0:
-        risks.append(f"{tech['overdueCount']} vencidos")
+        risks.append(f"{tech['overdueCount']} epic(s) vencido(s)")
     if open_count > 8:
         risks.append(f"{open_count} abertos — WIP elevado")
-    if tech['board']['novo'] > 0 and tech['board']['upsell'] > 0:
-        risks.append(f"Mix Novo ({tech['board']['novo']}) e Upsell ({tech['board']['upsell']})")
-    risks.append("Monitorar evolução")
+    if tech['zeroHoursOpen'] > 0:
+        risks.append(f"{tech['zeroHoursOpen']} epic(s) sem apontamento de horas")
+    if open_count <= 2 and total > 5:
+        risks.append("WIP baixo — capacidade ociosa")
+    if total_hours > 300:
+        risks.append(f"Carga alta ({total_hours:.0f}h) — risco de sobrecarga")
+    if not risks:
+        risks.append("Monitorar evolução da fila")
     return strengths, risks
 
 
