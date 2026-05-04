@@ -1888,7 +1888,7 @@
             ).join('');
 
             // ========== 2. Epic Table ==========
-            const epics = tech.openEpics || [];
+            const excludeStatus = ['concluído','cancelado','concluido']; const epics = (tech.openEpics || []).filter(e => !excludeStatus.includes(e.status.toLowerCase()));
             if (epics.length > 0) {
                 document.getElementById('fichas-epic-section').style.display = 'block';
                 const overdueCount = epics.filter(e => e.overdue).length;
