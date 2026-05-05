@@ -6,7 +6,7 @@ Fetches epics from Jira Cloud, processes data, injects into HTML template.
 
 import os
 import sys
-import json
+import jsonh
 import base64
 import argparse
 from datetime import datetime, timedelta
@@ -53,11 +53,11 @@ class JiraClient:
         max_results = 100
         next_page_token = None
 
-        jql = 'project = IWN AND issuetype = Epic'
+        current_year = datetime.now().strftime('%Y'); jql = f'project = IWN AND issuetype = Epic AND (created >= {current_year}-01-01 OR statusCategory != Done OR resolutiondate >= {current_year}-01-01)'
         fields = [
             'summary', 'status', 'assignee', 'customfield_10800',
             'aggregatetimespent', 'created', 'duedate', 'timetracking', 'updated',
-            'customfield_10015'
+            'customfield_10015', 'resolutiondate'
         ]
 
         while True:
