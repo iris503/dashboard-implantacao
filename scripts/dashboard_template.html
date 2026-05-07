@@ -6,7 +6,7 @@
     <title>Dashboard Performance Time | WMI Solutions</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <style>
-        * {h
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -688,11 +688,6 @@
                 </div>
 
                 <div id="overview-insights"></div>
-
-                <div class="section">
-                    
-                    
-                </div>
             </div>
         </div>
 
@@ -1152,28 +1147,6 @@
             }
             document.getElementById('overview-insights').innerHTML = insights.join('');
 
-            
-        }
-
-        function renderYasminQueue() {
-            const yasmin = DATA.yasminQueue || [];
-            if (yasmin.length === 0) {
-                document.getElementById('yasmin-queue-table').innerHTML = '<p style="text-align:center;color:#8b949e;">Nenhum item na fila Yasmin.</p>';
-                return;
-            }
-            let html = '<table><thead><tr><th>Chave</th><th>Resumo</th><th>Status</th><th>Horas</th><th>Criado</th><th>Vencimento</th></tr></thead><tbody>';
-            yasmin.forEach(item => {
-                html += `<tr>
-                    <td><a href="https://wmi-solutions.atlassian.net/browse/${item.key}" target="_blank" style="color:#06b6d4;">${item.key}</a></td>
-                    <td>${item.summary}</td>
-                    <td><span class="status-badge status-pending">${item.status}</span></td>
-                    <td>${item.hours ? formatHours(item.hours) : '—'}</td>
-                    <td>${item.created}</td>
-                    <td>${item.duedate || '—'}</td>
-                </tr>`;
-            });
-            html += '</tbody></table>';
-            document.getElementById('yasmin-queue-table').innerHTML = html;
         }
 
         function renderNovoTab() {
@@ -1551,10 +1524,6 @@
                     <div class="metric-label">Upsell Atribuído (${summary.upsellPercent}%)</div>
                 </div>
                 <div class="metric-card">
-                    
-                    <div class="metric-label"></div>
-                </div>
-                <div class="metric-card">
                     <div class="metric-value" style="color: #a78bfa;">${summary.backlogMonths.toFixed(1)} meses</div>
                     <div class="metric-label">Backlog / Capacity Equipe</div>
                 </div>
@@ -1888,7 +1857,8 @@
             ).join('');
 
             // ========== 2. Epic Table ==========
-            const excludeStatus = ['concluído','cancelado','concluido']; const epics = (tech.openEpics || []).filter(e => !excludeStatus.includes(e.status.toLowerCase()));
+            const excludeStatus = ['concluído','cancelado','concluido'];
+            const epics = (tech.openEpics || []).filter(e => !excludeStatus.includes(e.status.toLowerCase()));
             if (epics.length > 0) {
                 document.getElementById('fichas-epic-section').style.display = 'block';
                 const overdueCount = epics.filter(e => e.overdue).length;
