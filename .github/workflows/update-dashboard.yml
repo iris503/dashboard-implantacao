@@ -4,6 +4,8 @@ on:
   schedule:
     # Roda seg-sex às 08:00 (horário de Brasília = 11:00 UTC)
     - cron: '0 11 * * 1-5'
+    # Roda seg-sex às 14:00 (horário de Brasília = 17:00 UTC)
+    - cron: '0 17 * * 1-5'
   workflow_dispatch: # Permite rodar manualmente
 
 permissions:
@@ -24,16 +26,17 @@ jobs:
       - name: Instalar dependências
         run: pip install requests
 
-      - name: Gerar dashboard v3
+      - name: Gerar dashboard
         env:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          JIRA_BASE_URL: https://wmi-solutions.atlassian.net
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: python scripts/generate_dashboard_v3.py
 
       - name: Commit e push
         run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
+          git config user.name 'actions-user'
+          git config user.email 'actions@github.com'
           git add index.html
-          git diff --staged --quiet || (git commit -m "Dashboard v3 - $(date +'%d/%m/%Y %H:%M')" && git push)
+          TIMESTAMP=$(TZ='America/Sao_Paulo' date +'%d/%m/%Y %H:%M')
+          git diff --cached --quiet || git commit -m "Dashboard v3 - $TIMESTAMP"
+          git push
