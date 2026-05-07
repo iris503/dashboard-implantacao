@@ -1,15 +1,20 @@
 name: Atualizar Dashboard
 
+
 on:
   schedule:
     # Roda seg-sex Ã s 08:00 (horÃ¡rio de BrasÃ­lia = 11:00 UTC)
-    - cron: '0 11 * * 1-5'
+    - cron: '0 11 * * 1-5'→ Runs at 11:00, Monday through Friday
+
     # Roda seg-sex Ã s 14:00 (horÃ¡rio de BrasÃ­lia = 17:00 UTC)
-    - cron: '0 17 * * 1-5'
+    - cron: '0 17 * * 1-5'→ Runs at 17:00, Monday through Friday
+
   workflow_dispatch: # Permite rodar manualmente
+
 
 permissions:
   contents: write
+
 
 jobs:
   update:
@@ -18,20 +23,24 @@ jobs:
       - name: Checkout repositÃ³rio
         uses: actions/checkout@v4
 
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+
       - name: Instalar dependÃªncias
         run: pip install requests
+
 
       - name: Gerar dashboard
         env:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_TOKEN }}
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
         run: python scripts/generate_dashboard_v3.py
+
 
       - name: Commit e push
         run: |
@@ -41,3 +50,4 @@ jobs:
           TIMESTAMP=$(TZ='America/Sao_Paulo' date +'%d/%m/%Y %H:%M')
           git diff --cached --quiet || git commit -m "Dashboard v3 - $TIMESTAMP"
           git push
+
