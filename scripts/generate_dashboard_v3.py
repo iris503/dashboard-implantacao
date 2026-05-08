@@ -341,7 +341,7 @@ def generate_strengths_risks(tech: Dict) -> Tuple[List[str], List[str]]:
     if rate >= 75:
         strengths.append(f"{int(rate)}% de conclusÃ£o ({completed}/{total})")
     if tech['overdueCount'] == 0:
-        strengths.append("Zero vencidos â fila saudÃ¡vel")
+        strengths.append("Zero vencidos - fila saudÃ¡vel")
     if tech['zeroHoursOpen'] == 0 and open_count > 0:
         strengths.append("Todos os epics com apontamento de horas")
     if tech['board']['novo'] > 0 and tech['board']['upsell'] > 0:
@@ -349,21 +349,21 @@ def generate_strengths_risks(tech: Dict) -> Tuple[List[str], List[str]]:
     elif tech['board']['novo'] == 0 and tech['board']['upsell'] > 0:
         strengths.append(f"Foco claro: 100% Upsell")
     if tech['paused'] == 0 and open_count > 0:
-        strengths.append("Zero Paused â fluxo contÃ­nuo")
+        strengths.append("Zero Paused - fluxo contÃ­nuo")
     if total_hours < 100 and open_count > 0:
-        strengths.append(f"Carga leve ({total_hours:.0f}h) â disponÃ­vel para absorver demandas")
+        strengths.append(f"Carga leve ({total_hours:.0f}h) - disponÃ­vel para absorver demandas")
 
     risks = []
     if tech['overdueCount'] > 0:
         risks.append(f"{tech['overdueCount']} epic(s) vencido(s)")
     if open_count > 8:
-        risks.append(f"{open_count} abertos â WIP elevado")
+        risks.append(f"{open_count} abertos - WIP elevado")
     if tech['zeroHoursOpen'] > 0:
         risks.append(f"{tech['zeroHoursOpen']} epic(s) sem apontamento de horas")
     if open_count <= 2 and total > 5:
-        risks.append("WIP baixo â capacidade ociosa")
+        risks.append("WIP baixo - capacidade ociosa")
     if total_hours > 300:
-        risks.append(f"Carga alta ({total_hours:.0f}h) â risco de sobrecarga")
+        risks.append(f"Carga alta ({total_hours:.0f}h) - risco de sobrecarga")
     if not risks:
         risks.append("Monitorar evoluÃ§Ã£o da fila")
     return strengths, risks
@@ -505,7 +505,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
                 'status': status,
                 'hours': round(hours, 1),
                 'criado': created,
-                'dueDate': duedate or 'â'
+                'dueDate': duedate or '-'
             })
 
     # Calculate summary metrics (only open epics)
@@ -743,7 +743,7 @@ def generate_mock_data() -> Dict:
                       'desvioMedio': 37, 'antecipados': random.randint(0, 5), 'noPrazo': random.randint(0, 3),
                       'atrasados': random.randint(0, 10), 'pctNoPrazo': random.randint(10, 60)},
             'strengths': [f"{rate}% conclusÃ£o ({completed}/{total})", "Sem epics fantasma"],
-            'risks': [f"{overdue} vencidos", f"{open_count} abertos â WIP elevado"],
+            'risks': [f"{overdue} vencidos", f"{open_count} abertos - WIP elevado"],
             'novoStats': {'total': novo + random.randint(0, 3), 'completed': random.randint(0, novo),
                           'inProgress': random.randint(0, max(1, novo)), 'paused': 0,
                           'pending': random.randint(0, 2), 'waiting': 0,
