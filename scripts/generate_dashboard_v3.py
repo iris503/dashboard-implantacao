@@ -196,7 +196,12 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         summary = fields.get('summary', 'Unknown')
         key = epic.get('key', '')
         status = fields.get('status', {}).get('name', 'Unknown')
-        status_cat = get_status_category(status)
+        # Use Jira statusCategory.key as primary indicator (avoids encoding issues with accented chars)
+        jira_status_cat_key = fields.get('status', {}).get('statusCategory', {}).get('key', '')
+        if jira_status_cat_key == 'done':
+            status_cat = 'completed'
+        else:
+            status_cat = get_status_category(status)
         assignee = fields.get('assignee')
         created = parse_date(fields.get('created', ''))
         duedate = parse_date(fields.get('duedate', ''))
