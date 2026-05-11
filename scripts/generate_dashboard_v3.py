@@ -133,8 +133,10 @@ def get_status_category(status: str) -> str:
         return 'em_andamento'
     elif s in STATUS_PAUSED:
         return 'paused'
-    elif s in STATUS_PENDENTE or s in STATUS_WAITING:
+    elif s in STATUS_PENDENTE:
         return 'pendente'
+    elif s in STATUS_WAITING:
+        return 'paused'
     else:
         return 'pendente'
 
@@ -198,7 +200,10 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         status = fields.get('status', {}).get('name', 'Unknown')
         # Use Jira statusCategory.key as primary indicator (avoids encoding issues with accented chars)
         jira_status_cat_key = fields.get('status', {}).get('statusCategory', {}).get('key', '')
-        if jira_status_cat_key == 'done':
+        # Check specific status overrides first (before broad category)
+        if status.strip().upper() == 'AGUARDANDO CLIENTE' or status.strip() == 'Paused':
+            status_cat = 'paused'
+        elif jira_status_cat_key == 'done':
             status_cat = 'completed'
         elif jira_status_cat_key == 'indeterminate':
             status_cat = 'em_andamento'
