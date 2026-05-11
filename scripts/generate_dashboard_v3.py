@@ -7,7 +7,7 @@ Fetches epics from Jira Cloud, processes data, injects into HTML template.
 import os
 import sys
 import json
-import base64h
+import base64
 import argparse
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
