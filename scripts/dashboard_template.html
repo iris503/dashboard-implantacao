@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <style>
         * {
-            margin: 0;
+            margin: 0;h
             padding: 0;
             box-sizing: border-box;
         }
@@ -1208,7 +1208,7 @@
                 data: {
                     labels: techNames,
                     datasets: [
-                        { label: 'Concluído', data: techWithNovo.map(t => t.completed), backgroundColor: COLORS.success, borderRadius: 4 },
+                        { label: 'Concluído', data: techWithNovo.map(t => t.novoStats.completed), backgroundColor: COLORS.success, borderRadius: 4 },
                         { label: 'Aberto', data: techWithNovo.map(t => t.board.novo), backgroundColor: COLORS.novo, borderRadius: 4 }
                     ]
                 },
@@ -1353,7 +1353,7 @@
                 data: {
                     labels: techNames,
                     datasets: [
-                        { label: 'Concluído', data: techWithUpsell.map(t => t.completed), backgroundColor: COLORS.success, borderRadius: 4 },
+                        { label: 'Concluído', data: techWithUpsell.map(t => t.upsellStats.completed), backgroundColor: COLORS.success, borderRadius: 4 },
                         { label: 'Aberto', data: techWithUpsell.map(t => t.board.upsell), backgroundColor: COLORS.upsell, borderRadius: 4 }
                     ]
                 },
@@ -1377,7 +1377,7 @@
                 data: {
                     labels: techNames,
                     datasets: [
-                        { label: 'Concluído', data: techWithUpsell.map(t => t.completed), backgroundColor: COLORS.success, borderRadius: 4 },
+                        { label: 'Concluído', data: techWithUpsell.map(t => t.upsellStats.completed), backgroundColor: COLORS.success, borderRadius: 4 },
                         { label: 'Em Andamento', data: techWithUpsell.map(t => t.inProgress), backgroundColor: COLORS.novo, borderRadius: 4 },
                         { label: 'Pendente', data: techWithUpsell.map(t => t.pending), backgroundColor: COLORS.danger, borderRadius: 4 }
                     ]
