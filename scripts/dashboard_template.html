@@ -636,7 +636,7 @@
                     <span class="badge" id="headerTechCount">—</span>
                 </div>
                 <div class="meta-item">
-                    <span>Total Epics Ativos:</span>
+                    <span>Total Epics em Aberto:</span>
                     <span class="badge" id="headerEpicCount">—</span>
                 </div>
             </div>
@@ -946,13 +946,13 @@
         }
 
         function renderOverview() {
-            const totHoras = DATA.technicians.reduce((s, t) => s + t.hours, 0);
+            const totHoras = DATA.technicians.reduce((s, t) => s + t.novoHours + t.upsellHours, 0);
             const novoHoras = DATA.technicians.reduce((s, t) => s + t.novoHours, 0);
             const upsellHoras = DATA.technicians.reduce((s, t) => s + t.upsellHours, 0);
             const pctNovo = totHoras > 0 ? Math.round((novoHoras / totHoras) * 100) : 0;
             const pctUpsell = 100 - pctNovo;
 
-            const totEpics = DATA.technicians.reduce((s, t) => s + t.total, 0);
+            const totEpics = DATA.technicians.reduce((s, t) => s + t.board.novo + t.board.upsell, 0);
             const totNovoEpics = DATA.technicians.reduce((s, t) => s + t.board.novo, 0);
             const totUpsellEpics = DATA.technicians.reduce((s, t) => s + t.board.upsell, 0);
             const avgHPerNovoEpic = totNovoEpics > 0 ? (novoHoras / totNovoEpics).toFixed(1) : 0;
@@ -961,7 +961,7 @@
             document.getElementById('overview-kpi-row1').innerHTML = `
                 <div class="metric-card">
                     <div class="metric-value">${formatHours(totHoras)}</div>
-                    <div class="metric-label">Total Horas Ativas</div>
+                    <div class="metric-label">Total Horas em Aberto</div>
                 </div>
                 <div class="metric-card" style="border-left: 3px solid #06b6d4;">
                     <div class="metric-value" style="color:#06b6d4;">${formatHours(novoHoras)}</div>
@@ -984,7 +984,7 @@
             document.getElementById('overview-kpi-row2').innerHTML = `
                 <div class="metric-card">
                     <div class="metric-value">${totEpics}</div>
-                    <div class="metric-label">Total Epics Ativos</div>
+                    <div class="metric-label">Total Epics em Aberto</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-value">${totNovoEpics}</div>
