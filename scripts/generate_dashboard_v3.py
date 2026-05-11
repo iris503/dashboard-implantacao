@@ -7,7 +7,7 @@ Fetches epics from Jira Cloud, processes data, injects into HTML template.
 import os
 import sys
 import json
-import base64
+import base64h
 import argparse
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
@@ -200,6 +200,8 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         jira_status_cat_key = fields.get('status', {}).get('statusCategory', {}).get('key', '')
         if jira_status_cat_key == 'done':
             status_cat = 'completed'
+        elif jira_status_cat_key == 'indeterminate':
+            status_cat = 'em_andamento'
         else:
             status_cat = get_status_category(status)
         assignee = fields.get('assignee')
