@@ -24,7 +24,7 @@ IMPLEMENTERS = ['Jessica', 'Daniel', 'Fabio', 'Nino', 'Jorge', 'Anderson', 'Luiz
 EXCLUDE_ASSIGNEES = {'Yasmin', 'Michael', 'Iris'}
 
 # Status mappings
-STATUS_COMPLETED = {'ConcluÃÂ­do', 'Cancelado'}
+STATUS_COMPLETED = {'ConcluÃÂÃÂ­do', 'Cancelado'}
 STATUS_EM_ANDAMENTO = {'Em andamento'}
 STATUS_PAUSED = {'Paused'}
 STATUS_PENDENTE = {'Tarefas pendentes', 'Escalado'}
@@ -126,7 +126,7 @@ def get_status_category(status: str) -> str:
     if s in STATUS_COMPLETED:
         return 'completed'
     # Fallback: normalize accents for comparison
-    s_lower = s.lower().replace('ÃÂ­','i').replace('ÃÂº','u')
+    s_lower = s.lower().replace('ÃÂÃÂ­','i').replace('ÃÂÃÂº','u')
     if s_lower in ('concluido', 'cancelado', 'done', 'closed'):
         return 'completed'
     if s in STATUS_EM_ANDAMENTO:
@@ -156,7 +156,7 @@ def extract_implementer_name(assignee: Optional[Dict]) -> Optional[str]:
 
 def is_cloud_migration(summary: str) -> bool:
     """Check if epic is a cloud migration"""
-    keywords = ['Migration Module', 'Autolac Cloud', 'MigraÃÂ§ÃÂ£o']
+    keywords = ['Migration Module', 'Autolac Cloud', 'MigraÃÂÃÂ§ÃÂÃÂ£o']
     summary_lower = summary.lower()
     return any(kw.lower() in summary_lower for kw in keywords)
 
@@ -214,7 +214,8 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         duedate = parse_date(fields.get('duedate', ''))
 
         # Filter: only epics created in current year (2026+)
-        if created and created < f'{current_year}-01-01':
+        filter_year = datetime.now().strftime('%Y')
+        if created and created < f'{filter_year}-01-01':
             continue
         updated = parse_date(fields.get('updated', ''))
         time_spent = fields.get('aggregatetimespent', 0) or 0
@@ -350,9 +351,9 @@ def generate_strengths_risks(tech: Dict) -> Tuple[List[str], List[str]]:
 
     strengths = []
     if rate >= 75:
-        strengths.append(f"{int(rate)}% de conclusÃÂ£o ({completed}/{total})")
+        strengths.append(f"{int(rate)}% de conclusÃÂÃÂ£o ({completed}/{total})")
     if tech['overdueCount'] == 0:
-        strengths.append("Zero vencidos - fila saudÃÂ¡vel")
+        strengths.append("Zero vencidos - fila saudÃÂÃÂ¡vel")
     if tech['zeroHoursOpen'] == 0 and open_count > 0:
         strengths.append("Todos os epics com apontamento de horas")
     if tech['board']['novo'] > 0 and tech['board']['upsell'] > 0:
@@ -360,9 +361,9 @@ def generate_strengths_risks(tech: Dict) -> Tuple[List[str], List[str]]:
     elif tech['board']['novo'] == 0 and tech['board']['upsell'] > 0:
         strengths.append(f"Foco claro: 100% Upsell")
     if tech['paused'] == 0 and open_count > 0:
-        strengths.append("Zero Paused - fluxo contÃÂ­nuo")
+        strengths.append("Zero Paused - fluxo contÃÂÃÂ­nuo")
     if total_hours < 100 and open_count > 0:
-        strengths.append(f"Carga leve ({total_hours:.0f}h) - disponÃÂ­vel para absorver demandas")
+        strengths.append(f"Carga leve ({total_hours:.0f}h) - disponÃÂÃÂ­vel para absorver demandas")
 
     risks = []
     if tech['overdueCount'] > 0:
@@ -376,7 +377,7 @@ def generate_strengths_risks(tech: Dict) -> Tuple[List[str], List[str]]:
     if total_hours > 300:
         risks.append(f"Carga alta ({total_hours:.0f}h) - risco de sobrecarga")
     if not risks:
-        risks.append("Monitorar evoluÃÂ§ÃÂ£o da fila")
+        risks.append("Monitorar evoluÃÂÃÂ§ÃÂÃÂ£o da fila")
     return strengths, risks
 
 
@@ -393,7 +394,7 @@ def detect_porte(summary: str) -> Tuple[str, int, int]:
 
     if 'large' in summary_lower or 'grande' in summary_lower:
         return ('Large', 400, 120)
-    elif 'medium' in summary_lower or 'mÃÂ©dio' in summary_lower:
+    elif 'medium' in summary_lower or 'mÃÂÃÂ©dio' in summary_lower:
         return ('Medium', 200, 90)
     elif 'small' in summary_lower or 'pequeno' in summary_lower:
         return ('Small', 150, 60)
@@ -425,7 +426,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         gasto = time_spent / 3600
 
         # Skip completed/cancelled epics (use category 'done' to avoid encoding issues)
-        if status_cat == 'done' or status.lower().replace('ÃÂ­','i') in ('concluido', 'cancelado'):
+        if status_cat == 'done' or status.lower().replace('ÃÂÃÂ­','i') in ('concluido', 'cancelado'):
             continue
 
         # Detect porte
@@ -486,7 +487,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         fields = epic.get('fields', {})
         status = fields.get('status', {}).get('name', 'Unknown')
         status_cat = fields.get('status', {}).get('statusCategory', {}).get('key', '')
-        if status_cat == 'done' or status.lower().replace('ÃÂ­','i') in ('concluido', 'cancelado'):
+        if status_cat == 'done' or status.lower().replace('ÃÂÃÂ­','i') in ('concluido', 'cancelado'):
             continue
         key = epic.get('key', '')
         summary = fields.get('summary', '')
@@ -506,7 +507,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
                 tipo = 'Interlac'
             elif 'nota fiscal' in summary.lower() or 'nf' in summary.lower():
                 tipo = 'NF'
-            elif 'cloud' in summary.lower() or 'migraÃÂ§ÃÂ£o' in summary.lower():
+            elif 'cloud' in summary.lower() or 'migraÃÂÃÂ§ÃÂÃÂ£o' in summary.lower():
                 tipo = 'Cloud'
 
             fila_yasmin.append({
@@ -564,7 +565,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         novos_str = f"{novos_em_andamento} em andamento" if novos_em_andamento > 0 else "0"
 
         ocupacao = (total_rest / (CAPACITY_MONTHLY * 3)) * 100 if total_rest > 0 else 0
-        risco = 'ALTO' if ocupacao > 100 else 'MÃÂDIO' if ocupacao > 50 else 'BAIXO'
+        risco = 'ALTO' if ocupacao > 100 else 'MÃÂÃÂDIO' if ocupacao > 50 else 'BAIXO'
 
         capacity_table.append({
             'name': tech_name,
@@ -587,16 +588,16 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
     overdue_novos = sum(1 for e in novo_open if e['statusPrazoType'] == 'overdue')
     if overdue_novos > 0:
         insights.append({
-            'title': f'{overdue_novos} Novo epics com porte estÃÂ£o ATRASADOS',
-            'text': f'Dos epics Novo com porte definido, {overdue_novos} jÃÂ¡ ultrapassaram o prazo WMI.',
+            'title': f'{overdue_novos} Novo epics com porte estÃÂÃÂ£o ATRASADOS',
+            'text': f'Dos epics Novo com porte definido, {overdue_novos} jÃÂÃÂ¡ ultrapassaram o prazo WMI.',
             'level': 'danger'
         })
 
     high_risk_techs = [t['name'] for t in capacity_table if t['risco'] == 'ALTO']
     if high_risk_techs:
         insights.append({
-            'title': f'{len(high_risk_techs)} tÃÂ©cnico(s) acima da capacidade trimestral',
-            'text': f'{", ".join(high_risk_techs)} tÃÂªm ocupaÃÂ§ÃÂ£o >100%.',
+            'title': f'{len(high_risk_techs)} tÃÂÃÂ©cnico(s) acima da capacidade trimestral',
+            'text': f'{", ".join(high_risk_techs)} tÃÂÃÂªm ocupaÃÂÃÂ§ÃÂÃÂ£o >100%.',
             'level': 'danger'
         })
 
@@ -604,15 +605,15 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
     if parallel_risk:
         insights.append({
             'title': f'Paralelismo no limite: {", ".join(parallel_risk)}',
-            'text': 'Tocar 3 Novos simultÃÂ¢neos com 2-4h/dia cada pode pressionar a agenda.',
+            'text': 'Tocar 3 Novos simultÃÂÃÂ¢neos com 2-4h/dia cada pode pressionar a agenda.',
             'level': 'warning'
         })
 
     available_techs = [t['name'] for t in capacity_table if t['ocupacao'] < 30]
     if available_techs:
         insights.append({
-            'title': f'Capacidade disponÃÂ­vel: {", ".join(available_techs)}',
-            'text': f'Estes tÃÂ©cnicos tÃÂªm espaÃÂ§o para absorver mais Novos.',
+            'title': f'Capacidade disponÃÂÃÂ­vel: {", ".join(available_techs)}',
+            'text': f'Estes tÃÂÃÂ©cnicos tÃÂÃÂªm espaÃÂÃÂ§o para absorver mais Novos.',
             'level': 'success'
         })
 
@@ -752,7 +753,7 @@ def generate_mock_data() -> Dict:
             'prazo': {'epics': random.randint(5, 20), 'previstoMedio': 44, 'realizadoMedio': 81,
                       'desvioMedio': 37, 'antecipados': random.randint(0, 5), 'noPrazo': random.randint(0, 3),
                       'atrasados': random.randint(0, 10), 'pctNoPrazo': random.randint(10, 60)},
-            'strengths': [f"{rate}% conclusÃÂ£o ({completed}/{total})", "Sem epics fantasma"],
+            'strengths': [f"{rate}% conclusÃÂÃÂ£o ({completed}/{total})", "Sem epics fantasma"],
             'risks': [f"{overdue} vencidos", f"{open_count} abertos - WIP elevado"],
             'novoStats': {'total': novo + random.randint(0, 3), 'completed': random.randint(0, novo),
                           'inProgress': random.randint(0, max(1, novo)), 'paused': 0,
@@ -780,19 +781,19 @@ def generate_mock_data() -> Dict:
         'capacityTable': [
             {'name': 'Anderson', 'epicsAbertos': '7 (4N + 3U)', 'horasNovo': 540.0, 'horasUpsell': 6.0, 'totalRestante': 546.0, 'meses': 3.9, 'novosSimultaneos': '2 em andamento', 'ocupacao': 130.0, 'risco': 'ALTO'},
             {'name': 'Luiz', 'epicsAbertos': '4 (3N + 1U)', 'horasNovo': 537.0, 'horasUpsell': 2.0, 'totalRestante': 539.0, 'meses': 3.9, 'novosSimultaneos': '3 em andamento', 'ocupacao': 128.0, 'risco': 'ALTO'},
-            {'name': 'Jorge', 'epicsAbertos': '8 (3N + 5U)', 'horasNovo': 326.0, 'horasUpsell': 22.0, 'totalRestante': 348.0, 'meses': 2.5, 'novosSimultaneos': '3 em andamento', 'ocupacao': 83.0, 'risco': 'MÃÂDIO'},
+            {'name': 'Jorge', 'epicsAbertos': '8 (3N + 5U)', 'horasNovo': 326.0, 'horasUpsell': 22.0, 'totalRestante': 348.0, 'meses': 2.5, 'novosSimultaneos': '3 em andamento', 'ocupacao': 83.0, 'risco': 'MÃÂÃÂDIO'},
         ],
         'backlogNovo': [
-            {'key': 'IWN-826', 'summary': 'DRA TÃÂNIA', 'assignee': 'Nino', 'porte': 'Large', 'status': 'Em andamento', 'gasto': 483.9, 'meta': 400.0, 'restante': 40.0, 'progresso': 1.21, 'criacao': '2025-10-10', 'prazoWmi': '2026-02-07', 'statusPrazo': '+72 dias', 'statusPrazoType': 'overdue'},
+            {'key': 'IWN-826', 'summary': 'DRA TÃÂÃÂNIA', 'assignee': 'Nino', 'porte': 'Large', 'status': 'Em andamento', 'gasto': 483.9, 'meta': 400.0, 'restante': 40.0, 'progresso': 1.21, 'criacao': '2025-10-10', 'prazoWmi': '2026-02-07', 'statusPrazo': '+72 dias', 'statusPrazoType': 'overdue'},
         ],
         'filaYasmin': [
             {'key': 'IWN-3256', 'summary': 'VITALABOR - Fila / Interlac', 'tipo': 'Interlac', 'status': 'Em andamento', 'hours': 49.3, 'criado': '2025-12-11', 'dueDate': '2026-01-16', 'sugestao': 'Daniel / Fabio'},
         ],
         'backlogInsights': [
-            {'title': '8 Novo epics com porte estÃÂ£o ATRASADOS', 'text': 'Dos epics Novo com porte definido, 8 jÃÂ¡ ultrapassaram o prazo WMI.', 'level': 'danger'},
+            {'title': '8 Novo epics com porte estÃÂÃÂ£o ATRASADOS', 'text': 'Dos epics Novo com porte definido, 8 jÃÂÃÂ¡ ultrapassaram o prazo WMI.', 'level': 'danger'},
             {'title': 'Anderson e Luiz Neto: 3.9 meses de backlog cada', 'text': 'Acima da capacidade trimestral (130% e 128%).', 'level': 'danger'},
-            {'title': 'Paralelismo no limite', 'text': 'Luiz, Jorge e Nino tocam 3 Novos simultÃÂ¢neos.', 'level': 'warning'},
-            {'title': 'Capacidade disponÃÂ­vel', 'text': 'Daniel e Fabio tÃÂªm espaÃÂ§o para absorver mais Novos.', 'level': 'success'},
+            {'title': 'Paralelismo no limite', 'text': 'Luiz, Jorge e Nino tocam 3 Novos simultÃÂÃÂ¢neos.', 'level': 'warning'},
+            {'title': 'Capacidade disponÃÂÃÂ­vel', 'text': 'Daniel e Fabio tÃÂÃÂªm espaÃÂÃÂ§o para absorver mais Novos.', 'level': 'success'},
         ]
     }
 
@@ -803,7 +804,7 @@ def generate_mock_data() -> Dict:
                          'created': (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d'),
                          'duedate': (datetime.now() + timedelta(days=5)).strftime('%Y-%m-%d')}],
         'migracaoCloud': [{'key': 'IWN-3779', 'summary': 'Cloud Migration',
-                           'assignee': 'Anderson', 'status': 'ConcluÃÂ­do', 'hours': 47.0}],
+                           'assignee': 'Anderson', 'status': 'ConcluÃÂÃÂ­do', 'hours': 47.0}],
         'novoSummary': {'total': 37, 'completed': 19, 'inProgress': 13, 'paused': 0, 'pending': 5,
                         'totalHours': 3264.0, 'activeHours': 1019.0, 'avgHoursPerEpic': 88.2},
         'upsellSummary': {'total': 185, 'completed': 132, 'inProgress': 40, 'paused': 8, 'pending': 5,
