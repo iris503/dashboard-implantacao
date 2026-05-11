@@ -220,6 +220,8 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         updated = parse_date(fields.get('updated', ''))
         time_spent = fields.get('aggregatetimespent', 0) or 0
         hours = time_spent / 3600 if time_spent else 0.0
+        time_remaining = fields.get('aggregatetimeestimate', 0) or 0
+        remaining_hours = time_remaining / 3600 if time_remaining else 0.0
         classification = classify_epic(epic)
 
         implementer = extract_implementer_name(assignee)
@@ -282,10 +284,10 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         if is_open:
             if classification == 'Novo':
                 tech['board']['novo'] += 1
-                tech['novoHours'] += hours
+                tech['novoHours'] += remaining_hours
             else:
                 tech['board']['upsell'] += 1
-                tech['upsellHours'] += hours
+                tech['upsellHours'] += remaining_hours
 
             # Check overdue
             is_overdue = False
