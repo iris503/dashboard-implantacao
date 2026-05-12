@@ -284,10 +284,12 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         if is_open:
             if classification == 'Novo':
                 tech['board']['novo'] += 1
-                tech['novoHours'] += remaining_hours
+                if created >= '2026-04-01':
+                    tech['novoHours'] += hours
             else:
                 tech['board']['upsell'] += 1
-                tech['upsellHours'] += remaining_hours
+                if created >= '2026-04-01':
+                    tech['upsellHours'] += hours
 
             # Check overdue
             is_overdue = False
