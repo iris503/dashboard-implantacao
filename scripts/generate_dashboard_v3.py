@@ -6,7 +6,7 @@ Fetches epics from Jira Cloud, processes data, injects into HTML template.
 
 import os
 import sys
-import json
+import jsonh
 import base64
 import argparse
 from datetime import datetime, timedelta
@@ -213,10 +213,6 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         created = parse_date(fields.get('created', ''))
         duedate = parse_date(fields.get('duedate', ''))
 
-        # Filter: only epics created in current year (2026+)
-        filter_year = datetime.now().strftime('%Y')
-        if created and created < f'{filter_year}-01-01':
-            continue
         updated = parse_date(fields.get('updated', ''))
         time_spent = fields.get('aggregatetimespent', 0) or 0
         hours = time_spent / 3600 if time_spent else 0.0
