@@ -63,7 +63,7 @@ class JiraClient:
         )
         fields = [
             'summary', 'status', 'assignee', 'customfield_10800',
-            'aggregatetimespent', 'created', 'duedate', 'timetracking', 'updated',
+            'aggregatetimespent', 'aggregatetimeestimate', 'created', 'duedate', 'timetracking', 'updated',
             'customfield_10015', 'resolutiondate'
         ]
 
