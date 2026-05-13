@@ -6,7 +6,7 @@ Fetches epics from Jira Cloud, processes data, injects into HTML template.
 
 import os
 import sys
-import json
+import jsonh
 import base64
 import argparse
 from datetime import datetime, timedelta
@@ -119,25 +119,79 @@ class JiraClient:
 
 
 def fetch_q2_hours(client, epics: List[Dict], since_date: str) -> Dict[str, float]:
-    """Fetch worklog hours since a date for each epic, returns {key: hours}"""
-    q2_hours = {}
-    for epic in epics:
-        key = epic['key']
+    """Fetch worklog hours since a date from ALL issues, mapped to parent epics"""
+    epic_keys = {e['key'] for e in epics}
+    q2_hours = {e['key']: 0.0 for e in epics}
+
+    # Step 1: Search all issues with worklogs in Q2
+    jql = f'project = IWN AND worklogDate >= "{since_date}" ORDER BY key'
+    issues = []
+    start_at = 0
+    while True:
+        url = f"{client.base_url}/rest/api/3/search"
+        params = {'jql': jql, 'startAt': start_at, 'maxResults': 100, 'fields': 'key,parent,issuetype'}
+        response = requests.get(url, headers=client.headers, params=params, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        issues.extend(data.get('issues', []))
+        if start_at + data.get('maxResults', 100) >= data.get('total', 0):
+            break
+        start_at += data.get('maxResults', 100)
+
+    print(f"Found {len(issues)} issues with Q2 worklogs", file=sys.stderr)
+
+    # Step 2: Map each issue to its parent epic
+    issue_epic_map = {}
+    unknown_parents = {}
+
+    for issue in issues:
+        key = issue['key']
+        fields = issue.get('fields', {})
+        issue_type = fields.get('issuetype', {}).get('name', '')
+        parent_obj = fields.get('parent')
+        parent_key = parent_obj.get('key', '') if parent_obj else ''
+
+        if key in epic_keys or issue_type == 'Epic':
+            issue_epic_map[key] = key
+        elif parent_key in epic_keys:
+            issue_epic_map[key] = parent_key
+        elif parent_key:
+            if parent_key not in unknown_parents:
+                unknown_parents[parent_key] = []
+            unknown_parents[parent_key].append(key)
+
+    # Resolve subtasks whose parent is a story under an epic
+    if unknown_parents:
+        for pk in list(unknown_parents.keys()):
+            try:
+                url = f"{client.base_url}/rest/api/3/issue/{pk}"
+                resp2 = requests.get(url, headers=client.headers, params={'fields': 'parent'}, timeout=30)
+                resp2.raise_for_status()
+                gp = resp2.json().get('fields', {}).get('parent')
+                if gp and gp.get('key') in epic_keys:
+                    for ck in unknown_parents[pk]:
+                        issue_epic_map[ck] = gp['key']
+            except Exception:
+                pass
+
+    mapped = sum(1 for v in issue_epic_map.values() if v)
+    print(f"Mapped {mapped}/{len(issues)} issues to epics", file=sys.stderr)
+
+    # Step 3: Fetch worklogs for each mapped issue
+    for issue in issues:
+        key = issue['key']
+        epic_key = issue_epic_map.get(key)
+        if not epic_key:
+            continue
         try:
             wl = client.get_epic_worklogs(key)
-            total_seconds = sum(
-                w.get('timeSpentSeconds', 0)
-                for w in wl
-                if w.get('started', '')[:10] >= since_date
-            )
-            q2_hours[key] = total_seconds / 3600
+            for w in wl:
+                if w.get('started', '')[:10] >= since_date:
+                    q2_hours[epic_key] = q2_hours.get(epic_key, 0.0) + w.get('timeSpentSeconds', 0) / 3600
         except Exception as e:
             print(f"Warning: Could not fetch worklogs for {key}: {e}", file=sys.stderr)
-            time_spent = epic.get('fields', {}).get('aggregatetimespent', 0) or 0
-            q2_hours[key] = time_spent / 3600
+
     return q2_hours
-
-
 def classify_epic(epic: Dict) -> str:
     """Classify epic as Novo or Upsell based on customfield_10800"""
     fields = epic.get('fields', {})
