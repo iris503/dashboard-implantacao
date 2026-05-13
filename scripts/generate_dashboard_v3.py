@@ -128,7 +128,7 @@ def fetch_q2_hours(client, epics: List[Dict], since_date: str) -> Dict[str, floa
     issues = []
     start_at = 0
     while True:
-        url = f"{client.base_url}/rest/api/3/search"
+        url = f"{client.base_url}/rest/api/3/search/jql"
         params = {'jql': jql, 'startAt': start_at, 'maxResults': 100, 'fields': 'key,parent,issuetype'}
         response = requests.get(url, headers=client.headers, params=params, timeout=30)
         response.raise_for_status()
