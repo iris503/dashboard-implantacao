@@ -283,7 +283,7 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
                    for impl in IMPLEMENTERS}
     yasmin_queue = []
     cloud_migrations = []
-
+    excluded_open_hours = 0.0  # Hours from non-implementer assignees on open epics
 
     # Process each epic
     for epic in epics:
@@ -323,6 +323,9 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
 
         # Route to yasmin queue if needed
         if not implementer or implementer in EXCLUDE_ASSIGNEES:
+            # Accumulate hours from excluded assignees on open epics for global KPI
+            if is_open:
+                excluded_open_hours += hours
             if status_cat in ('pendente', 'waiting') or not implementer:
                 yasmin_queue.append({
                     'key': key,
@@ -345,7 +348,8 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         # Update technician counts
         tech = technicians[implementer]
         tech['total'] += 1
-        tech['hours'] += hours
+        if is_open:
+            tech['hours'] += hours  # Only open epics for hour KPIs
 
         if status_cat == 'completed':
             tech['completed'] += 1
@@ -361,7 +365,8 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         # Track per-type stats (novo vs upsell breakdown)
         type_key = 'novoStats' if classification == 'Novo' else 'upsellStats'
         tech[type_key]['total'] += 1
-        tech[type_key]['hours'] += hours
+        if is_open:
+            tech[type_key]['hours'] += hours  # Only open epics
         if status_cat == 'completed':
             tech[type_key]['completed'] += 1
         elif status_cat == 'em_andamento':
@@ -800,6 +805,7 @@ def generate_dashboard_data(epics: List[Dict]) -> Dict:
         'migracaoCloud': cloud_migrations,
         'novoSummary': novo_summary,
         'upsellSummary': upsell_summary,
+        'excludedOpenHours': round(excluded_open_hours, 1),
         'backlogSummary': backlog_data['backlogSummary'],
         'capacityTable': backlog_data['capacityTable'],
         'backlogNovo': backlog_data['backlogNovo'],
