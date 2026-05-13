@@ -126,17 +126,19 @@ def fetch_q2_hours(client, epics: List[Dict], since_date: str) -> Dict[str, floa
     # Step 1: Search all issues with worklogs in Q2
     jql = f'project = IWN AND worklogDate >= "{since_date}" ORDER BY key'
     issues = []
-    start_at = 0
+    next_page_token = None
     while True:
         url = f"{client.base_url}/rest/api/3/search/jql"
-        params = {'jql': jql, 'startAt': start_at, 'maxResults': 100, 'fields': 'key,parent,issuetype'}
+        params = {'jql': jql, 'maxResults': 100, 'fields': 'key,parent,issuetype'}
+        if next_page_token:
+            params['nextPageToken'] = next_page_token
         response = requests.get(url, headers=client.headers, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
         issues.extend(data.get('issues', []))
-        if start_at + data.get('maxResults', 100) >= data.get('total', 0):
+        next_page_token = data.get('nextPageToken')
+        if not next_page_token:
             break
-        start_at += data.get('maxResults', 100)
 
     print(f"Found {len(issues)} issues with Q2 worklogs", file=sys.stderr)
 
