@@ -192,6 +192,9 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
     yasmin_queue = []
     cloud_migrations = []
 
+    # Hours cutoff: only count hours for epics created from Q2 (01/04) onwards
+    hours_cutoff = f'{datetime.now().strftime("%Y")}-04-01'
+
     # Process each epic
     for epic in epics:
         fields = epic.get('fields', {})
@@ -226,6 +229,10 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         # Determine if open
         is_open = status_cat != 'completed'
 
+        # Hours filtering: older epics tracked for board/status but excluded from hour KPIs
+        include_hours = not created or created >= hours_cutoff
+        kpi_hours = hours if include_hours else 0.0
+
         # Route to yasmin queue if needed
         if not implementer or implementer in EXCLUDE_ASSIGNEES:
             if status_cat in ('pendente', 'waiting') or not implementer:
@@ -250,7 +257,7 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         # Update technician counts
         tech = technicians[implementer]
         tech['total'] += 1
-        tech['hours'] += hours
+        tech['hours'] += kpi_hours
 
         if status_cat == 'completed':
             tech['completed'] += 1
@@ -266,7 +273,7 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         # Track per-type stats (novo vs upsell breakdown)
         type_key = 'novoStats' if classification == 'Novo' else 'upsellStats'
         tech[type_key]['total'] += 1
-        tech[type_key]['hours'] += hours
+        tech[type_key]['hours'] += kpi_hours
         if status_cat == 'completed':
             tech[type_key]['completed'] += 1
         elif status_cat == 'em_andamento':
@@ -278,9 +285,9 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
 
         # Accumulate hours for ALL epics (open + closed) to match Tempo
         if classification == 'Novo':
-            tech['novoHours'] += hours
+            tech['novoHours'] += kpi_hours
         else:
-            tech['upsellHours'] += hours
+            tech['upsellHours'] += kpi_hours
 
         # Track board classification (open epics only)
         if is_open:
