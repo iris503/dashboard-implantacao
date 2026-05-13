@@ -371,11 +371,12 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         elif status_cat in ('pendente', 'waiting'):
             tech[type_key]['pending'] += 1
 
-        # Accumulate hours for ALL epics (open + closed) to match Tempo
-        if classification == 'Novo':
-            tech['novoHours'] += hours
-        else:
-            tech['upsellHours'] += hours
+        # Accumulate hours only for OPEN epics (to match Jira time tracking report)
+        if is_open:
+            if classification == 'Novo':
+                tech['novoHours'] += hours
+            else:
+                tech['upsellHours'] += hours
 
         # Track board classification (open epics only)
         if is_open:
