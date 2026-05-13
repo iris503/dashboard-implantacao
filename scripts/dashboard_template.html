@@ -946,7 +946,9 @@
         }
 
         function renderOverview() {
-            const totHoras = DATA.technicians.reduce((s, t) => s + t.novoHours + t.upsellHours, 0);
+            const techHoras = DATA.technicians.reduce((s, t) => s + t.novoHours + t.upsellHours, 0);
+            const excludedHoras = DATA.excludedOpenHours || 0;
+            const totHoras = techHoras + excludedHoras;
             const novoHoras = DATA.technicians.reduce((s, t) => s + t.novoHours, 0);
             const upsellHoras = DATA.technicians.reduce((s, t) => s + t.upsellHours, 0);
             const pctNovo = totHoras > 0 ? Math.round((novoHoras / totHoras) * 100) : 0;
