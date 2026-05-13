@@ -309,7 +309,7 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         updated = parse_date(fields.get('updated', ''))
         time_spent = fields.get('aggregatetimespent', 0) or 0
         total_hours = time_spent / 3600 if time_spent else 0.0
-        hours = epic.get('_q2_hours', total_hours)  # Use Q2 worklog hours
+        hours = epic.get('_q2_hours', 0.0)  # Use Q2 worklog hours only
         time_remaining = fields.get('aggregatetimeestimate', 0) or 0
         remaining_hours = time_remaining / 3600 if time_remaining else 0.0
         classification = classify_epic(epic)
