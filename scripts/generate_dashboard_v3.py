@@ -101,6 +101,42 @@ class JiraClient:
 
         return epics
 
+    def get_epic_worklogs(self, issue_key: str) -> List[Dict]:
+        """Fetch all worklogs for an epic"""
+        worklogs = []
+        start_at = 0
+        while True:
+            url = f"{self.base_url}/rest/api/3/issue/{issue_key}/worklog"
+            params = {'startAt': start_at, 'maxResults': 100}
+            response = requests.get(url, headers=self.headers, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            worklogs.extend(data.get('worklogs', []))
+            if start_at + data.get('maxResults', 100) >= data.get('total', 0):
+                break
+            start_at += data.get('maxResults', 100)
+        return worklogs
+
+
+def fetch_q2_hours(client, epics: List[Dict], since_date: str) -> Dict[str, float]:
+    """Fetch worklog hours since a date for each epic, returns {key: hours}"""
+    q2_hours = {}
+    for epic in epics:
+        key = epic['key']
+        try:
+            wl = client.get_epic_worklogs(key)
+            total_seconds = sum(
+                w.get('timeSpentSeconds', 0)
+                for w in wl
+                if w.get('started', '')[:10] >= since_date
+            )
+            q2_hours[key] = total_seconds / 3600
+        except Exception as e:
+            print(f"Warning: Could not fetch worklogs for {key}: {e}", file=sys.stderr)
+            time_spent = epic.get('fields', {}).get('aggregatetimespent', 0) or 0
+            q2_hours[key] = time_spent / 3600
+    return q2_hours
+
 
 def classify_epic(epic: Dict) -> str:
     """Classify epic as Novo or Upsell based on customfield_10800"""
@@ -192,8 +228,6 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
     yasmin_queue = []
     cloud_migrations = []
 
-    # Hours cutoff: only count hours for epics created from Q2 (01/04) onwards
-    hours_cutoff = f'{datetime.now().strftime("%Y")}-04-01'
 
     # Process each epic
     for epic in epics:
@@ -218,7 +252,8 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
 
         updated = parse_date(fields.get('updated', ''))
         time_spent = fields.get('aggregatetimespent', 0) or 0
-        hours = time_spent / 3600 if time_spent else 0.0
+        total_hours = time_spent / 3600 if time_spent else 0.0
+        hours = epic.get('_q2_hours', total_hours)  # Use Q2 worklog hours
         time_remaining = fields.get('aggregatetimeestimate', 0) or 0
         remaining_hours = time_remaining / 3600 if time_remaining else 0.0
         classification = classify_epic(epic)
@@ -229,9 +264,6 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         # Determine if open
         is_open = status_cat != 'completed'
 
-        # Hours filtering: older epics tracked for board/status but excluded from hour KPIs
-        include_hours = not created or created >= hours_cutoff
-        kpi_hours = hours if include_hours else 0.0
 
         # Route to yasmin queue if needed
         if not implementer or implementer in EXCLUDE_ASSIGNEES:
@@ -257,7 +289,7 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         # Update technician counts
         tech = technicians[implementer]
         tech['total'] += 1
-        tech['hours'] += kpi_hours
+        tech['hours'] += hours
 
         if status_cat == 'completed':
             tech['completed'] += 1
@@ -273,7 +305,7 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
         # Track per-type stats (novo vs upsell breakdown)
         type_key = 'novoStats' if classification == 'Novo' else 'upsellStats'
         tech[type_key]['total'] += 1
-        tech[type_key]['hours'] += kpi_hours
+        tech[type_key]['hours'] += hours
         if status_cat == 'completed':
             tech[type_key]['completed'] += 1
         elif status_cat == 'em_andamento':
@@ -285,9 +317,9 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
 
         # Accumulate hours for ALL epics (open + closed) to match Tempo
         if classification == 'Novo':
-            tech['novoHours'] += kpi_hours
+            tech['novoHours'] += hours
         else:
-            tech['upsellHours'] += kpi_hours
+            tech['upsellHours'] += hours
 
         # Track board classification (open epics only)
         if is_open:
@@ -848,6 +880,15 @@ def main():
         client = JiraClient(JIRA_EMAIL, JIRA_API_TOKEN, JIRA_BASE_URL)
         epics = client.get_epics()
         print(f"Fetched {len(epics)} epics", file=sys.stderr)
+
+        # Fetch Q2 worklogs for accurate hour filtering
+        q2_start = f'{datetime.now().strftime("%Y")}-04-01'
+        print(f"Fetching Q2 worklogs since {q2_start}...", file=sys.stderr)
+        q2_hours_map = fetch_q2_hours(client, epics, q2_start)
+        for epic in epics:
+            epic['_q2_hours'] = q2_hours_map.get(epic['key'], 0.0)
+        print(f"Q2 worklogs fetched for {len(q2_hours_map)} epics", file=sys.stderr)
+
         data = generate_dashboard_data(epics)
 
     # Read template
