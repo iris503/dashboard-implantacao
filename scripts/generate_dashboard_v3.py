@@ -272,7 +272,7 @@ def calculate_days_between(date1: str, date2: str) -> int:
         return 0
 
 
-def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
+def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List, float]:
     """Process epics and calculate metrics. Returns (technicians_data, yasmin_queue, cloud_migrations)"""
     technicians = {impl: {'name': impl, 'total': 0, 'completed': 0, 'inProgress': 0, 'paused': 0,
                            'pending': 0, 'waiting': 0, 'hours': 0.0, 'openEpics': [],
@@ -426,7 +426,7 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List]:
                 'hours': round(hours, 1)
             })
 
-    return technicians, yasmin_queue, cloud_migrations
+    return technicians, yasmin_queue, cloud_migrations, excluded_open_hours
 
 
 def generate_risk_level(tech: Dict) -> str:
@@ -743,7 +743,7 @@ def generate_dashboard_data(epics: List[Dict]) -> Dict:
     """Generate complete DATA object for dashboard"""
     today = datetime.now().strftime('%Y-%m-%d')
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M BRT')
-    technicians, yasmin_queue, cloud_migrations = process_epics(epics, today)
+    technicians, yasmin_queue, cloud_migrations, excluded_open_hours = process_epics(epics, today)
     technicians_array = []
 
     for i, name in enumerate(IMPLEMENTERS):
