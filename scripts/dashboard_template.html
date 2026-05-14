@@ -556,11 +556,6 @@
             border-bottom: 1px solid #30363d;
         }
 
-        .strengths-risks-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
         .sr-box {
             background: #161b22;
             border: 1px solid #30363d;
@@ -614,7 +609,6 @@
 
         @media (max-width: 768px) {
             .fichas-grid { grid-template-columns: 1fr; }
-            .strengths-risks-grid { grid-template-columns: 1fr; }
             .kpi-row { grid-template-columns: repeat(3, 1fr); }
         }
     </style>
@@ -647,7 +641,6 @@
             <button class="tab-btn" onclick="switchTab('novos-clientes')">Quadro Clientes Novos</button>
             <button class="tab-btn" onclick="switchTab('upsell')">Quadro Upsell/Existentes</button>
             <button class="tab-btn" onclick="switchTab('comportamento')">Comparativo de Comportamento</button>
-            <button class="tab-btn" onclick="switchTab('riscos')">Riscos & Recomendações</button>
             <button class="tab-btn" onclick="switchTab('backlog')">Backlog & Capacity</button>
             <button class="tab-btn" onclick="switchTab('fichas')">Fichas Individuais</button>
         </div>
@@ -756,20 +749,6 @@
                 </div>
 
                 <div id="comportamento-insights"></div>
-            </div>
-        </div>
-
-        <!-- TAB 5: Riscos -->
-        <div id="riscos" class="tab-content">
-            <div class="section">
-                <h2 class="section-title">Riscos & Recomendações</h2>
-
-                <div class="metrics-grid" id="risk-kpis"></div>
-
-                <h3 class="section-title">Riscos por Implantador</h3>
-                <div class="table-wrapper" id="risk-table"></div>
-
-                <div id="risk-insights"></div>
             </div>
         </div>
 
@@ -1462,47 +1441,6 @@
             document.getElementById('comportamento-insights').innerHTML = '<div class="insight-box info"><strong>Análise Comparativa:</strong> Taxa média ' + Math.min(novoAvgRate, upsellAvgRate) + '% a ' + Math.max(novoAvgRate, upsellAvgRate) + '% entre tipos.</div>';
         }
 
-        function renderRiscos() {
-            const highRiskCount = DATA.technicians.filter(t => t.overdueCount > 3).length;
-            const mediumRiskCount = DATA.technicians.filter(t => t.overdueCount > 1 && t.overdueCount <= 3).length;
-            const lowRiskCount = DATA.technicians.length - highRiskCount - mediumRiskCount;
-
-            document.getElementById('risk-kpis').innerHTML = `
-                <div class="metric-card">
-                    <div class="metric-value" style="color:#ef4444;">${highRiskCount}</div>
-                    <div class="metric-label">Alto Risco</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value" style="color:#f97316;">${mediumRiskCount}</div>
-                    <div class="metric-label">Risco Médio</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value" style="color:#22c55e;">${lowRiskCount}</div>
-                    <div class="metric-label">Baixo Risco</div>
-                </div>
-            `;
-
-            let riskTableHtml = '<table><thead><tr><th>Implantador</th><th>Vencidos</th><th>Abertos</th><th>Taxa %</th><th>Risco</th></tr></thead><tbody>';
-            DATA.technicians.forEach(tech => {
-                const rate = getCompletionRate(tech);
-                const risk = tech.overdueCount > 3 ? 'Alto' : tech.overdueCount > 1 ? 'Médio' : 'Baixo';
-                const riskColor = risk === 'Alto' ? '#ef4444' : risk === 'Médio' ? '#f97316' : '#22c55e';
-
-                riskTableHtml += `<tr>
-                    <td><strong>${tech.name}</strong></td>
-                    <td>${tech.overdueCount}</td>
-                    <td>${tech.openCount}</td>
-                    <td>${rate}%</td>
-                    <td><span style="color:${riskColor};font-weight:600;">${risk}</span></td>
-                </tr>`;
-            });
-            riskTableHtml += '</tbody></table>';
-            document.getElementById('risk-table').innerHTML = riskTableHtml;
-
-            const insightText = highRiskCount > 0 ? `<div class="insight-box critical"><strong>Alerta:</strong> ${highRiskCount} técnico(s) em situação de alto risco.</div>` : '<div class="insight-box positive"><strong>Situação Controlada:</strong> Nenhum técnico em alto risco.</div>';
-            document.getElementById('risk-insights').innerHTML = insightText;
-        }
-
         function renderBacklog() {
             if (!DATA.backlogSummary) {
                 console.warn('No backlog data available');
@@ -2096,7 +2034,6 @@
             renderNovoTab();
             renderUpsellTab();
             renderComportamento();
-            renderRiscos();
             renderBacklog();
             renderFichas();
         }
