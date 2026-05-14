@@ -448,7 +448,7 @@ def process_epics(epics: List[Dict], today: str) -> Tuple[Dict, List, List, floa
                 'status': status,
                 'board': classification,
                 'due': duedate,
-                'hours': round(hours, 1),
+                'hours': round(total_hours, 1),
                 'overdue': is_overdue
             })
 
