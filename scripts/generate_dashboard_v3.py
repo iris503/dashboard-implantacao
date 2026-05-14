@@ -194,6 +194,46 @@ def fetch_q2_hours(client, epics: List[Dict], since_date: str) -> Dict[str, floa
             print(f"Warning: Could not fetch worklogs for {key}: {e}", file=sys.stderr)
 
     return q2_hours
+def extract_tipo_from_summary(summary: str) -> str:
+    """Extract module/type from epic summary for the unassigned queue table."""
+    import re
+    s = summary.lower().strip()
+
+    # Pattern: "Implementation Upsell - X Module - WMI" or "X Module - WMI"
+    m = re.search(r'(?:implementation\s+upsell\s*-\s*)?([\w\s]+?)\s+module\s*-?\s*wmi', s)
+    if m:
+        mod = m.group(1).strip().title()
+        if 'cloud' in mod.lower():
+            return 'Cloud'
+        return mod
+
+    # Pattern: "Implementation Project Plan" (= Novo)
+    if 'implementation project plan' in s:
+        return 'Novo'
+
+    # Keyword-based detection
+    if 'interlac' in s:
+        return 'Interlac'
+    if 'nota fiscal' in s:
+        return 'NF'
+    if re.search(r'integra[çc][ãa]o', s):
+        return 'Integração'
+    if 'b2b' in s:
+        return 'B2B'
+    if 'fila de atendimento' in s:
+        return 'Fila'
+    if 'treinamento' in s or 'confere' in s:
+        return 'Treinamento'
+    if 'kualiz' in s:
+        return 'Kualiz'
+    if 'assinatura' in s:
+        return 'Assinatura'
+    if 'cloud' in s:
+        return 'Cloud'
+
+    return 'Upsell'
+
+
 def classify_epic(epic: Dict) -> str:
     """Classify epic as Novo or Upsell based on customfield_10800"""
     fields = epic.get('fields', {})
@@ -600,14 +640,8 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
 
         # Add to fila if not assigned to implementer or is in waiting
         if not impl or impl in EXCLUDE_ASSIGNEES:
-            # Extract tipo from summary
-            tipo = 'Upsell'
-            if 'interlac' in summary.lower():
-                tipo = 'Interlac'
-            elif 'nota fiscal' in summary.lower() or 'nf' in summary.lower():
-                tipo = 'NF'
-            elif 'cloud' in summary.lower() or 'migraÃÂÃÂ§ÃÂÃÂ£o' in summary.lower():
-                tipo = 'Cloud'
+            # Extract tipo (module) from summary
+            tipo = extract_tipo_from_summary(summary)
 
             fila_yasmin.append({
                 'key': key,
