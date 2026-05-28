@@ -51,7 +51,7 @@ tfoot td.sum{text-align:right;font-weight:800;font-size:14px}
     <div style="background:#6366f1;border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px">📊</div>
     <div>
       <div class="ttl">Upsell Modules · Tempo Médio por Implantação <span class="badge">✓ Apenas Concluídos</span></div>
-      <div class="sub">IWN · status = Concluído · Time Sheet (Jira Worklog) · Atualizado 25/05/2026</div>
+      <div class="sub">IWN · status = Concluído · Time Sheet (Jira Worklog) · Atualizado 28/05/2026</div>
     </div>
   </div>
   <div class="tabs" id="tabs"></div>
@@ -59,102 +59,14 @@ tfoot td.sum{text-align:right;font-weight:800;font-size:14px}
 <div class="kpis" id="kpis"></div>
 <div class="bnr" id="bnr"></div>
 <div class="mods" id="mods"></div>
-<div class="foot">Fonte: IWN Jira · status=Done (Concluído) · aggregatetimespent · 25/05/2026</div>
+<div class="foot">Fonte: IWN Jira · status=Done (Concluído) · aggregatetimespent · 28/05/2026</div>
 <script>
 const B="https://wmi-solutions.atlassian.net/browse/";
 const PAL=["#6366f1","#f59e0b","#10b981","#ec4899","#3b82f6","#8b5cf6","#f97316","#06b6d4","#84cc16","#a78bfa","#fb923c","#94a3b8","#e879f9","#34d399","#fbbf24","#f43f5e","#0ea5e9","#d946ef","#22d3ee","#e11d48","#65a30d","#7c3aed","#c026d3","#0891b2"];
 function nm(v){return v==="Stock Module"?"Estoque":v==="Finance Module"?"Financeiro":v==="Fila de atendimento"?"Fila de Atendimento":v}
 
 const D=[
-{k:"IWN-4961",m:"Interlac",s:21000,d:"2026-05-22",t:"INTERLAC - Laboratório Célula - 10087"},
-{k:"IWN-4674",m:"Apoio Alvaro",s:315900,d:"2026-05-20",t:"B2B ALVARO ( DASA ) - LABORATORIO SANDRINI - 10156"},
-{k:"IWN-4937",m:"Kualiz Gestão",s:3000,d:"2026-05-20",t:"LAB OSWALDO CRUZ - 7220 - USUARIO KUALIZ GESTÃO - LAB OSWALDO CRUZ - 7220"},
-{k:"IWN-4734",m:"Apoio DB",s:9600,d:"2026-05-19",t:"B2B DB -  LAB SEABRA - 3527"},
-{k:"IWN-4776",m:"Confere",s:12060,d:"2026-05-19",t:"CONFERE - LAB ANALISE - 5292"},
-{k:"IWN-3904",m:"Interlac",s:12600,d:"2026-05-19",t:"Interlac - LABORATORIO DR. SAMUEL BARRETO - 1487"},
-{k:"IWN-4963",m:"Treinamento",s:6600,d:"2026-05-19",t:"LACEI - 4175 - TREINAMENTO INTERLAC LABMAX 100 - LACEI - 4175"},
-{k:"IWN-4952",m:"Local de Controle Amostra",s:3900,d:"2026-05-15",t:"LOCAL DE CONTROLE INTERNO -  LAB GASPAR VIANA - 2722"},
-{k:"IWN-3652",m:"Autolac Cloud",s:54000,d:"2026-05-14",t:"ADEQUAÇÕES - Laboratorio Frota / Unidade em Monsenhor Paulo/MG - 312"},
-{k:"IWN-3662",m:"Autolac Cloud",s:18000,d:"2026-05-14",t:"APOIO AO CLIENTE - REZENDE GARCIA SERVICOS MEDICOS LTDA - 10063"},
-{k:"IWN-3831",m:"Integrações",s:144000,d:"2026-05-14",t:"INTEGRAÇÃO VECTOR - UNIDADE MEDICA ALDO OLIVOTTI - 10017"},
-{k:"IWN-4767",m:"Apoio Alvaro",s:46800,d:"2026-05-13",t:"B2B ALVARO ( DASA ) -  LABORATORIO CARLOS CHAGAS - 3574"},
-{k:"IWN-4903",m:"Fila de atendimento",s:25200,d:"2026-05-13",t:"FILA DE ATENDIMENTO -  LAB NOSSA SENHORA DA PENHA - 6396"},
-{k:"IWN-4797",m:"Interlac",s:9600,d:"2026-05-13",t:"INTERLAC - LABORATORIO HM ANALISES CLINICAS LTDA - 10043"},
-{k:"IWN-4681",m:"Nota Fiscal",s:10200,d:"2026-05-13",t:"NOTA FISCAL -  ANALISA LABORATORIO DE ANALISES CLINICAS - 10131"},
-{k:"IWN-3256",m:"Fila de atendimento",s:177420,d:"2026-05-12",t:"FILA / INTERLAC / ADEQUAÇÕES  - VITALABOR - 3763"},
-{k:"IWN-4750",m:"Interlac",s:19200,d:"2026-05-12",t:"INTERLAC - LAB QUALITY DIAGNOSTICOS LTDA  - 4843"},
-{k:"IWN-4799",m:"Interlac",s:11040,d:"2026-05-12",t:"INTERLAC -  LABORATORIO PAX MINAS AVELAR - 7181"},
-{k:"IWN-4708",m:"Nota Fiscal",s:16800,d:"2026-05-12",t:"NOTA FISCAL -  LABORATORIO UNIMED - 10037"},
-{k:"IWN-4744",m:"Interlac",s:90000,d:"2026-05-11",t:"INTERLAC -  LABORATORIO DR. LACYR - 4924"},
-{k:"IWN-3810",m:"Laudos Ilimitado",s:37200,d:"2026-05-11",t:"LAUDOS ILIMITADO - CENTRO DE DIAGNOSTICO ADOLFO LUTZ - 1504"},
-{k:"IWN-3175",m:"Apoio Apoiado WS",s:31080,d:"2026-05-08",t:"APOIO X APOIADO WS - LABORATORIO REAL DIAGNOSTICO - 1906"},
-{k:"IWN-3905",m:"Apoio Apoiado WS",s:18780,d:"2026-05-08",t:"APOIO X  APOIADO  (SOC NET - WS)  - LAB KLETT DE AN CLIN TOXIC E VAC LTDA  - 2789"},
-{k:"IWN-3379",m:"Apoio HP",s:7320,d:"2026-05-08",t:"B2B HP - BIOOS SAUDE INTEGRADA - 10088"},
-{k:"IWN-4723",m:"Autolac Cloud",s:17100,d:"2026-05-08",t:"INFLUENCIADORES (treinamento ) - AUTOLAC"},
-{k:"IWN-4803",m:"Autolac Cloud",s:7980,d:"2026-05-08",t:"Solicitação de TAP +SAUDE"},
-{k:"IWN-4729",m:"Confere",s:14100,d:"2026-05-08",t:"APP CONTROLLER E CONFERENCIA - LABORATORIO THIAGO HUGO - 4215"},
-{k:"IWN-1348",m:"Financeiro",s:194940,d:"2026-05-08",t:"LABORATORIO CLINICO PREVENCAO - 10028 - Implementation Upsell - Finance Module - WMI"},
-{k:"IWN-1418",m:"Financeiro",s:32880,d:"2026-05-08",t:"LABORATORIO ITALAB - 2238 - Implementation Upsell - Finance Module - WMI"},
-{k:"IWN-4601",m:"Nota Fiscal",s:27300,d:"2026-05-07",t:"NOTA FISCAL -  MEGALAB - 6577"},
-{k:"IWN-3405",m:"Apoio HP",s:18000,d:"2026-05-06",t:"APOIO AO CLIENTE ( TREINAMENTO B2B / HP ) - Laboratório São Judas - 1685"},
-{k:"IWN-4699",m:"Apoio HP",s:10800,d:"2026-05-06",t:"B2B HP -  CENTRO PASSENSE DE ANALISES CLINICAS - 7210"},
-{k:"IWN-4755",m:"Integrações",s:33600,d:"2026-05-06",t:"APOIO X APOIADO - GEES (WS) - CLINICA LINUS PAULING -1702"},
-{k:"IWN-4642",m:"Interlac",s:25200,d:"2026-05-05",t:"INTERLAC - LABORATORIO CITO-CENTER-HOSP SAO PAULO - 2158"},
-{k:"IWN-4037",m:"Nota Fiscal",s:18540,d:"2026-05-05",t:"NOTA FISCAL - MASTER LAB SAUDE E DIAGNOSTICOS LTDA - 7139"},
-{k:"IWN-4783",m:"Interlac",s:15600,d:"2026-05-04",t:"INTERLAC - CLINICA PINHEIRO - 5277"},
-{k:"IWN-1886",m:"Assinatura Digital",s:116700,d:"2026-04-30",t:"Assinatura Digital -  LABORATORIO GONTIJO GUIMARAES - 970"},
-{k:"IWN-4525",m:"Confere",s:8400,d:"2026-04-29",t:"CONFERE -  CENTERLIFE ANALISES CLINICAS E IMAGEM - 4889"},
-{k:"IWN-1997",m:"Fila de atendimento",s:7800,d:"2026-04-28",t:"FILA DE ATENDIMENTO - CLINICA PINHEIRO LTDA - 5277"},
-{k:"IWN-4653",m:"Interlac",s:28620,d:"2026-04-28",t:"INTERLAC DXH800 - HEMOLABER - 294"},
-{k:"IWN-4542",m:"Interlac",s:25800,d:"2026-04-27",t:"INTERLAC -  LABORATORIO DR. PABLUS GRION LTDA  - 3648"},
-{k:"IWN-4717",m:"Interlac",s:19800,d:"2026-04-27",t:"INTERLAC - BIO-LAB ANALISES CLINICAS - 4157"},
-{k:"IWN-4633",m:"Kualiz Automação",s:21900,d:"2026-04-27",t:"KUAL AUTOMAÇÃO - LABCENTER - 7137"},
-{k:"IWN-3907",m:"Migração - Autolac Cloud",s:94800,d:"2026-04-27",t:"LABORATORIO THIAGO HUGO - 4215 - Autolac Cloud Migration Module - WMI"},
-{k:"IWN-988",m:"Estoque",s:37140,d:"2026-04-24",t:"LAB. DE ANALISES CLINICAS VITAL BRASIL - 5503 - ESTOQUE"},
-{k:"IWN-3687",m:"Estoque",s:27900,d:"2026-04-24",t:"UNIRAD - 6748 -  - Implementation Upsell - Stock Module - WMI"},
-{k:"IWN-1224",m:"Finance Module",s:95340,d:"2026-04-24",t:"DIAG LAB DE ANAL CLIN - 5082 - Implementation Upsell - Finance Module - WMI"},
-{k:"IWN-1411",m:"Financeiro",s:128880,d:"2026-04-24",t:"TRIMED MEDICINA DIAGNOSTICO - 7055 - Implementation Upsell - Finance Module - WMI"},
-{k:"IWN-3529",m:"Financeiro",s:112860,d:"2026-04-24",t:"APOIO AO CLIENTE - LABORATORIO SANTA CLARA - 1056"},
-{k:"IWN-3756",m:"Financeiro",s:21000,d:"2026-04-24",t:"BIOSOFIA - 7179 - Implementation Upsell - Finance Module - WMI"},
-{k:"IWN-3575",m:"Nota Fiscal",s:10800,d:"2026-04-23",t:"NOTA FISCAL - LABORATORIO BIOANALISE - 3117"},
-{k:"IWN-1240",m:"Financeiro",s:47520,d:"2026-04-22",t:"LOPES LAB SAUDE - 7173 - Implementation Upsell - Finance Module - WMI"},
-{k:"IWN-3837",m:"Interlac",s:7200,d:"2026-04-22",t:"INTERLACs desenvolvimento - LABORATORIO CLINICO PREVENCAO - 10028"},
-{k:"IWN-4540",m:"Kualiz Automação",s:18060,d:"2026-04-20",t:"KUALIZ AUTOMAÇÃO - Lab Cito-Center-Hosp São Paulo - 2158"},
-{k:"IWN-3985",m:"Nota Fiscal",s:12600,d:"2026-04-20",t:"NOTA FISCAL - DIAGNOSTICOS PEDRA AZUL - 7156"},
-{k:"IWN-4103",m:"Apoio DB",s:10800,d:"2026-04-17",t:"B2B DB - LABCENTER - 7137"},
-{k:"IWN-3777",m:"Apoio HP",s:14400,d:"2026-04-17",t:"B2B HP - LABORATORIO BIOMED DE SALINAS LTDA - 5155"},
-{k:"IWN-4650",m:"Autorização Online",s:20520,d:"2026-04-17",t:"AUTORIZAÇÃO ORIZON - LABORATORIO CITO-CENTER-HOSP SAO PAULO - 2158"},
-{k:"IWN-3417",m:"Integrações",s:9600,d:"2026-04-16",t:"INTEGRAÇÃO - APOIO X APOIADO - SYSTEMA H (API)- LABORATORIO UNIRAD - 6748"},
-{k:"IWN-4503",m:"Interlac",s:77400,d:"2026-04-16",t:"Interlacs - LOPES LAB SAUDE E MEDICINA - 7173"},
-{k:"IWN-3640",m:"Interlac",s:30900,d:"2026-04-16",t:"INTERLAC - Laboratório Paulista - 422"},
-{k:"IWN-4463",m:"Interlac",s:27000,d:"2026-04-16",t:"INTERLAC - LARBOS LABORATORIO DE ANALISES CLINICAS - 2708"},
-{k:"IWN-4045",m:"TAP",s:34140,d:"2026-04-15",t:"Solicitação de TAP - EVOLUÇÃO DIAGNOSTICO"},
-{k:"IWN-683",m:"Migração - Autolac Cloud",s:283680,d:"2026-04-14",t:"LABORATORIO ROJAN - 1271 - CLOUD"},
-{k:"IWN-4537",m:"Autorização Online",s:7920,d:"2026-04-13",t:"AUTORIZAÇÃO ONLINE  - CLIMOLAB - 6549"},
-{k:"IWN-3669",m:"Integrações",s:246360,d:"2026-04-13",t:"INTEGRAÇÃO GESTHOS, LAB QUALITY - 4843"},
-{k:"IWN-4118",m:"Interlac",s:23400,d:"2026-04-13",t:"INTERLAC -  LABORMEDIC -4520"},
-{k:"IWN-4107",m:"Interlac",s:15720,d:"2026-04-13",t:"Interlac -  LABORATORIO SAO PAULO - 2158"},
-{k:"IWN-3646",m:"Auditoria de Pre Faturamento",s:13260,d:"2026-04-10",t:"Auditoria e Pré Faturamento - Laborbraz Analises Clinicas - 857"},
-{k:"IWN-4421",m:"Fila de atendimento",s:32400,d:"2026-04-10",t:"FILA DE ATENDIMENTO / COLETA - LABORATORIO PAX MINAS AVELAR - 7181"},
-{k:"IWN-3989",m:"Interlac",s:23400,d:"2026-04-10",t:"INTERLAC - Laboratorio PIO XII - 4064"},
-{k:"IWN-3565",m:"Kualiz Automação",s:15120,d:"2026-04-10",t:"KUALIZ AUTOMAÇÃO ( API não oficial ) - LABORATORIO SANTA CECILIA - 6964"},
-{k:"IWN-3355",m:"Laudos Ilimitado",s:16740,d:"2026-04-09",t:"ADEQUAÇÕES - LABORATORIO DR AURELIO - 3123"},
-{k:"IWN-675",m:"Migração - Autolac Cloud",s:272820,d:"2026-04-09",t:"LABORATORIO GONTIJO GUIMARAES - 970 - Migração Autolac Cloud"},
-{k:"IWN-3396",m:"Migração - Autolac Cloud",s:119700,d:"2026-04-09",t:"Laboratório São Geraldo -491 - Autolac Cloud Migration Module - WMI"},
-{k:"IWN-938",m:"Estoque",s:74520,d:"2026-04-08",t:"LAB.ANDREIA BRAZ - 5140 - Implementation Upsell - Stock Module - WMI"},
-{k:"IWN-4109",m:"Kualiz Gestão",s:17160,d:"2026-04-08",t:"KUALIZ GESTÃO ( treinamento ) - LABORATORIO SAO PAULO - 2158"},
-{k:"IWN-3872",m:"Apoio HP",s:7200,d:"2026-04-07",t:"B2B HP - ITALAB ( CARMOPOLIS ) - 2238"},
-{k:"IWN-3811",m:"Confere",s:24060,d:"2026-04-07",t:"CONFERE -  ANGRALAB LABORATORIO DE ANALISES CLINICAS - 6445"},
-{k:"IWN-2000",m:"Interlac",s:19500,d:"2026-04-07",t:"KN BIOLOGICA - 4605 - Interlac"},
-{k:"IWN-3835",m:"Interlac",s:17400,d:"2026-04-07",t:"Interlac - SUNMED LABORATORIO - 7087"},
-{k:"IWN-4115",m:"Laudos Ilimitado",s:18720,d:"2026-04-06",t:"LAUDOS ILIMITADO - BIO-LAB ANALISES CLINICAS -4157"},
-{k:"IWN-4104",m:"TAP",s:7500,d:"2026-04-06",t:"Solicitação de TAP - IBELAB - INSTITUTO MEDICO DE EXAMES LABORATORIAIS LTDA"},
-{k:"IWN-4224",m:"Migração - Autolac Cloud",s:72000,d:"2026-04-02",t:"LABORTEST LABORATORIO E TESTES CLINICOS - 2205- Autolac Cloud Migration Module - WMI"},
-{k:"IWN-3915",m:"Autorização Online",s:18480,d:"2026-04-01",t:"AUTORIZAÇÃO ONLINE - LABORATORIO ROCHA - 5405"},
-{k:"IWN-3792",m:"Auditoria de Pre Faturamento",s:10140,d:"2026-03-31",t:"AUDITORIA PRÉ FATURAMENTO -  LAB NOSSA SENHORA DA PENHA - 6396"},
-{k:"IWN-4264",m:"Autolac Cloud",s:5400,d:"2026-03-31",t:"APOIO AO CLIENTE - PATARO LABORATORIO - 7202"},
-{k:"IWN-3926",m:"Homologação",s:36420,d:"2026-03-31",t:"Monitoramento de Pontualidade de Resultados  - LOPES LAB SAUDE E MEDICINA LTDA - 7173"},
-{k:"IWN-3977",m:"TAP",s:15720,d:"2026-03-31",t:"Solicitação de TAP -  LABORATORIO DR. GILSON MOREIRA"}
+
 ];
 
 const MONTHS=[...new Set(D.map(i=>i.d.slice(0,7)))].sort().reverse();
