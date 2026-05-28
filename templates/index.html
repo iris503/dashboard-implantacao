@@ -467,16 +467,17 @@ function renderFilaYasmin() {
       <td class="td-main">${e.summary.substring(0,50)}${e.summary.length > 50 ? '...' : ''}</td>
       <td><span class="badge badge-cyan">${e.tipo}</span></td>
       <td>${statusBadge(e.status)}</td>
-      <td class="td-right">${e.hours}h</td>
+      <td class="td-right">${e.estimatedHours}h</td>
       <td>${e.criado}</td>
       <td>${e.dueDate}</td>
     </tr>
   `).join('');
+  const totalEstimated = (DATA.filaYasmin || []).reduce((s,e) => s + (e.estimatedHours || 0), 0);
   document.getElementById('filaYasminTable').innerHTML = `
     <div class="table-wrapper">
-      <div class="table-header"><span class="table-title">Fila Yasmin (${DATA.filaYasmin?.length || 0} épicos)</span></div>
+      <div class="table-header"><span class="table-title">Fila Yasmin (${DATA.filaYasmin?.length || 0} épicos · ${totalEstimated.toFixed(0)}h estimadas)</span></div>
       <table>
-        <thead><tr><th>Key</th><th>Épico</th><th>Tipo</th><th>Status</th><th>Horas</th><th>Criado</th><th>Due Date</th></tr></thead>
+        <thead><tr><th>Key</th><th>Épico</th><th>Tipo</th><th>Status</th><th>Horas Est.</th><th>Criado</th><th>Due Date</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
