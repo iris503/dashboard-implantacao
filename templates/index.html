@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Implantação — WMI Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-bg-deep:#020818;--color-bg-dark:#050A1F;--color-bg-navy:#0A1628;--color-bg-mid:#0D1B3E;--color-bg-elevated:#111D40;
+  --color-blue-900:#1E3A8A;--color-blue-700:#1D4ED8;--color-blue-600:#2563EB;--color-blue-500:#3B82F6;--color-blue-400:#60A5FA;--color-blue-300:#93C5FD;--color-blue-200:#BFDBFE;
+  --color-cyan-500:#06B6D4;--color-cyan-400:#22D3EE;--color-cyan-300:#67E8F9;--color-cyan-glow:#00D4FF;
+  --color-white:#FFFFFF;--color-gray-100:#F1F5F9;--color-gray-300:#CBD5E1;--color-gray-400:#94A3B8;--color-gray-500:#64748B;--color-gray-600:#475569;--color-gray-700:#334155;
+  --color-success:#10B981;--color-success-light:rgba(16,185,129,0.15);--color-warning:#F59E0B;--color-warning-light:rgba(245,158,11,0.15);--color-error:#EF4444;--color-error-light:rgba(239,68,68,0.15);--color-info:#3B82F6;--color-info-light:rgba(59,130,246,0.15);
+  --gradient-brand:linear-gradient(135deg,#2563EB 0%,#06B6D4 100%);--gradient-text:linear-gradient(90deg,#60A5FA 0%,#00D4FF 100%);
+  --glass-bg:rgba(255,255,255,0.04);--glass-bg-hover:rgba(255,255,255,0.07);--glass-bg-active:rgba(37,99,235,0.15);--glass-border:rgba(255,255,255,0.08);--glass-border-hover:rgba(96,165,250,0.3);--glass-border-brand:rgba(37,99,235,0.4);--glass-blur:blur(20px);
+  --shadow-sm:0 2px 8px rgba(0,0,0,0.3);--shadow-md:0 4px 20px rgba(0,0,0,0.4);--shadow-lg:0 8px 40px rgba(0,0,0,0.5);--shadow-blue-sm:0 0 15px rgba(37,99,235,0.2);--shadow-blue-md:0 0 30px rgba(37,99,235,0.3);
+  --font-family:'Poppins',sans-serif;
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;--radius-xl:20px;--radius-full:9999px;
+  --transition-fast:150ms ease;--transition-base:250ms ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-family);background:var(--color-bg-deep);color:var(--color-white);line-height:1.5;font-size:0.875rem;overflow-x:hidden;min-height:100vh}
+
+.aurora-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.aurora-bg::before{content:'';position:absolute;width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,0.12) 0%,transparent 70%);top:-200px;left:-200px;animation:a1 20s ease-in-out infinite}
+.aurora-bg::after{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(6,182,212,0.08) 0%,transparent 70%);bottom:-100px;right:-100px;animation:a2 25s ease-in-out infinite}
+@keyframes a1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(100px,80px) scale(1.1)}66%{transform:translate(-60px,120px) scale(0.9)}}
+@keyframes a2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-80px,-60px) scale(1.15)}66%{transform:translate(60px,-100px) scale(0.95)}}
+
+.text-gradient{background:var(--gradient-text);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.container{max-width:1400px;margin:0 auto;padding:0 1.5rem;position:relative;z-index:1}
+
+/* ─── NAV ─── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 0;border-bottom:1px solid var(--glass-border);margin-bottom:2rem}
+.nav-brand{display:flex;align-items:center;gap:0.75rem}
+.nav-logo{width:36px;height:36px;border-radius:var(--radius-md);background:var(--gradient-brand);display:grid;place-items:center;font-weight:800;font-size:0.875rem}
+.nav-title{font-size:1.125rem;font-weight:700}
+.nav-meta{display:flex;align-items:center;gap:1rem}
+.nav-timestamp{font-size:0.625rem;color:var(--color-gray-400);text-transform:uppercase;letter-spacing:0.08em}
+.btn-refresh{background:var(--glass-bg);border:1px solid var(--glass-border);color:var(--color-blue-400);padding:0.5rem 1rem;border-radius:var(--radius-lg);font-family:var(--font-family);font-size:0.75rem;font-weight:600;cursor:pointer;transition:all var(--transition-base);display:flex;align-items:center;gap:0.5rem}
+.btn-refresh:hover{background:var(--glass-bg-active);border-color:var(--color-blue-400);transform:translateY(-1px)}
+.btn-refresh.loading svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── TABS ─── */
+.tabs{display:flex;gap:0.25rem;margin-bottom:1.5rem;border-bottom:1px solid var(--glass-border);padding-bottom:0}
+.tab{padding:0.75rem 1.25rem;font-size:0.75rem;font-weight:600;color:var(--color-gray-400);cursor:pointer;border:none;background:none;font-family:var(--font-family);border-bottom:2px solid transparent;transition:all var(--transition-fast);text-transform:uppercase;letter-spacing:0.06em}
+.tab:hover{color:var(--color-white)}
+.tab.active{color:var(--color-cyan-glow);border-bottom-color:var(--color-cyan-glow)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ─── KPI CARDS ─── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
+.kpi-card{background:var(--glass-bg);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:1.25rem;position:relative;overflow:hidden;transition:all var(--transition-base)}
+.kpi-card::after{content:'';position:absolute;top:-30px;right:-30px;width:80px;height:80px;border-radius:50%;pointer-events:none}
+.kpi-card:hover{border-color:var(--glass-border-hover);transform:translateY(-3px);box-shadow:var(--shadow-blue-sm)}
+.kpi-label{font-size:0.625rem;color:var(--color-gray-400);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5rem}
+.kpi-value{font-size:2rem;font-weight:800;line-height:1.1}
+.kpi-sub{font-size:0.625rem;color:var(--color-gray-500);margin-top:0.5rem}
+
+/* ─── BADGES ─── */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:0.625rem;font-weight:600;letter-spacing:0.05em;padding:2px 10px;border-radius:var(--radius-full)}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.badge-blue{background:rgba(37,99,235,0.15);color:var(--color-blue-300);border:1px solid rgba(37,99,235,0.25)}
+.badge-cyan{background:rgba(6,182,212,0.12);color:var(--color-cyan-300);border:1px solid rgba(6,182,212,0.25)}
+.badge-success{background:var(--color-success-light);color:#6EE7B7;border:1px solid rgba(16,185,129,0.25)}
+.badge-warning{background:var(--color-warning-light);color:#FCD34D;border:1px solid rgba(245,158,11,0.25)}
+.badge-error{background:var(--color-error-light);color:#FCA5A5;border:1px solid rgba(239,68,68,0.25)}
+.badge-neutral{background:rgba(255,255,255,0.05);color:var(--color-gray-300);border:1px solid var(--glass-border)}
+
+/* ─── TABLES ─── */
+.table-wrapper{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-xl);overflow:hidden;margin-bottom:2rem}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--glass-border)}
+.table-title{font-size:0.875rem;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:0.75rem}
+thead tr{background:rgba(37,99,235,0.06);border-bottom:1px solid var(--glass-border)}
+thead th{padding:0.75rem 1rem;text-align:left;font-size:0.625rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-gray-400);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--glass-border);transition:background var(--transition-fast)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--glass-bg-hover)}
+tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
+.td-main{font-weight:500;color:var(--color-white)!important}
+.td-key{font-family:monospace;font-size:0.625rem;color:var(--color-blue-400)}
+.td-right{text-align:right}
+
+/* ─── PROGRESS BAR ─── */
+.progress-track{height:6px;background:rgba(255,255,255,0.06);border-radius:var(--radius-full);overflow:hidden;border:1px solid var(--glass-border)}
+.progress-fill{height:100%;border-radius:var(--radius-full);background:var(--gradient-brand);transition:width 1s ease}
+.progress-fill.success{background:linear-gradient(90deg,#059669,#10B981)}
+.progress-fill.warning{background:linear-gradient(90deg,#D97706,#F59E0B)}
+.progress-fill.danger{background:linear-gradient(90deg,#DC2626,#EF4444)}
+
+/* ─── SECTION HEADER ─── */
+.section-header{margin-bottom:1.5rem}
+.section-number{font-size:0.625rem;font-weight:600;text-transform:uppercase;letter-spacing:0.15em;color:var(--color-blue-400);display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem}
+.section-number::after{content:'';flex:1;max-width:40px;height:1px;background:var(--gradient-brand)}
+.section-header h2{font-size:1.5rem;font-weight:700;line-height:1.2}
+
+/* ─── INSIGHT CARDS ─── */
+.insight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:2rem}
+.insight-card{padding:1rem 1.25rem;border-radius:var(--radius-lg);border-left:3px solid;display:flex;align-items:flex-start;gap:0.75rem}
+.insight-card.danger{background:rgba(239,68,68,0.06);border-color:var(--color-error)}
+.insight-card.warning{background:rgba(245,158,11,0.06);border-color:var(--color-warning)}
+.insight-card.success{background:rgba(16,185,129,0.06);border-color:var(--color-success)}
+.insight-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.insight-title{font-size:0.75rem;font-weight:600;margin-bottom:2px}
+.insight-text{font-size:0.625rem;color:var(--color-gray-400);line-height:1.5}
+
+/* ─── TECH CARDS (Resumo por Implantador) ─── */
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;margin-bottom:2rem}
+.tech-card{background:var(--glass-bg);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:1.25rem;transition:all var(--transition-base);position:relative;overflow:hidden}
+.tech-card:hover{border-color:var(--glass-border-hover);box-shadow:var(--shadow-blue-sm)}
+.tech-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.tech-name{font-size:1rem;font-weight:700}
+.tech-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:1rem}
+.tech-stat{text-align:center;padding:0.5rem;background:rgba(255,255,255,0.02);border-radius:var(--radius-md);border:1px solid rgba(255,255,255,0.04)}
+.tech-stat-val{font-size:1.125rem;font-weight:700}
+.tech-stat-label{font-size:0.5rem;color:var(--color-gray-500);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px}
+.tech-board{display:flex;gap:0.5rem;margin-bottom:0.75rem}
+.tech-board-item{flex:1;padding:0.5rem;border-radius:var(--radius-md);text-align:center;font-size:0.625rem;font-weight:600}
+.board-novo{background:rgba(37,99,235,0.12);color:var(--color-blue-300);border:1px solid rgba(37,99,235,0.2)}
+.board-upsell{background:rgba(6,182,212,0.1);color:var(--color-cyan-300);border:1px solid rgba(6,182,212,0.2)}
+.tech-meta{display:flex;justify-content:space-between;font-size:0.625rem;color:var(--color-gray-500)}
+
+/* ─── RISK INDICATOR ─── */
+.risk{display:inline-flex;align-items:center;gap:4px;font-size:0.625rem;font-weight:600;padding:2px 8px;border-radius:var(--radius-full)}
+.risk-low{background:rgba(16,185,129,0.12);color:#6EE7B7}
+.risk-medium{background:rgba(245,158,11,0.12);color:#FCD34D}
+.risk-high{background:rgba(239,68,68,0.12);color:#FCA5A5}
+
+/* ─── LOADING/EMPTY ─── */
+.loading-state{text-align:center;padding:4rem 2rem;color:var(--color-gray-400)}
+.loading-spinner{width:40px;height:40px;border:3px solid var(--glass-border);border-top-color:var(--color-blue-500);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1rem}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:768px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .tech-grid{grid-template-columns:1fr}
+  .tabs{overflow-x:auto;flex-wrap:nowrap}
+  .tab{white-space:nowrap;font-size:0.625rem;padding:0.5rem 0.75rem}
+}
+</style>
+</head>
+<body>
+<div class="aurora-bg"></div>
+<div class="container" style="padding-top:1rem;padding-bottom:3rem">
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-logo">W</div>
+    <div>
+      <div class="nav-title">Dashboard <span class="text-gradient">Implantação</span></div>
+      <div style="font-size:0.5rem;color:var(--color-gray-500);text-transform:uppercase;letter-spacing:0.1em">WMI Solutions</div>
+    </div>
+  </div>
+  <div class="nav-meta">
+    <div class="nav-timestamp" id="timestamp">Carregando...</div>
+    <button class="btn-refresh" id="btnRefresh" onclick="doRefresh()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+      Atualizar
+    </button>
+  </div>
+</nav>
+
+<!-- TABS -->
+<div class="tabs" id="tabs">
+  <button class="tab active" data-tab="resumo">Resumo</button>
+  <button class="tab" data-tab="implantadores">Implantadores</button>
+  <button class="tab" data-tab="backlog">Backlog Detalhado</button>
+  <button class="tab" data-tab="capacity">Capacity</button>
+</div>
+
+<!-- TAB: RESUMO -->
+<div class="tab-panel active" id="panel-resumo">
+  <div class="kpi-grid" id="kpiGrid"></div>
+  <div class="section-header"><div class="section-number">01 — Insights</div><h2>Alertas e Recomendações</h2></div>
+  <div class="insight-grid" id="insightsGrid"></div>
+  <div class="section-header"><div class="section-number">02 — Equipe</div><h2>Resumo por Implantador</h2></div>
+  <div id="resumoTable"></div>
+</div>
+
+<!-- TAB: IMPLANTADORES -->
+<div class="tab-panel" id="panel-implantadores">
+  <div class="section-header"><div class="section-number">Visão Individual</div><h2>Cards dos Implantadores</h2></div>
+  <div class="tech-grid" id="techGrid"></div>
+</div>
+
+<!-- TAB: BACKLOG DETALHADO -->
+<div class="tab-panel" id="panel-backlog">
+  <div class="section-header"><div class="section-number">Backlog Novo</div><h2>Épicos Novos em Aberto</h2></div>
+  <div id="backlogTable"></div>
+  <div class="section-header" style="margin-top:2rem"><div class="section-number">Fila Yasmin</div><h2>Épicos sem Implantador</h2></div>
+  <div id="filaYasminTable"></div>
+</div>
+
+<!-- TAB: CAPACITY -->
+<div class="tab-panel" id="panel-capacity">
+  <div class="kpi-grid" id="capacityKpis"></div>
+  <div class="section-header"><div class="section-number">Capacity</div><h2>Capacity por Implantador</h2></div>
+  <div id="capacityTable"></div>
+</div>
+
+<!-- LOADING STATE -->
+<div class="loading-state" id="loadingState" style="display:none">
+  <div class="loading-spinner"></div>
+  <div>Buscando dados do Jira...</div>
+</div>
+
+</div>
+
+<script>
+let DATA = null;
+
+// ─── Tab switching ─────────────────────────────
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+  });
+});
+
+// ─── Refresh ───────────────────────────────────
+async function doRefresh() {
+  const btn = document.getElementById('btnRefresh');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  try {
+    await fetch('/api/refresh', { method: 'POST' });
+    await loadData();
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+async function loadData() {
+  try {
+    const resp = await fetch('/api/data');
+    DATA = await resp.json();
+    if (DATA.error) {
+      document.getElementById('loadingState').style.display = 'block';
+      return;
+    }
+    document.getElementById('loadingState').style.display = 'none';
+    renderAll();
+  } catch(e) {
+    console.error('Load failed:', e);
+  }
+}
+
+// ─── Badge helper ──────────────────────────────
+function statusBadge(status) {
+  const map = {
+    'Em andamento': 'badge-blue', 'Paused': 'badge-warning', 'AGUARDANDO CLIENTE': 'badge-warning',
+    'Tarefas pendentes': 'badge-neutral', 'Escalado': 'badge-neutral',
+    'Concluído': 'badge-success', 'Cancelado': 'badge-neutral'
+  };
+  return `<span class="badge ${map[status] || 'badge-neutral'}">${status}</span>`;
+}
+
+function riskBadge(risk) {
+  const map = { 'ALTO': 'badge-error', 'MÉDIO': 'badge-warning', 'BAIXO': 'badge-success' };
+  return `<span class="badge ${map[risk] || 'badge-neutral'}">${risk}</span>`;
+}
+
+function prazoBadge(type, text) {
+  const map = { 'overdue': 'badge-error', 'warning': 'badge-warning', 'ok': 'badge-success', 'noporte': 'badge-neutral' };
+  return `<span class="badge ${map[type] || 'badge-neutral'}">${text}</span>`;
+}
+
+// ─── Render All ────────────────────────────────
+function renderAll() {
+  document.getElementById('timestamp').textContent = 'Atualizado: ' + DATA.timestamp;
+  renderKPIs();
+  renderInsights();
+  renderResumoTable();
+  renderTechCards();
+  renderBacklogTable();
+  renderFilaYasmin();
+  renderCapacityKPIs();
+  renderCapacityTable();
+}
+
+// ─── KPIs ──────────────────────────────────────
+function renderKPIs() {
+  const d = DATA;
+  const totalOpen = d.technicians.reduce((a,t) => a + t.openCount, 0);
+  const totalCompleted = d.technicians.reduce((a,t) => a + t.completed, 0);
+  const totalHours = d.technicians.reduce((a,t) => a + t.hours, 0);
+  const totalEpics = d.technicians.reduce((a,t) => a + t.total, 0);
+  const novoOpen = d.novoSummary.total - d.novoSummary.completed;
+  const upsellOpen = d.upsellSummary.total - d.upsellSummary.completed;
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Épicos Abertos</div>
+      <div class="kpi-value text-gradient">${totalOpen}</div>
+      <div class="kpi-sub">${novoOpen} Novo · ${upsellOpen} Upsell</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Concluídos</div>
+      <div class="kpi-value" style="color:var(--color-success)">${totalCompleted}</div>
+      <div class="kpi-sub">${totalEpics > 0 ? Math.round(totalCompleted/totalEpics*100) : 0}% do total</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Horas Ativas (Q2+)</div>
+      <div class="kpi-value text-gradient">${totalHours.toFixed(0)}h</div>
+      <div class="kpi-sub">Em épicos abertos</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Novo — Em Andamento</div>
+      <div class="kpi-value" style="color:var(--color-blue-400)">${d.novoSummary.inProgress}</div>
+      <div class="kpi-sub">${d.novoSummary.activeHours.toFixed(0)}h investidas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Upsell — Em Andamento</div>
+      <div class="kpi-value" style="color:var(--color-cyan-400)">${d.upsellSummary.inProgress}</div>
+      <div class="kpi-sub">${d.upsellSummary.activeHours.toFixed(0)}h investidas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Backlog Total</div>
+      <div class="kpi-value text-gradient">${d.backlogSummary.totalRestante.toFixed(0)}h</div>
+      <div class="kpi-sub">${d.backlogSummary.backlogMonths} meses estimados</div>
+    </div>
+  `;
+}
+
+// ─── Insights ──────────────────────────────────
+function renderInsights() {
+  const insights = DATA.backlogInsights || [];
+  const icons = { danger: '🔴', warning: '🟡', success: '🟢' };
+  document.getElementById('insightsGrid').innerHTML = insights.map(i => `
+    <div class="insight-card ${i.level}">
+      <div class="insight-icon">${icons[i.level] || '📊'}</div>
+      <div>
+        <div class="insight-title">${i.title}</div>
+        <div class="insight-text">${i.text}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── Resumo Table ──────────────────────────────
+function renderResumoTable() {
+  const rows = DATA.technicians.map(t => `
+    <tr>
+      <td class="td-main">${t.name}</td>
+      <td>${t.total}</td>
+      <td style="color:var(--color-success)">${t.completed}</td>
+      <td style="color:var(--color-blue-400)">${t.inProgress}</td>
+      <td style="color:var(--color-warning)">${t.paused + t.pending + t.waiting}</td>
+      <td class="td-right">${t.hours.toFixed(0)}h</td>
+      <td>
+        <span style="color:var(--color-blue-300)">${t.board.novo}N</span> /
+        <span style="color:var(--color-cyan-300)">${t.board.upsell}U</span>
+      </td>
+      <td><span class="risk risk-${t.riskLevel}">${t.riskLevel === 'high' ? 'Alto' : t.riskLevel === 'medium' ? 'Médio' : 'Baixo'}</span></td>
+    </tr>
+  `).join('');
+  document.getElementById('resumoTable').innerHTML = `
+    <div class="table-wrapper">
+      <div class="table-header"><span class="table-title">Resumo da Equipe</span></div>
+      <table>
+        <thead><tr><th>Implantador</th><th>Total</th><th>Concluídos</th><th>Andamento</th><th>Pendente</th><th>Horas</th><th>Novo/Upsell</th><th>Risco</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── Tech Cards ────────────────────────────────
+function renderTechCards() {
+  document.getElementById('techGrid').innerHTML = DATA.technicians.map(t => {
+    const openCount = t.total - t.completed;
+    const rate = t.total > 0 ? Math.round(t.completed / t.total * 100) : 0;
+    return `
+    <div class="tech-card">
+      <div class="tech-card-header">
+        <span class="tech-name">${t.name}</span>
+        <span class="risk risk-${t.riskLevel}">${t.riskLevel === 'high' ? 'Alto' : t.riskLevel === 'medium' ? 'Médio' : 'Baixo'}</span>
+      </div>
+      <div class="tech-stats">
+        <div class="tech-stat"><div class="tech-stat-val" style="color:var(--color-success)">${t.completed}</div><div class="tech-stat-label">Concluídos</div></div>
+        <div class="tech-stat"><div class="tech-stat-val" style="color:var(--color-blue-400)">${t.inProgress}</div><div class="tech-stat-label">Andamento</div></div>
+        <div class="tech-stat"><div class="tech-stat-val" style="color:var(--color-warning)">${t.paused + t.pending}</div><div class="tech-stat-label">Pendentes</div></div>
+      </div>
+      <div style="margin-bottom:0.75rem">
+        <div style="display:flex;justify-content:space-between;font-size:0.625rem;color:var(--color-gray-400);margin-bottom:4px">
+          <span>Conclusão</span><span>${rate}%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill ${rate >= 70 ? 'success' : rate >= 40 ? '' : 'danger'}" style="width:${rate}%"></div>
+        </div>
+      </div>
+      <div class="tech-board">
+        <div class="tech-board-item board-novo">${t.board.novo} Novo · ${t.novoHours.toFixed(0)}h</div>
+        <div class="tech-board-item board-upsell">${t.board.upsell} Upsell · ${t.upsellHours.toFixed(0)}h</div>
+      </div>
+      <div class="tech-meta">
+        <span>${t.hours.toFixed(0)}h total abertas</span>
+        <span>${t.overdueCount} vencido(s)</span>
+      </div>
+      ${t.openEpics.length > 0 ? `
+      <details style="margin-top:0.75rem">
+        <summary style="font-size:0.625rem;color:var(--color-blue-400);cursor:pointer;font-weight:600">Ver ${t.openEpics.length} épicos abertos</summary>
+        <div style="margin-top:0.5rem;max-height:200px;overflow-y:auto">
+          ${t.openEpics.map(e => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:0.625rem">
+              <div>
+                <span class="td-key">${e.key}</span>
+                <span style="color:var(--color-gray-300);margin-left:6px">${e.title.substring(0,40)}${e.title.length > 40 ? '...' : ''}</span>
+              </div>
+              <span style="color:var(--color-gray-500)">${e.hours}h</span>
+            </div>
+          `).join('')}
+        </div>
+      </details>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ─── Backlog Table ─────────────────────────────
+function renderBacklogTable() {
+  const rows = (DATA.backlogNovo || []).map(e => `
+    <tr>
+      <td class="td-key">${e.key}</td>
+      <td class="td-main">${e.summary.substring(0,50)}${e.summary.length > 50 ? '...' : ''}</td>
+      <td>${e.assignee}</td>
+      <td><span class="badge badge-${e.porte === 'Large' ? 'error' : e.porte === 'Medium' ? 'warning' : e.porte === 'Small' ? 'success' : 'neutral'}">${e.porte}</span></td>
+      <td>${statusBadge(e.status)}</td>
+      <td class="td-right">${e.gasto}h</td>
+      <td class="td-right">${e.meta}h</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="progress-track" style="width:60px;height:4px">
+            <div class="progress-fill ${e.progresso > 1 ? 'danger' : e.progresso > 0.7 ? 'warning' : ''}" style="width:${Math.min(e.progresso * 100, 100)}%"></div>
+          </div>
+          <span style="font-size:0.5rem;color:var(--color-gray-500)">${Math.round(e.progresso * 100)}%</span>
+        </div>
+      </td>
+      <td>${prazoBadge(e.statusPrazoType, e.statusPrazo)}</td>
+    </tr>
+  `).join('');
+  document.getElementById('backlogTable').innerHTML = `
+    <div class="table-wrapper">
+      <div class="table-header"><span class="table-title">Backlog Novo (${DATA.backlogNovo?.length || 0} épicos)</span></div>
+      <table>
+        <thead><tr><th>Key</th><th>Épico</th><th>Responsável</th><th>Porte</th><th>Status</th><th>Gasto</th><th>Meta</th><th>Progresso</th><th>Status Prazo</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── Fila Yasmin ───────────────────────────────
+function renderFilaYasmin() {
+  const rows = (DATA.filaYasmin || []).map(e => `
+    <tr>
+      <td class="td-key">${e.key}</td>
+      <td class="td-main">${e.summary.substring(0,50)}${e.summary.length > 50 ? '...' : ''}</td>
+      <td><span class="badge badge-cyan">${e.tipo}</span></td>
+      <td>${statusBadge(e.status)}</td>
+      <td class="td-right">${e.hours}h</td>
+      <td>${e.criado}</td>
+      <td>${e.dueDate}</td>
+    </tr>
+  `).join('');
+  document.getElementById('filaYasminTable').innerHTML = `
+    <div class="table-wrapper">
+      <div class="table-header"><span class="table-title">Fila Yasmin (${DATA.filaYasmin?.length || 0} épicos)</span></div>
+      <table>
+        <thead><tr><th>Key</th><th>Épico</th><th>Tipo</th><th>Status</th><th>Horas</th><th>Criado</th><th>Due Date</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── Capacity KPIs ─────────────────────────────
+function renderCapacityKPIs() {
+  const s = DATA.backlogSummary;
+  document.getElementById('capacityKpis').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Backlog Total</div>
+      <div class="kpi-value text-gradient">${s.totalRestante.toFixed(0)}h</div>
+      <div class="kpi-sub">${s.backlogMonths} meses estimados</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Horas Novo</div>
+      <div class="kpi-value" style="color:var(--color-blue-400)">${s.novoRestante.toFixed(0)}h</div>
+      <div class="kpi-sub">${s.novoPercent}% do backlog</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Horas Upsell</div>
+      <div class="kpi-value" style="color:var(--color-cyan-400)">${s.upsellRestante.toFixed(0)}h</div>
+      <div class="kpi-sub">${s.upsellPercent}% do backlog</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Fila Yasmin</div>
+      <div class="kpi-value" style="color:var(--color-warning)">${s.yasminEpics}</div>
+      <div class="kpi-sub">${s.yasminHours.toFixed(0)}h (${s.yasminPercent}%)</div>
+    </div>
+  `;
+}
+
+// ─── Capacity Table ────────────────────────────
+function renderCapacityTable() {
+  const rows = (DATA.capacityTable || []).map(t => `
+    <tr>
+      <td class="td-main">${t.name}</td>
+      <td>${t.epicsAbertos}</td>
+      <td class="td-right">${t.horasNovo}h</td>
+      <td class="td-right">${t.horasUpsell}h</td>
+      <td class="td-right" style="font-weight:600">${t.totalRestante}h</td>
+      <td class="td-right">${t.meses}</td>
+      <td>${t.novosSimultaneos}</td>
+      <td class="td-right">${t.ocupacao}%</td>
+      <td>${riskBadge(t.risco)}</td>
+    </tr>
+  `).join('');
+  document.getElementById('capacityTable').innerHTML = `
+    <div class="table-wrapper">
+      <div class="table-header"><span class="table-title">Capacity por Implantador</span></div>
+      <table>
+        <thead><tr><th>Implantador</th><th>Épicos Abertos</th><th>Horas Novo</th><th>Horas Upsell</th><th>Total Restante</th><th>Meses</th><th>Novos Simult.</th><th>Ocupação</th><th>Risco</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── Init ──────────────────────────────────────
+document.getElementById('loadingState').style.display = 'block';
+loadData();
+// Auto-refresh every 5 minutes on the frontend
+setInterval(loadData, 300000);
+</script>
+</body>
+</html>
