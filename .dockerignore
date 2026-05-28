@@ -1,0 +1,49 @@
+# Cache e bytecode
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual envs
+.venv
+venv
+env
+
+# Git e meta
+.git
+.gitignore
+.gitattributes
+.dockerignore
+Dockerfile
+*.md
+LICENSE
+
+# Configs locais e secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Test caches
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.mypy_cache
+.ruff_cache
+
+# Build artifacts
+*.egg-info
+dist
+build
+*.whl
+
+# Logs
+*.log
+logs/
