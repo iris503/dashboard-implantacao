@@ -40,6 +40,19 @@ STATUS_PAUSED = {'Paused'}
 STATUS_PENDENTE = {'Tarefas pendentes', 'Escalado'}
 STATUS_WAITING = {'AGUARDANDO CLIENTE'}
 
+# Estimated hours per module (menor média from historical data Jan-Mai/2026)
+MODULE_HOURS = {
+    'Interlac': 4.5,
+    'NF': 3.2,
+    'Upsell': 12.0,
+    'Integração': 24.7,
+    'Cloud': 47.0,
+    'Assinatura': 5.3,
+    'B2B': 12.0,
+    'Novo': 100.0,
+}
+MODULE_DEFAULT_HOURS = 12.0  # fallback for unknown types
+
 # In-memory cache
 _dashboard_cache: Dict = {}
 _cache_lock = asyncio.Lock()
@@ -360,16 +373,21 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             tipo = 'Upsell'
             sl = summary.lower()
             if 'interlac' in sl: tipo = 'Interlac'
-            elif 'nota fiscal' in sl or 'nf' in sl: tipo = 'NF'
+            elif 'nota fiscal' in sl or 'nf ' in sl or sl.startswith('nf-') or sl.startswith('nf '): tipo = 'NF'
             elif 'cloud' in sl or 'migração' in sl: tipo = 'Cloud'
-            fila_yasmin.append({'key': key, 'summary': summary, 'tipo': tipo, 'status': status, 'hours': round(hours, 1), 'criado': created, 'dueDate': duedate or '—'})
+            elif 'integra' in sl or 'api' in sl: tipo = 'Integração'
+            elif 'assinatura' in sl: tipo = 'Assinatura'
+            elif 'b2b' in sl: tipo = 'B2B'
+            elif 'implementation project' in sl or 'novo' in sl: tipo = 'Novo'
+            estimated = MODULE_HOURS.get(tipo, MODULE_DEFAULT_HOURS)
+            fila_yasmin.append({'key': key, 'summary': summary, 'tipo': tipo, 'status': status, 'hours': round(hours, 1), 'estimatedHours': estimated, 'criado': created, 'dueDate': duedate or '—'})
 
     total_novo_restante = sum(e['restante'] for e in novo_open)
     upsell_restante = sum(
         max(12 - (e.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600, 0)
         for e in upsell_epics if e.get('fields', {}).get('status', {}).get('name', '') not in STATUS_COMPLETED
     )
-    yasmin_hours = sum(e['hours'] for e in fila_yasmin)
+    yasmin_hours = sum(e['estimatedHours'] for e in fila_yasmin)
     total_restante = total_novo_restante + upsell_restante + yasmin_hours
     num_techs = len([t for t in technicians_dict.values() if t.get('total', 0) > 0])
     backlog_months = total_restante / (CAPACITY_MONTHLY * max(1, num_techs)) if num_techs > 0 else 0
