@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <style>
         * {
-            margin: 0;h
+            margin: 0;hh
             padding: 0;
             box-sizing: border-box;
         }
@@ -1646,7 +1646,8 @@
                     </tr>`;
                 });
 
-                filaTableHtml += '</tbody></table>';
+                const totalHorasPendentes = DATA.filaYasmin.reduce((s,e) => s + (e.hours || 0), 0);
+                filaTableHtml += '</tbody><tfoot><tr style="border-top:2px solid rgba(0,224,255,0.3);font-weight:700;"><td colspan="4" style="text-align:right;color:#8b949e;">Total horas pendentes (tempo gasto):</td><td style="color:#f59e0b;">' + formatHours(totalHorasPendentes) + '</td><td colspan="2"></td></tr></tfoot></table>';
                 document.getElementById('backlog-yasmin-table').innerHTML = filaTableHtml;
             }
 
