@@ -609,6 +609,7 @@
 
         @media (max-width: 768px) {
             .fichas-grid { grid-template-columns: 1fr; }
+
             .kpi-row { grid-template-columns: repeat(3, 1fr); }
         }
     </style>
@@ -641,6 +642,7 @@
             <button class="tab-btn" onclick="switchTab('novos-clientes')">Quadro Clientes Novos</button>
             <button class="tab-btn" onclick="switchTab('upsell')">Quadro Upsell/Existentes</button>
             <button class="tab-btn" onclick="switchTab('comportamento')">Comparativo de Comportamento</button>
+
             <button class="tab-btn" onclick="switchTab('backlog')">Backlog & Capacity</button>
             <button class="tab-btn" onclick="switchTab('fichas')">Fichas Individuais</button>
         </div>
@@ -751,6 +753,7 @@
                 <div id="comportamento-insights"></div>
             </div>
         </div>
+
 
         <!-- TAB 6: Backlog & Capacity -->
         <div id="backlog" class="tab-content">
@@ -1626,9 +1629,10 @@
 
             // Render Fila Yasmin
             if (DATA.filaYasmin && DATA.filaYasmin.length > 0) {
-                document.getElementById('backlog-yasmin-badge').innerHTML = `${DATA.filaYasmin.length} epics | ${formatHours(summary.yasminHours)}`;
+                const totalEstimated = DATA.filaYasmin.reduce((s,e) => s + (e.estimatedHours || 0), 0);
+                document.getElementById('backlog-yasmin-badge').innerHTML = `${DATA.filaYasmin.length} epics | ${formatHours(totalEstimated)} estimadas`;
 
-                let filaTableHtml = '<table><thead><tr><th>Epic</th><th>Demanda</th><th>Tipo</th><th>Status</th><th>Horas</th><th>Criado</th><th>Due Date</th></tr></thead><tbody>';
+                let filaTableHtml = '<table><thead><tr><th>Epic</th><th>Demanda</th><th>Tipo</th><th>Status</th><th>Horas Est.</th><th>Criado</th><th>Due Date</th></tr></thead><tbody>';
 
                 DATA.filaYasmin.forEach(item => {
                     filaTableHtml += `<tr>
@@ -1636,7 +1640,7 @@
                         <td>${item.summary}</td>
                         <td>${item.tipo}</td>
                         <td><span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(59,130,246,0.15);color:#3b82f6;">${item.status}</span></td>
-                        <td style="font-weight:600;color:#f59e0b;">${formatHours(item.hours)}</td>
+                        <td style="font-weight:600;color:#f59e0b;">${formatHours(item.estimatedHours)}</td>
                         <td>${item.criado}</td>
                         <td style="color:#8b949e;">${item.dueDate || '—'}</td>
                     </tr>`;
