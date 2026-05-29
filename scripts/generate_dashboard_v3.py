@@ -656,6 +656,10 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             # Extract tipo (module) from summary
             tipo = extract_tipo_from_summary(summary)
 
+            # Skip "Novo" - tracked separately in Backlog Novo table
+            if tipo == 'Novo':
+                continue
+                
             estimated = MODULE_HOURS.get(tipo, MODULE_DEFAULT_HOURS)
             fila_yasmin.append({
                 'key': key,
