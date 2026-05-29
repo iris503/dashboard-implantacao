@@ -39,6 +39,7 @@ MODULE_HOURS = {
     'Cloud': 47.0,
     'Assinatura': 5.3,
     'B2B': 12.0,
+    'TAP': 1.5,
     'Novo': 100.0,
 }
 MODULE_DEFAULT_HOURS = 12.0
@@ -231,6 +232,8 @@ def extract_tipo_from_summary(summary: str) -> str:
         return 'NF'
     if re.search(r'integra[çc][ãa]o', s):
         return 'Integração'
+    if 'tap' in s or 'solicitação de tap' in s or 'solicitacao de tap' in s:
+        return 'TAP'
     if 'b2b' in s:
         return 'B2B'
     if 'fila de atendimento' in s:
