@@ -49,6 +49,7 @@ MODULE_HOURS = {
     'Cloud': 47.0,
     'Assinatura': 5.3,
     'B2B': 12.0,
+    'TAP': 1.5,
     'Novo': 100.0,
 }
 MODULE_DEFAULT_HOURS = 12.0  # fallback for unknown types
@@ -377,8 +378,11 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             elif 'cloud' in sl or 'migração' in sl: tipo = 'Cloud'
             elif 'integra' in sl or 'api' in sl: tipo = 'Integração'
             elif 'assinatura' in sl: tipo = 'Assinatura'
+            elif 'tap' in sl or 'solicitação de tap' in sl or 'solicitacao de tap' in sl: tipo = 'TAP'
             elif 'b2b' in sl: tipo = 'B2B'
             elif 'implementation project' in sl or 'novo' in sl: tipo = 'Novo'
+            if tipo == 'Novo':
+                continue
             estimated = MODULE_HOURS.get(tipo, MODULE_DEFAULT_HOURS)
             fila_yasmin.append({'key': key, 'summary': summary, 'tipo': tipo, 'status': status, 'hours': round(hours, 1), 'estimatedHours': estimated, 'criado': created, 'dueDate': duedate or '—'})
 
