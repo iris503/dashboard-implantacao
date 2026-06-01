@@ -90,14 +90,14 @@ class JiraClient:
             'customfield_10015', 'resolutiondate'
         ]
 
-        async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
+        if True:  # using requests
             while True:
                 url = f"{self.base_url}/rest/api/2/search"
                 params = {'jql': jql, 'maxResults': max_results, 'startAt': start_at, 'fields': ','.join(fields)}
                 
                     
 
-                resp = await client.get(url, headers=self.headers, params=params)
+                resp = req_lib.get(url, headers=self.headers, params=params, timeout=30)
                 resp.raise_for_status()
                 data = resp.json()
                 issues = data.get('issues', [])
