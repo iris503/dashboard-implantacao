@@ -90,7 +90,7 @@ class JiraClient:
             'customfield_10015', 'resolutiondate'
         ]
 
-        async with httpx.AsyncClient(timeout=30) as client:
+        async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
             while True:
                 url = f"{self.base_url}/rest/api/2/search"
                 params = {'jql': jql, 'maxResults': max_results, 'startAt': start_at, 'fields': ','.join(fields)}
