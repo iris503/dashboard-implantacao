@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
 
-import httpx
+import requests as req_lib
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -532,7 +532,7 @@ async def refresh_data():
             logger.warning("Jira credentials not set — skipping refresh")
             return
         client = JiraClient(JIRA_EMAIL, JIRA_API_TOKEN, JIRA_BASE_URL)
-        epics = await client.get_epics()
+        epics = await asyncio.to_thread(client.get_epics_sync)
         data = generate_dashboard_data(epics)
         async with _cache_lock:
             _dashboard_cache = data
