@@ -92,7 +92,7 @@ class JiraClient:
 
         async with httpx.AsyncClient(timeout=30) as client:
             while True:
-                url = f"{self.base_url}/rest/api/3/search"
+                url = f"{self.base_url}/rest/api/2/search"
                 params = {'jql': jql, 'maxResults': max_results, 'startAt': start_at, 'fields': ','.join(fields)}
                 
                     
