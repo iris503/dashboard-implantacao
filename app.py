@@ -75,7 +75,7 @@ class JiraClient:
     async def get_epics(self) -> List[Dict]:
         epics = []
         max_results = 100
-        next_page_token = None
+        start_at = 0
         current_year = datetime.now().strftime('%Y')
         jql = (
             f'project = IWN AND issuetype = Epic AND ('
@@ -92,10 +92,10 @@ class JiraClient:
 
         async with httpx.AsyncClient(timeout=30) as client:
             while True:
-                url = f"{self.base_url}/rest/api/3/search/jql"
-                params = {'jql': jql, 'maxResults': max_results, 'fields': ','.join(fields)}
-                if next_page_token:
-                    params['nextPageToken'] = next_page_token
+                url = f"{self.base_url}/rest/api/3/search"
+                params = {'jql': jql, 'maxResults': max_results, 'startAt': start_at, 'fields': ','.join(fields)}
+                
+                    
 
                 resp = await client.get(url, headers=self.headers, params=params)
                 resp.raise_for_status()
@@ -104,8 +104,8 @@ class JiraClient:
                 if not issues:
                     break
                 epics.extend(issues)
-                next_page_token = data.get('nextPageToken')
-                if not next_page_token:
+                start_at += len(issues)
+                if start_at >= data.get('total', 0):
                     break
 
         logger.info(f"Fetched {len(epics)} epics from Jira")
