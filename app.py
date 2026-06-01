@@ -532,7 +532,7 @@ async def refresh_data():
             logger.warning("Jira credentials not set — skipping refresh")
             return
         client = JiraClient(JIRA_EMAIL, JIRA_API_TOKEN, JIRA_BASE_URL)
-        epics = await asyncio.to_thread(client.get_epics_sync)
+        epics = await client.get_epics()
         data = generate_dashboard_data(epics)
         async with _cache_lock:
             _dashboard_cache = data
