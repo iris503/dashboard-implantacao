@@ -19,6 +19,7 @@ COPY --chown=appuser:appuser . .
 
 # USER appuser  # running as root for DNS fix
 ENV PATH=/home/appuser/.local/bin:$PATH
+ENV PYTHONPATH=/home/appuser/.local/lib/python3.12/site-packages
 
 EXPOSE 8000
 
