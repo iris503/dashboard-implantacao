@@ -589,28 +589,42 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         restante = max(meta - gasto, 10) if gasto < meta else max(meta - gasto, 10)
         progresso = (gasto / meta) if meta > 0 else 0
 
-        # Calculate prazo
+        # Calculate prazo — prioriza Data Limite (duedate) do Jira
+        # Se Novo e Pausado, não contabiliza prazo (tempo congelado)
         prazo_wmi = 'N/D'
         status_prazo = 'Sem porte'
         status_prazo_type = 'noporte'
 
-        # Use Start Date if available, otherwise fall back to created date
-        base_date = start_date if start_date else created
-        if days > 0 and base_date:
-            deadline = datetime.strptime(base_date, '%Y-%m-%d') + timedelta(days=days)
-            prazo_wmi = deadline.strftime('%d/%m/%Y')
-            today_dt = datetime.strptime(today, '%Y-%m-%d')
-            days_diff = (today_dt - deadline).days
-
-            if days_diff > 0:
-                status_prazo = f'+{days_diff} dias'
-                status_prazo_type = 'overdue'
-            elif days_diff < -90:
-                status_prazo = f'{-days_diff} dias'
-                status_prazo_type = 'ok'
+        is_paused = status.strip().lower() in ('paused', 'pausado')
+        if is_paused:
+            prazo_wmi = 'Pausado'
+            status_prazo = 'Pausado'
+            status_prazo_type = 'paused'
+        else:
+            deadline = None
+            if duedate:
+                # Usa a Data Limite definida no Jira (campo duedate)
+                deadline = datetime.strptime(duedate, '%Y-%m-%d')
             else:
-                status_prazo = f'{-days_diff} dias'
-                status_prazo_type = 'warning'
+                # Fallback: calcula com base na data de inicio + dias do porte
+                base_date = start_date if start_date else created
+                if days > 0 and base_date:
+                    deadline = datetime.strptime(base_date, '%Y-%m-%d') + timedelta(days=days)
+
+            if deadline:
+                prazo_wmi = deadline.strftime('%d/%m/%Y')
+                today_dt = datetime.strptime(today, '%Y-%m-%d')
+                days_diff = (today_dt - deadline).days
+
+                if days_diff > 0:
+                    status_prazo = f'+{days_diff} dias'
+                    status_prazo_type = 'overdue'
+                elif days_diff < -90:
+                    status_prazo = f'{-days_diff} dias'
+                    status_prazo_type = 'ok'
+                else:
+                    status_prazo = f'{-days_diff} dias'
+                    status_prazo_type = 'warning'
 
         impl = extract_implementer_name(assignee)
 
