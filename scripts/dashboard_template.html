@@ -1646,7 +1646,7 @@
                     </tr>`;
                 });
 
-                const totalHorasPendentes = DATA.filaYasmin.reduce((s,e) => s + (e.hours || 0), 0);
+                const totalHorasPendentes = DATA.filaYasmin.reduce((s,e) => s + (e.estimatedHours || 0), 0);
                 filaTableHtml += '</tbody><tfoot><tr style="border-top:2px solid rgba(0,224,255,0.3);font-weight:700;"><td colspan="4" style="text-align:right;color:#8b949e;">Total horas pendentes (tempo gasto):</td><td style="color:#f59e0b;">' + formatHours(totalHorasPendentes) + '</td><td colspan="2"></td></tr></tfoot></table>';
                 document.getElementById('backlog-yasmin-table').innerHTML = filaTableHtml;
             }
