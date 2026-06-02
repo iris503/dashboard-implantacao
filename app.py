@@ -92,7 +92,7 @@ class JiraClient:
 
         if True:  # using requests
             while True:
-                url = f"{self.base_url}/rest/api/2/search"
+                url = f"{self.base_url}/rest/api/3/search/jql"
                 params = {'jql': jql, 'maxResults': max_results, 'startAt': start_at, 'fields': ','.join(fields)}
                 
                     
