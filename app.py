@@ -169,7 +169,7 @@ def detect_porte(summary: str) -> Tuple[str, int, int]:
     summary_lower = summary.lower()
     if 'large' in summary_lower or 'grande' in summary_lower:
         return ('Large', 400, 120)
-    elif 'medium' in summary_lower or 'médio' in summary_lower:
+    elif 'medium' in summary_lower or 'M\u00c9DIO' in summary_lower:
         return ('Medium', 200, 90)
     elif 'small' in summary_lower or 'pequeno' in summary_lower:
         return ('Small', 150, 60)
@@ -418,7 +418,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         novos_em_andamento = sum(1 for e in novo_open if e['assignee'] == tech_name and e['status'] == 'Em andamento')
         novos_str = f"{novos_em_andamento} em andamento" if novos_em_andamento > 0 else "0"
         ocupacao = (total_rest / (CAPACITY_MONTHLY * 3)) * 100 if total_rest > 0 else 0
-        risco = 'ALTO' if ocupacao > 100 else 'MÉDIO' if ocupacao > 50 else 'BAIXO'
+        risco = 'ALTO' if ocupacao > 100 else 'M\u00c9DIO' if ocupacao > 50 else 'BAIXO'
         capacity_table.append({
             'name': tech_name, 'epicsAbertos': epics_str, 'horasNovo': round(novo_rest, 1),
             'horasUpsell': round(upsell_rest, 1), 'totalRestante': round(total_rest, 1),
