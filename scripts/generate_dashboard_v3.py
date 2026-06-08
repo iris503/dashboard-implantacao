@@ -960,9 +960,10 @@ def generate_mock_data() -> Dict:
             {'key': 'IWN-3256', 'summary': 'VITALABOR - Fila / Interlac', 'tipo': 'Interlac', 'status': 'Em andamento', 'hours': 49.3, 'criado': '2025-12-11', 'dueDate': '2026-01-16', 'sugestao': 'Daniel / Fabio'},
         ],
         'backlogInsights': [
-            {'title': 'Anderson e Luiz Neto: 3.9 meses de backlog cada', 'text': 'Acima da capacidade trimestral (130% e 128%).', 'level': 'danger'},            {'title': '8 Novo epics com porte estao ATRASADOS', 'text': 'Dos epics Novo com porte definido, 8 ja ultrapassaram o prazo WMI.', 'level': 'danger'},
-            {'title': 'Paralelismo no limite', 'text': 'Luiz, Jorge e Nino tocam 3 Novos simultÃÂÃÂ¢neos.', 'level': 'warning'},
-            'text': f'Estes tecnicos tem espaco para absorver mais Novos.',
+            {'title': '8 Novo epics com porte estao ATRASADOS', 'text': 'Dos epics Novo com porte definido, 8 ja ultrapassaram o prazo WMI.', 'level': 'danger'},
+            {'title': 'Anderson e Luiz Neto: 3.9 meses de backlog cada', 'text': 'Acima da capacidade trimestral (130% e 128%).', 'level': 'danger'},
+            {'title': 'Paralelismo no limite', 'text': 'Luiz, Jorge e Nino tocam 3 Novos simultaneos.', 'level': 'warning'},
+            {'title': 'Capacidade disponivel', 'text': 'Daniel tem espaco para absorver mais Novos.', 'level': 'success'},
         ]
     }
 
