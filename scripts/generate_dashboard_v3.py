@@ -20,8 +20,8 @@ JIRA_EMAIL = os.getenv('JIRA_EMAIL')
 JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN')
 JIRA_BASE_URL = os.getenv('JIRA_BASE_URL')
 
-IMPLEMENTERS = ['Jessica', 'Daniel', 'Fabio', 'Nino', 'Jorge', 'Anderson', 'Luiz', 'Fernanda']
-EXCLUDE_ASSIGNEES = {'Yasmin', 'Michael', 'Iris'}
+IMPLEMENTERS = ['Jessica', 'Daniel', 'Nino', 'Jorge', 'Anderson', 'Luiz', 'Fernanda']
+EXCLUDE_ASSIGNEES = {'Yasmin', 'Michael', 'Iris', 'Fabio'}
 
 # Status mappings
 STATUS_COMPLETED = {'ConcluÃÂÃÂ­do', 'Cancelado'}
@@ -757,16 +757,16 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
     overdue_novos = sum(1 for e in novo_open if e['statusPrazoType'] == 'overdue')
     if overdue_novos > 0:
         insights.append({
-            'title': f'{overdue_novos} Novo epics com porte estÃÂÃÂ£o ATRASADOS',
-            'text': f'Dos epics Novo com porte definido, {overdue_novos} jÃÂÃÂ¡ ultrapassaram o prazo WMI.',
+            'title': f'{overdue_novos} Novo epics com porte estao ATRASADOS',
+            'text': f'Dos epics Novo com porte definido, {overdue_novos} ja ultrapassaram o prazo WMI.',
             'level': 'danger'
         })
 
     high_risk_techs = [t['name'] for t in capacity_table if t['risco'] == 'ALTO']
     if high_risk_techs:
         insights.append({
-            'title': f'{len(high_risk_techs)} tÃÂÃÂ©cnico(s) acima da capacidade trimestral',
-            'text': f'{", ".join(high_risk_techs)} tÃÂÃÂªm ocupaÃÂÃÂ§ÃÂÃÂ£o >100%.',
+            'title': f'{len(high_risk_techs)} tecnico(s) acima da capacidade trimestral',
+            'text': f'{", ".join(high_risk_techs)} tem ocupacao >100%.',
             'level': 'danger'
         })
 
@@ -774,15 +774,15 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
     if parallel_risk:
         insights.append({
             'title': f'Paralelismo no limite: {", ".join(parallel_risk)}',
-            'text': 'Tocar 3 Novos simultÃÂÃÂ¢neos com 2-4h/dia cada pode pressionar a agenda.',
+            'text': 'Tocar 3 Novos simultaneos com 2-4h/dia cada pode pressionar a agenda.',
             'level': 'warning'
         })
 
     available_techs = [t['name'] for t in capacity_table if t['ocupacao'] < 30]
     if available_techs:
         insights.append({
-            'title': f'Capacidade disponÃÂÃÂ­vel: {", ".join(available_techs)}',
-            'text': f'Estes tÃÂÃÂ©cnicos tÃÂÃÂªm espaÃÂÃÂ§o para absorver mais Novos.',
+            'title': f'Capacidade disponivel: {", ".join(available_techs)}',
+            'text': f'Estes tecnicos tem espaco para absorver mais Novos.',
             'level': 'success'
         })
 
@@ -960,10 +960,10 @@ def generate_mock_data() -> Dict:
             {'key': 'IWN-3256', 'summary': 'VITALABOR - Fila / Interlac', 'tipo': 'Interlac', 'status': 'Em andamento', 'hours': 49.3, 'criado': '2025-12-11', 'dueDate': '2026-01-16', 'sugestao': 'Daniel / Fabio'},
         ],
         'backlogInsights': [
-            {'title': '8 Novo epics com porte estÃÂÃÂ£o ATRASADOS', 'text': 'Dos epics Novo com porte definido, 8 jÃÂÃÂ¡ ultrapassaram o prazo WMI.', 'level': 'danger'},
+            'text': f'Dos epics Novo com porte definido, {overdue_novos} ja ultrapassaram o prazo WMI.',
             {'title': 'Anderson e Luiz Neto: 3.9 meses de backlog cada', 'text': 'Acima da capacidade trimestral (130% e 128%).', 'level': 'danger'},
             {'title': 'Paralelismo no limite', 'text': 'Luiz, Jorge e Nino tocam 3 Novos simultÃÂÃÂ¢neos.', 'level': 'warning'},
-            {'title': 'Capacidade disponÃÂÃÂ­vel', 'text': 'Daniel e Fabio tÃÂÃÂªm espaÃÂÃÂ§o para absorver mais Novos.', 'level': 'success'},
+            'text': f'Estes tecnicos tem espaco para absorver mais Novos.',
         ]
     }
 
