@@ -78,7 +78,7 @@ class JiraClient:
         fields = [
             'summary', 'status', 'assignee', 'customfield_10800',
             'aggregatetimespent', 'aggregatetimeestimate', 'created', 'duedate', 'timetracking', 'updated',
-            'customfield_10015', 'resolutiondate'
+            'customfield_10015', 'resolutiondate', 'customfield_10124'
         ]
 
         while True:
@@ -307,6 +307,75 @@ def is_cloud_migration(summary: str) -> bool:
     keywords = ['Migration Module', 'Autolac Cloud', 'MigraÃÂÃÂ§ÃÂÃÂ£o']
     summary_lower = summary.lower()
     return any(kw.lower() in summary_lower for kw in keywords)
+
+
+def _extract_upsell_module(cf) -> str:
+    """Extrai o valor do campo Jira 'Upsell Module' (customfield_10124).
+    Aceita dict {value:...}, lista de dicts/strings, ou string.
+    """
+    if cf is None:
+        return ''
+    if isinstance(cf, dict):
+        return (cf.get('value') or '').strip()
+    if isinstance(cf, list):
+        vals = []
+        for x in cf:
+            if isinstance(x, dict) and x.get('value'):
+                vals.append(x['value'])
+            elif isinstance(x, str) and x.strip():
+                vals.append(x.strip())
+        return ', '.join(vals).strip()
+    return str(cf).strip()
+
+
+def generate_tempo_modulos(epics: List[Dict]) -> List[Dict]:
+    """Monta a lista de epics de upsell CONCLUIDOS com tempo por modulo,
+    para alimentar a aba 'Tempo Modulos' do dashboard.
+
+    Regras (fonte: licoes aprendidas do dashboard original):
+    - Apenas concluidos (statusCategory = Done);
+    - Exclui templates (summary contendo 'template');
+    - Modulo = campo customizado customfield_10124 (Upsell Module). Epics sem
+      esse campo preenchido sao ignorados (nao sao upsell de modulo);
+    - Horas = aggregatetimespent (epic + subtarefas, vida toda do epic).
+
+    Cada item: {k: key, s: summary, m: modulo, h: horas, r: data de resolucao}.
+    """
+    result = []
+    for epic in epics:
+        fields = epic.get('fields', {})
+        status = fields.get('status', {}).get('name', '')
+        cat_key = fields.get('status', {}).get('statusCategory', {}).get('key', '')
+
+        if cat_key == 'done':
+            status_cat = 'completed'
+        else:
+            status_cat = get_status_category(status)
+        if status_cat != 'completed':
+            continue
+
+        summary = (fields.get('summary', '') or '').strip()
+        if 'template' in summary.lower():
+            continue
+
+        modulo = _extract_upsell_module(fields.get('customfield_10124'))
+        if not modulo:
+            continue  # sem modulo de upsell -> fora (regra do dashboard original)
+
+        resolution = parse_date(fields.get('resolutiondate', '')) or parse_date(fields.get('updated', ''))
+        time_spent = fields.get('aggregatetimespent', 0) or 0
+        hours = round(time_spent / 3600, 2)
+
+        result.append({
+            'k': epic.get('key', ''),
+            's': summary,
+            'm': modulo,
+            'h': hours,
+            'r': resolution,
+        })
+
+    result.sort(key=lambda x: x.get('r') or '', reverse=True)
+    return result
 
 
 def parse_date(date_str: str) -> str:
@@ -876,7 +945,8 @@ def generate_dashboard_data(epics: List[Dict]) -> Dict:
         'capacityTable': backlog_data['capacityTable'],
         'backlogNovo': backlog_data['backlogNovo'],
         'filaYasmin': backlog_data['filaYasmin'],
-        'backlogInsights': backlog_data['backlogInsights']
+        'backlogInsights': backlog_data['backlogInsights'],
+        'tempoModulos': generate_tempo_modulos(epics)
     }
 
 
@@ -979,6 +1049,14 @@ def generate_mock_data() -> Dict:
                         'totalHours': 3264.0, 'activeHours': 1019.0, 'avgHoursPerEpic': 88.2},
         'upsellSummary': {'total': 185, 'completed': 132, 'inProgress': 40, 'paused': 8, 'pending': 5,
                           'totalHours': 1946.0, 'activeHours': 591.0, 'avgHoursPerEpic': 10.5},
+        'tempoModulos': [
+            {'k': 'IWN-3290', 's': 'INTERLAC - MEGAENSAIO - 10053', 'm': 'Interlac', 'h': 16.98, 'r': '2026-01-22'},
+            {'k': 'IWN-3374', 's': 'INTERLAC - LAB ELION - 2959', 'm': 'Interlac', 'h': 4.0, 'r': '2026-01-22'},
+            {'k': 'IWN-3473', 's': 'NOTA FISCAL - LAB OSWALDO CRUZ - 3126', 'm': 'Nota Fiscal', 'h': 3.7, 'r': '2026-02-13'},
+            {'k': 'IWN-3059', 's': 'NEXO - 10097 - Finance Module', 'm': 'Financeiro', 'h': 9.75, 'r': '2026-03-18'},
+            {'k': 'IWN-489', 's': 'Implementation Upsell - Finance Module - WMI', 'm': 'Financeiro', 'h': 0.0, 'r': '2026-02-01'},
+            {'k': 'IWN-1034', 's': 'LABORATORIO SANTA RITA - 5693', 'm': 'Estoque', 'h': 4.9, 'r': '2026-03-25'},
+        ],
         **mock_backlog
     }
 
