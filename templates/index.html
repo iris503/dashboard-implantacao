@@ -181,7 +181,9 @@ tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
   <div class="kpi-grid" id="kpiGrid"></div>
   <div class="section-header"><div class="section-number">01 — Insights</div><h2>Alertas e Recomendações</h2></div>
   <div class="insight-grid" id="insightsGrid"></div>
-  <div class="section-header"><div class="section-number">02 — Equipe</div><h2>Resumo por Implantador</h2></div>
+  <div class="section-header"><div class="section-number">02 — Análise</div><h2>Análise do Coordenador</h2></div>
+  <div id="coordAnalysis"></div>
+  <div class="section-header"><div class="section-number">03 — Equipe</div><h2>Resumo por Implantador</h2></div>
   <div id="resumoTable"></div>
 </div>
 
@@ -299,6 +301,7 @@ function renderAll() {
   document.getElementById('timestamp').textContent = 'Atualizado: ' + DATA.timestamp;
   renderKPIs();
   renderInsights();
+  renderCoordinatorAnalysis();
   renderResumoTable();
   renderTechCards();
   renderBacklogTable();
@@ -355,6 +358,33 @@ function renderKPIs() {
 }
 
 // ─── Insights ──────────────────────────────────
+function renderCoordinatorAnalysis() {
+  const el = document.getElementById('coordAnalysis');
+  if (!el) return;
+  const techs = DATA.technicians || [];
+  const cap = DATA.capacityTable || [];
+  const s = DATA.backlogSummary || {};
+  if (!techs.length) { el.innerHTML = ''; return; }
+  const totalOpen = techs.reduce((a,t)=>a+t.openCount,0);
+  const totalComp = techs.reduce((a,t)=>a+t.completed,0);
+  const totalEpics = techs.reduce((a,t)=>a+t.total,0);
+  const compRate = totalEpics ? Math.round(totalComp/totalEpics*100) : 0;
+  const totalVencidos = techs.reduce((a,t)=>a+(t.overdueCount||0),0);
+  const over = cap.filter(t=>t.ocupacao>100).sort((a,b)=>b.ocupacao-a.ocupacao);
+  const livres = cap.filter(t=>t.ocupacao<70).sort((a,b)=>a.ocupacao-b.ocupacao);
+  const top = cap.slice().sort((a,b)=>b.meses-a.meses)[0];
+  const fmt = arr => arr.map(t=>t.name).join(', ');
+  const p = `O time tem <strong>${totalOpen} épicos abertos</strong> e <strong>${(s.totalRestante||0).toFixed(0)}h</strong> de backlog (≈ <strong>${s.backlogMonths} meses</strong> no ritmo atual). A taxa de conclusão geral está em <strong>${compRate}%</strong>. A carga está dividida em <strong>${s.novoPercent}% Novo</strong> e <strong>${s.upsellPercent}% Upsell</strong>${s.yasminEpics?`, com ${s.yasminEpics} épicos (${(s.yasminHours||0).toFixed(0)}h) ainda na fila de triagem`:''}.`;
+  const items = [];
+  if (over.length) items.push({lvl:'danger', t:`${over.length} implantador(es) acima da capacidade`, d:`${fmt(over)} ${over.length>1?'estão':'está'} com ocupação acima de 100% — risco de atraso e sobrecarga.`});
+  if (top) items.push({lvl: over.length?'warning':'neutral', t:`Maior fila: ${top.name}`, d:`${top.meses} meses de backlog (${top.totalRestante}h) — o gargalo mais crítico de prazo.`});
+  if (totalVencidos>0) items.push({lvl:'danger', t:`${totalVencidos} épicos vencidos no time`, d:`Há entregas que já passaram do prazo WMI distribuídas entre os implantadores.`});
+  if (livres.length) items.push({lvl:'success', t:`Capacidade disponível`, d:`${fmt(livres)} ${livres.length>1?'estão':'está'} abaixo de 70% — ${livres.length>1?'podem':'pode'} absorver novas demandas ou ajudar a desafogar os sobrecarregados.`});
+  const colors = {danger:'#ef4444', warning:'#f59e0b', success:'#22c55e', neutral:'var(--color-blue-400)'};
+  const bullets = items.map(i=>`<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><div style="width:8px;height:8px;border-radius:50%;background:${colors[i.lvl]};margin-top:5px;flex:0 0 auto"></div><div><div style="font-weight:600;font-size:13px">${i.t}</div><div style="font-size:12px;color:var(--color-gray-400)">${i.d}</div></div></div>`).join('');
+  el.innerHTML = `<div class="table-wrapper" style="padding:1.25rem;margin-bottom:2rem"><div style="font-size:13px;line-height:1.65;color:var(--color-gray-100);margin-bottom:8px">${p}</div>${bullets}</div>`;
+}
+
 function renderInsights() {
   const insights = DATA.backlogInsights || [];
   const icons = { danger: '🔴', warning: '🟡', success: '🟢' };
