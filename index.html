@@ -1,2049 +1,692 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Performance Time | WMI Solutions</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #0d1117;
-            color: #c9d1d9;
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        header {
-            background: linear-gradient(135deg, #161b22 0%, #0d1117 100%);
-            border-bottom: 2px solid #30363d;
-            padding: 30px 20px;
-            margin-bottom: 30px;
-            border-radius: 8px;
-        }
-
-        header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #06b6d4, #f97316);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        header .subtitle {
-            color: #8b949e;
-            font-size: 1.1em;
-        }
-
-        header .meta-info {
-            display: flex;
-            gap: 30px;
-            margin-top: 20px;
-            font-size: 0.95em;
-            color: #8b949e;
-            flex-wrap: wrap;
-        }
-
-        header .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .badge {
-            background: #30363d;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            color: #79c0ff;
-            font-weight: 600;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #30363d;
-            overflow-x: auto;
-            padding-bottom: 0;
-        }
-
-        .tab-btn {
-            background: transparent;
-            border: none;
-            color: #8b949e;
-            padding: 15px 20px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 500;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .tab-btn:hover {
-            color: #c9d1d9;
-            border-bottom-color: #30363d;
-        }
-
-        .tab-btn.active {
-            color: #06b6d4;
-            border-bottom-color: #06b6d4;
-        }
-
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .section {
-            margin-bottom: 40px;
-        }
-
-        .section-title {
-            font-size: 1.8em;
-            margin-bottom: 20px;
-            color: #f0883e;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .section-title::before {
-            content: '';
-            width: 4px;
-            height: 30px;
-            background: #f97316;
-            border-radius: 2px;
-        }
-
-        .card {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .card-title {
-            font-size: 1.3em;
-            margin-bottom: 15px;
-            color: #c9d1d9;
-            font-weight: 600;
-        }
-
-        .insight-box {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-left: 4px solid #30363d;
-            border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 15px;
-            font-size: 0.95em;
-            line-height: 1.7;
-        }
-
-        .insight-box.positive {
-            border-left-color: #22c55e;
-            background: rgba(34, 197, 94, 0.05);
-        }
-
-        .insight-box.critical {
-            border-left-color: #ef4444;
-            background: rgba(239, 68, 68, 0.05);
-        }
-
-        .insight-box.warning {
-            border-left-color: #f97316;
-            background: rgba(249, 115, 22, 0.05);
-        }
-
-        .insight-box.info {
-            border-left-color: #06b6d4;
-            background: rgba(6, 182, 212, 0.05);
-        }
-
-        .insight-box strong {
-            color: #c9d1d9;
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-            margin-bottom: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #161b22;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        thead {
-            background: #0d1117;
-            border-bottom: 2px solid #30363d;
-        }
-
-        th {
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: #79c0ff;
-            font-size: 0.95em;
-        }
-
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #30363d;
-        }
-
-        tbody tr:nth-child(even) {
-            background: rgba(22, 27, 34, 0.5);
-        }
-
-        tbody tr:hover {
-            background: rgba(22, 27, 34, 0.8);
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 0.9em;
-            font-weight: 600;
-            text-align: center;
-            min-width: 70px;
-        }
-
-        .status-completed {
-            background: rgba(34, 197, 94, 0.15);
-            color: #22c55e;
-        }
-
-        .status-progress {
-            background: rgba(6, 182, 212, 0.15);
-            color: #06b6d4;
-        }
-
-        .status-paused {
-            background: rgba(249, 115, 22, 0.15);
-            color: #f97316;
-        }
-
-        .status-pending {
-            background: rgba(239, 68, 68, 0.15);
-            color: #ef4444;
-        }
-
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .chart-container {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 20px;
-            position: relative;
-            height: 400px;
-        }
-
-        .chart-container.full-width {
-            grid-column: 1 / -1;
-        }
-
-        .chart-container canvas {
-            max-height: 100%;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .metric-card {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .metric-value {
-            font-size: 2.5em;
-            font-weight: 700;
-            color: #06b6d4;
-            margin-bottom: 8px;
-        }
-
-        .metric-label {
-            color: #8b949e;
-            font-size: 0.95em;
-        }
-
-        footer {
-            background: #0d1117;
-            border-top: 1px solid #30363d;
-            padding: 20px;
-            text-align: center;
-            color: #8b949e;
-            margin-top: 50px;
-            border-radius: 8px;
-        }
-
-        @media (max-width: 768px) {
-            header h1 {
-                font-size: 1.8em;
-            }
-
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .tabs {
-                flex-wrap: wrap;
-            }
-
-            table {
-                font-size: 0.9em;
-            }
-
-            th, td {
-                padding: 10px;
-            }
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #30363d;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #06b6d4, #22c55e);
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-
-        .scope-info {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            color: #c9d1d9;
-        }
-
-        .controls {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .controls select {
-            padding: 0.5rem 1rem;
-            background-color: #161b22;
-            color: #c9d1d9;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        .controls select:hover {
-            border-color: #06b6d4;
-        }
-
-        .fichas-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .ficha-card {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 1.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .ficha-card:hover {
-            border-color: #06b6d4;
-            box-shadow: 0 8px 16px rgba(6, 182, 212, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .ficha-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-
-        .ficha-name {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #06b6d4;
-        }
-
-        .risk-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .risk-badge.high { background-color: rgba(239,68,68,0.2); color: #ef4444; }
-        .risk-badge.medium { background-color: rgba(249,115,22,0.2); color: #f97316; }
-        .risk-badge.low { background-color: rgba(34,197,94,0.2); color: #22c55e; }
-
-        .ficha-metrics {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-        }
-
-        .ficha-metric {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .ficha-metric-label {
-            color: #8b949e;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .ficha-metric-value {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #c9d1d9;
-            margin-top: 0.25rem;
-        }
-
-        .completion-bar {
-            width: 100%;
-            height: 4px;
-            background-color: #30363d;
-            border-radius: 2px;
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-        .completion-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease; }
-        .completion-fill.high { background-color: #22c55e; }
-        .completion-fill.medium { background-color: #eab308; }
-        .completion-fill.low { background-color: #ef4444; }
-
-        .ficha-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 1rem;
-            border-top: 1px solid #30363d;
-            color: #8b949e;
-            font-size: 0.85rem;
-        }
-
-        .board-split {
-            display: flex;
-            width: 80px;
-            height: 6px;
-            border-radius: 3px;
-            overflow: hidden;
-            gap: 1px;
-        }
-        .board-split-section { height: 100%; }
-
-        /* Detail View */
-        .fichas-detail-view { display: none; }
-        .fichas-detail-view.active { display: block; }
-        .fichas-grid-view.hidden { display: none; }
-
-        .detail-back-btn {
-            background: #21262d;
-            border: 1px solid #30363d;
-            color: #58a6ff;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            margin-bottom: 1.5rem;
-        }
-        .detail-back-btn:hover { background: #30363d; }
-
-        .detail-title {
-            font-size: 1.5rem;
-            color: #06b6d4;
-            margin-bottom: 1.5rem;
-        }
-
-        .kpi-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 0.8rem;
-            margin-bottom: 1.5rem;
-        }
-        .kpi-card {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 0.8rem;
-            text-align: center;
-        }
-        .kpi-card .kpi-label { font-size: 0.7rem; color: #8b949e; margin-bottom: 0.3rem; }
-        .kpi-card .kpi-value { font-size: 1.3rem; font-weight: 700; color: #e6edf3; }
-
-        .detail-section { margin-bottom: 1.5rem; }
-        .detail-section-title {
-            font-size: 1.1rem;
-            color: #e6edf3;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid #30363d;
-        }
-
-        .sr-box {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 1rem;
-        }
-        .sr-box h4 { font-size: 0.85rem; margin-bottom: 0.6rem; }
-        .sr-box ul { list-style: none; padding: 0; }
-        .sr-box ul li { padding: 0.3rem 0; font-size: 0.85rem; color: #c9d1d9; }
-        .sr-box ul li::before { margin-right: 0.4rem; }
-        .sr-box.strengths h4 { color: #22c55e; }
-        .sr-box.strengths ul li::before { content: '✓'; color: #22c55e; }
-        .sr-box.risks h4 { color: #ef4444; }
-        .sr-box.risks ul li::before { content: '⚠'; color: #ef4444; }
-
-        .epic-detail-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-        .epic-detail-table th {
-            padding: 0.5rem;
-            text-align: left;
-            color: #8b949e;
-            border-bottom: 1px solid #30363d;
-            font-size: 0.8rem;
-        }
-        .epic-detail-table td {
-            padding: 0.4rem 0.5rem;
-            border-bottom: 1px solid #21262d;
-            color: #c9d1d9;
-        }
-        .epic-detail-table a { color: #58a6ff; text-decoration: none; font-weight: 600; }
-        .epic-detail-table a:hover { text-decoration: underline; }
-
-        .prazo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 0.8rem;
-            margin-bottom: 1rem;
-        }
-        .prazo-card {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 0.8rem;
-            text-align: center;
-        }
-        .prazo-card .prazo-label { font-size: 0.7rem; color: #8b949e; margin-bottom: 0.3rem; }
-        .prazo-card .prazo-value { font-size: 1.2rem; font-weight: 700; }
-
-        @media (max-width: 768px) {
-            .fichas-grid { grid-template-columns: 1fr; }
-
-            .kpi-row { grid-template-columns: repeat(3, 1fr); }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Implantação — WMI Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-bg-deep:#020818;--color-bg-dark:#050A1F;--color-bg-navy:#0A1628;--color-bg-mid:#0D1B3E;--color-bg-elevated:#111D40;
+  --color-blue-900:#1E3A8A;--color-blue-700:#1D4ED8;--color-blue-600:#2563EB;--color-blue-500:#3B82F6;--color-blue-400:#60A5FA;--color-blue-300:#93C5FD;--color-blue-200:#BFDBFE;
+  --color-cyan-500:#06B6D4;--color-cyan-400:#22D3EE;--color-cyan-300:#67E8F9;--color-cyan-glow:#00D4FF;
+  --color-white:#FFFFFF;--color-gray-100:#F1F5F9;--color-gray-300:#CBD5E1;--color-gray-400:#94A3B8;--color-gray-500:#64748B;--color-gray-600:#475569;--color-gray-700:#334155;
+  --color-success:#10B981;--color-success-light:rgba(16,185,129,0.15);--color-warning:#F59E0B;--color-warning-light:rgba(245,158,11,0.15);--color-error:#EF4444;--color-error-light:rgba(239,68,68,0.15);--color-info:#3B82F6;--color-info-light:rgba(59,130,246,0.15);
+  --gradient-brand:linear-gradient(135deg,#2563EB 0%,#06B6D4 100%);--gradient-text:linear-gradient(90deg,#60A5FA 0%,#00D4FF 100%);
+  --glass-bg:rgba(255,255,255,0.04);--glass-bg-hover:rgba(255,255,255,0.07);--glass-bg-active:rgba(37,99,235,0.15);--glass-border:rgba(255,255,255,0.08);--glass-border-hover:rgba(96,165,250,0.3);--glass-border-brand:rgba(37,99,235,0.4);--glass-blur:blur(20px);
+  --shadow-sm:0 2px 8px rgba(0,0,0,0.3);--shadow-md:0 4px 20px rgba(0,0,0,0.4);--shadow-lg:0 8px 40px rgba(0,0,0,0.5);--shadow-blue-sm:0 0 15px rgba(37,99,235,0.2);--shadow-blue-md:0 0 30px rgba(37,99,235,0.3);
+  --font-family:'Poppins',sans-serif;
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;--radius-xl:20px;--radius-full:9999px;
+  --transition-fast:150ms ease;--transition-base:250ms ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-family);background:var(--color-bg-deep);color:var(--color-white);line-height:1.5;font-size:0.875rem;overflow-x:hidden;min-height:100vh}
+
+.aurora-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.aurora-bg::before{content:'';position:absolute;width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,0.12) 0%,transparent 70%);top:-200px;left:-200px;animation:a1 20s ease-in-out infinite}
+.aurora-bg::after{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(6,182,212,0.08) 0%,transparent 70%);bottom:-100px;right:-100px;animation:a2 25s ease-in-out infinite}
+@keyframes a1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(100px,80px) scale(1.1)}66%{transform:translate(-60px,120px) scale(0.9)}}
+@keyframes a2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-80px,-60px) scale(1.15)}66%{transform:translate(60px,-100px) scale(0.95)}}
+
+.text-gradient{background:var(--gradient-text);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.container{max-width:1400px;margin:0 auto;padding:0 1.5rem;position:relative;z-index:1}
+
+/* ─── NAV ─── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 0;border-bottom:1px solid var(--glass-border);margin-bottom:2rem}
+.nav-brand{display:flex;align-items:center;gap:0.75rem}
+.nav-logo{width:36px;height:36px;border-radius:var(--radius-md);background:var(--gradient-brand);display:grid;place-items:center;font-weight:800;font-size:0.875rem}
+.nav-title{font-size:1.125rem;font-weight:700}
+.nav-meta{display:flex;align-items:center;gap:1rem}
+.nav-timestamp{font-size:0.625rem;color:var(--color-gray-400);text-transform:uppercase;letter-spacing:0.08em}
+.btn-refresh{background:var(--glass-bg);border:1px solid var(--glass-border);color:var(--color-blue-400);padding:0.5rem 1rem;border-radius:var(--radius-lg);font-family:var(--font-family);font-size:0.75rem;font-weight:600;cursor:pointer;transition:all var(--transition-base);display:flex;align-items:center;gap:0.5rem}
+.btn-refresh:hover{background:var(--glass-bg-active);border-color:var(--color-blue-400);transform:translateY(-1px)}
+.btn-refresh.loading svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── TABS ─── */
+.tabs{display:flex;gap:0.25rem;margin-bottom:1.5rem;border-bottom:1px solid var(--glass-border);padding-bottom:0}
+.tab{padding:0.75rem 1.25rem;font-size:0.75rem;font-weight:600;color:var(--color-gray-400);cursor:pointer;border:none;background:none;font-family:var(--font-family);border-bottom:2px solid transparent;transition:all var(--transition-fast);text-transform:uppercase;letter-spacing:0.06em}
+.tab:hover{color:var(--color-white)}
+.tab.active{color:var(--color-cyan-glow);border-bottom-color:var(--color-cyan-glow)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ─── KPI CARDS ─── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
+.kpi-card{background:var(--glass-bg);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:1.25rem;position:relative;overflow:hidden;transition:all var(--transition-base)}
+.kpi-card::after{content:'';position:absolute;top:-30px;right:-30px;width:80px;height:80px;border-radius:50%;pointer-events:none}
+.kpi-card:hover{border-color:var(--glass-border-hover);transform:translateY(-3px);box-shadow:var(--shadow-blue-sm)}
+.kpi-label{font-size:0.625rem;color:var(--color-gray-400);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5rem}
+.kpi-value{font-size:2rem;font-weight:800;line-height:1.1}
+.kpi-sub{font-size:0.625rem;color:var(--color-gray-500);margin-top:0.5rem}
+
+/* ─── BADGES ─── */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:0.625rem;font-weight:600;letter-spacing:0.05em;padding:2px 10px;border-radius:var(--radius-full)}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.badge-blue{background:rgba(37,99,235,0.15);color:var(--color-blue-300);border:1px solid rgba(37,99,235,0.25)}
+.badge-cyan{background:rgba(6,182,212,0.12);color:var(--color-cyan-300);border:1px solid rgba(6,182,212,0.25)}
+.badge-success{background:var(--color-success-light);color:#6EE7B7;border:1px solid rgba(16,185,129,0.25)}
+.badge-warning{background:var(--color-warning-light);color:#FCD34D;border:1px solid rgba(245,158,11,0.25)}
+.badge-error{background:var(--color-error-light);color:#FCA5A5;border:1px solid rgba(239,68,68,0.25)}
+.badge-neutral{background:rgba(255,255,255,0.05);color:var(--color-gray-300);border:1px solid var(--glass-border)}
+
+/* ─── TABLES ─── */
+.table-wrapper{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:var(--radius-xl);overflow:hidden;margin-bottom:2rem}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--glass-border)}
+.table-title{font-size:0.875rem;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:0.75rem}
+thead tr{background:rgba(37,99,235,0.06);border-bottom:1px solid var(--glass-border)}
+thead th{padding:0.75rem 1rem;text-align:left;font-size:0.625rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-gray-400);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--glass-border);transition:background var(--transition-fast)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--glass-bg-hover)}
+tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
+.td-main{font-weight:500;color:var(--color-white)!important}
+.td-key{font-family:monospace;font-size:0.625rem;color:var(--color-blue-400)}
+.td-right{text-align:right}
+
+/* ─── PROGRESS BAR ─── */
+.progress-track{height:6px;background:rgba(255,255,255,0.06);border-radius:var(--radius-full);overflow:hidden;border:1px solid var(--glass-border)}
+.progress-fill{height:100%;border-radius:var(--radius-full);background:var(--gradient-brand);transition:width 1s ease}
+.progress-fill.success{background:linear-gradient(90deg,#059669,#10B981)}
+.progress-fill.warning{background:linear-gradient(90deg,#D97706,#F59E0B)}
+.progress-fill.danger{background:linear-gradient(90deg,#DC2626,#EF4444)}
+
+/* ─── SECTION HEADER ─── */
+.section-header{margin-bottom:1.5rem}
+.section-number{font-size:0.625rem;font-weight:600;text-transform:uppercase;letter-spacing:0.15em;color:var(--color-blue-400);display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem}
+.section-number::after{content:'';flex:1;max-width:40px;height:1px;background:var(--gradient-brand)}
+.section-header h2{font-size:1.5rem;font-weight:700;line-height:1.2}
+
+/* ─── INSIGHT CARDS ─── */
+.insight-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:2rem}
+.insight-card{padding:1rem 1.25rem;border-radius:var(--radius-lg);border-left:3px solid;display:flex;align-items:flex-start;gap:0.75rem}
+.insight-card.danger{background:rgba(239,68,68,0.06);border-color:var(--color-error)}
+.insight-card.warning{background:rgba(245,158,11,0.06);border-color:var(--color-warning)}
+.insight-card.success{background:rgba(16,185,129,0.06);border-color:var(--color-success)}
+.insight-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.insight-title{font-size:0.75rem;font-weight:600;margin-bottom:2px}
+.insight-text{font-size:0.625rem;color:var(--color-gray-400);line-height:1.5}
+
+/* ─── TECH CARDS (Resumo por Implantador) ─── */
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;margin-bottom:2rem}
+.tech-card{background:var(--glass-bg);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:1.25rem;transition:all var(--transition-base);position:relative;overflow:hidden}
+.tech-card:hover{border-color:var(--glass-border-hover);box-shadow:var(--shadow-blue-sm)}
+.tech-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.tech-name{font-size:1rem;font-weight:700}
+.tech-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:1rem}
+.tech-stat{text-align:center;padding:0.5rem;background:rgba(255,255,255,0.02);border-radius:var(--radius-md);border:1px solid rgba(255,255,255,0.04)}
+.tech-stat-val{font-size:1.125rem;font-weight:700}
+.tech-stat-label{font-size:0.5rem;color:var(--color-gray-500);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px}
+.tech-board{display:flex;gap:0.5rem;margin-bottom:0.75rem}
+.tech-board-item{flex:1;padding:0.5rem;border-radius:var(--radius-md);text-align:center;font-size:0.625rem;font-weight:600}
+.board-novo{background:rgba(37,99,235,0.12);color:var(--color-blue-300);border:1px solid rgba(37,99,235,0.2)}
+.board-upsell{background:rgba(6,182,212,0.1);color:var(--color-cyan-300);border:1px solid rgba(6,182,212,0.2)}
+.tech-meta{display:flex;justify-content:space-between;font-size:0.625rem;color:var(--color-gray-500)}
+
+/* ─── RISK INDICATOR ─── */
+.risk{display:inline-flex;align-items:center;gap:4px;font-size:0.625rem;font-weight:600;padding:2px 8px;border-radius:var(--radius-full)}
+.risk-low{background:rgba(16,185,129,0.12);color:#6EE7B7}
+.risk-medium{background:rgba(245,158,11,0.12);color:#FCD34D}
+.risk-high{background:rgba(239,68,68,0.12);color:#FCA5A5}
+
+/* ─── LOADING/EMPTY ─── */
+.loading-state{text-align:center;padding:4rem 2rem;color:var(--color-gray-400)}
+.loading-spinner{width:40px;height:40px;border:3px solid var(--glass-border);border-top-color:var(--color-blue-500);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1rem}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:768px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .tech-grid{grid-template-columns:1fr}
+  .tabs{overflow-x:auto;flex-wrap:nowrap}
+  .tab{white-space:nowrap;font-size:0.625rem;padding:0.5rem 0.75rem}
+}
+</style>
 </head>
 <body>
-    <script>const DATA = {"timestamp": "2026-06-05 19:02 BRT", "technicians": [{"id": 1, "name": "Jessica", "total": 68, "completed": 46, "inProgress": 19, "paused": 3, "pending": 0, "waiting": 0, "hours": 173.1, "hoursPerEpic": 2.5, "openCount": 22, "overdueCount": 11, "zeroHoursOpen": 2, "oldest": "2025-10-10", "board": {"novo": 0, "upsell": 22}, "novoHours": 0.0, "upsellHours": 173.1, "totalHours": 173.1, "openEpics": [{"key": "IWN-4987", "title": "LABORTEST LABORATORIO E TESTES CLINICOS - 2205 Finance Module - WMI", "created": "2026-05-25", "status": "Em andamento", "board": "Upsell", "due": "2026-08-25", "hours": 6.8, "overdue": false}, {"key": "IWN-4889", "title": "LAB.MAIS SAÚDE - 10135 -  - Implementation Upsell - Stock Module - WMI", "created": "2026-05-08", "status": "Em andamento", "board": "Upsell", "due": "2026-08-07", "hours": 3.1, "overdue": false}, {"key": "IWN-4874", "title": "LAB.MAIS SAÚDE - 10135  - Implementation Upsell - Finance Module - WMI", "created": "2026-05-08", "status": "Em andamento", "board": "Upsell", "due": "2026-08-07", "hours": 6.8, "overdue": false}, {"key": "IWN-4691", "title": "NOTA FISCAL - LABORATORIO SPINA MENDES LTDA - 4602", "created": "2026-04-22", "status": "Em andamento", "board": "Upsell", "due": "2026-05-29", "hours": 10.5, "overdue": true}, {"key": "IWN-4631", "title": " NOTA FISCAL - LABCENTER - 7137", "created": "2026-04-13", "status": "Em andamento", "board": "Upsell", "due": "2026-04-27", "hours": 3.7, "overdue": true}, {"key": "IWN-4616", "title": "MEGALAB - 6577  - Finance Module - WMI", "created": "2026-04-13", "status": "Em andamento", "board": "Upsell", "due": "2026-07-13", "hours": 9.7, "overdue": false}, {"key": "IWN-4520", "title": "NOTA FISCAL - LABORATORIO SANTANNA - 1192", "created": "2026-04-07", "status": "Em andamento", "board": "Upsell", "due": "2026-05-04", "hours": 6.4, "overdue": true}, {"key": "IWN-3917", "title": "NOTA FISCAL - LAMEP - 1728", "created": "2026-03-19", "status": "Em andamento", "board": "Upsell", "due": "2026-04-02", "hours": 3.0, "overdue": true}, {"key": "IWN-3892", "title": "LABORATORIO FRESSATO PARAGUACU - 3908 - Stock Module - WMI", "created": "2026-03-18", "status": "Em andamento", "board": "Upsell", "due": "2026-06-18", "hours": 6.3, "overdue": false}, {"key": "IWN-3876", "title": "LACOR - 10153 - Implementation Upsell - Finance Module - WMI", "created": "2026-03-18", "status": "Em andamento", "board": "Upsell", "due": "2026-06-18", "hours": 6.5, "overdue": false}, {"key": "IWN-3856", "title": "LAB.SANDRINI - 10156 -  - Implementation Upsell - Stock Module - WMI", "created": "2026-03-13", "status": "Em andamento", "board": "Upsell", "due": "2026-06-16", "hours": 5.7, "overdue": false}, {"key": "IWN-3841", "title": "LAB.SANDRINI - 10156 - Implementation Upsell - Finance Module - WMI", "created": "2026-03-13", "status": "Em andamento", "board": "Upsell", "due": "2026-06-16", "hours": 10.9, "overdue": false}, {"key": "IWN-3838", "title": "NOTA FISCAL - SALUTE LABORATORIO DE ANALISES CLINICA -  5696", "created": "2026-03-13", "status": "Em andamento", "board": "Upsell", "due": "2026-03-20", "hours": 3.5, "overdue": true}, {"key": "IWN-3813", "title": "ANGRALAB LABORATORIO DE ANALISES CLINICAS - 6445 - Finance Module - WMI", "created": "2026-03-11", "status": "Paused", "board": "Upsell", "due": "2026-07-08", "hours": 5.0, "overdue": false}, {"key": "IWN-3628", "title": "NUALI - 10077 -  - Implementation Upsell - Stock Module - WMI", "created": "2026-02-24", "status": "AGUARDANDO CLIENTE", "board": "Upsell", "due": "2026-05-23", "hours": 2.0, "overdue": true}, {"key": "IWN-3474", "title": "LABORATORIO OSWALDO CRUZ - 3126 - Implementation Upsell - Finance Module - WMI", "created": "2026-02-04", "status": "Em andamento", "board": "Upsell", "due": "2026-05-04", "hours": 10.5, "overdue": true}, {"key": "IWN-3448", "title": "LAB MONSENHOR MESSIAS  2745  - Implementation Upsell - Stock Module - WMI", "created": "2026-02-02", "status": "AGUARDANDO CLIENTE", "board": "Upsell", "due": "2026-09-03", "hours": 2.5, "overdue": false}, {"key": "IWN-3433", "title": "LAB MONSENHOR MESSIAS 2745 - Implementation Upsell - Finance Module - WMI", "created": "2026-02-02", "status": "Em andamento", "board": "Upsell", "due": "2026-09-03", "hours": 19.6, "overdue": false}, {"key": "IWN-3205", "title": "ANALISA - 10131 - Implementation Upsell - Finance Module - WMI", "created": "2025-12-04", "status": "Em andamento", "board": "Upsell", "due": "2026-03-04", "hours": 28.6, "overdue": true}, {"key": "IWN-2849", "title": "EXAME MEDICINA LABORATORIAL - 5377 - Implementation Upsell - Finance Module - WMI", "created": "2025-10-29", "status": "Em andamento", "board": "Upsell", "due": "2026-05-08", "hours": 23.7, "overdue": true}, {"key": "IWN-2815", "title": "LAB DOCTORA - 10108 - Implementation Upsell - Stock Module - WMI", "created": "2025-10-24", "status": "Em andamento", "board": "Upsell", "due": "2026-01-24", "hours": 7.8, "overdue": true}, {"key": "IWN-1319", "title": "SENSUS MEDICINA LABORATORIAL - 10062 - Implementation Upsell - Finance Module - WMI", "created": "2025-10-10", "status": "Em andamento", "board": "Upsell", "due": "2025-09-26", "hours": 21.4, "overdue": true}], "riskLevel": "high", "prazo": {"epics": 22, "previstoMedio": 44, "realizadoMedio": 81, "desvioMedio": 37, "antecipados": 0, "noPrazo": 0, "atrasados": 0, "pctNoPrazo": 0}, "strengths": ["Foco claro: 100% Upsell"], "risks": ["11 epic(s) vencido(s)", "22 abertos - WIP elevado", "2 epic(s) sem apontamento de horas"], "novoStats": {"total": 0, "completed": 0, "inProgress": 0, "paused": 0, "pending": 0, "waiting": 0, "hours": 0.0, "hoursPerEpic": 0}, "upsellStats": {"total": 68, "completed": 46, "inProgress": 19, "paused": 3, "pending": 0, "waiting": 0, "hours": 173.1, "hoursPerEpic": 2.5}}, {"id": 2, "name": "Daniel", "total": 42, "completed": 35, "inProgress": 3, "paused": 2, "pending": 2, "waiting": 0, "hours": 290.0, "hoursPerEpic": 6.9, "openCount": 7, "overdueCount": 2, "zeroHoursOpen": 1, "oldest": "2025-10-10", "board": {"novo": 0, "upsell": 7}, "novoHours": 0.0, "upsellHours": 290.0, "totalHours": 290.0, "openEpics": [{"key": "IWN-5044", "title": " INTERLAC - Dra Tânia Medicina Diagnóstica - 10106", "created": "2026-05-29", "status": "Em andamento", "board": "Upsell", "due": "2026-06-09", "hours": 0.5, "overdue": false}, {"key": "IWN-4949", "title": " FILA DE ATENDIMENTO - LABORATORIO THIAGO HUGO - 4215  ", "created": "2026-05-14", "status": "Paused", "board": "Upsell", "due": "2026-05-27", "hours": 3.3, "overdue": true}, {"key": "IWN-4860", "title": "LABORATORIO ROJAN - 1271 - LAUDOS WEB ", "created": "2026-05-07", "status": "Paused", "board": "Upsell", "due": "", "hours": 0.8, "overdue": false}, {"key": "IWN-4516", "title": "B2B DB -  LABVITA - 3495", "created": "2026-04-06", "status": "Em andamento", "board": "Upsell", "due": "", "hours": 0.5, "overdue": false}, {"key": "IWN-4113", "title": "CONFERE - LABORATORIO DEL REY - 5241", "created": "2026-03-30", "status": "Tarefas pendentes", "board": "Upsell", "due": "", "hours": 3.0, "overdue": false}, {"key": "IWN-4041", "title": "B2B HP & LAB REDE  - LABORATORIO DEL REY - 5241", "created": "2026-03-26", "status": "Tarefas pendentes", "board": "Upsell", "due": "2026-06-01", "hours": 98.8, "overdue": true}, {"key": "IWN-569", "title": "HOSPITAL SANTA TEREZINHA - 2198 - CLOUD", "created": "2025-10-10", "status": "Em andamento", "board": "Upsell", "due": "", "hours": 59.3, "overdue": false}], "riskLevel": "medium", "prazo": {"epics": 3, "previstoMedio": 44, "realizadoMedio": 81, "desvioMedio": 37, "antecipados": 0, "noPrazo": 0, "atrasados": 0, "pctNoPrazo": 0}, "strengths": ["83% de conclusÃÂÃÂ£o (35/42)", "Foco claro: 100% Upsell"], "risks": ["2 epic(s) vencido(s)", "1 epic(s) sem apontamento de horas"], "novoStats": {"total": 0, "completed": 0, "inProgress": 0, "paused": 0, "pending": 0, "waiting": 0, "hours": 0.0, "hoursPerEpic": 0}, "upsellStats": {"total": 42, "completed": 35, "inProgress": 3, "paused": 2, "pending": 2, "waiting": 0, "hours": 290.0, "hoursPerEpic": 6.9}}, {"id": 3, "name": "Fabio", "total": 17, "completed": 16, "inProgress": 1, "paused": 0, "pending": 0, "waiting": 0, "hours": 122.1, "hoursPerEpic": 7.2, "openCount": 1, "overdueCount": 1, "zeroHoursOpen": 0, "oldest": "2025-10-15", "board": {"novo": 0, "upsell": 1}, "novoHours": 2.2, "upsellHours": 119.9, "totalHours": 122.1, "openEpics": [{"key": "IWN-2327", "title": "SEMEC - 3351 - INTEGRAÇÃO SPDATA", "created": "2025-10-15", "status": "Em andamento", "board": "Upsell", "due": "2026-05-29", "hours": 41.6, "overdue": true}], "riskLevel": "low", "prazo": {"epics": 1, "previstoMedio": 44, "realizadoMedio": 81, "desvioMedio": 37, "antecipados": 0, "noPrazo": 0, "atrasados": 0, "pctNoPrazo": 0}, "strengths": ["94% de conclusÃÂÃÂ£o (16/17)", "Todos os epics com apontamento de horas", "Foco claro: 100% Upsell", "Zero Paused - fluxo contÃÂÃÂ­nuo"], "risks": ["1 epic(s) vencido(s)", "WIP baixo - capacidade ociosa"], "novoStats": {"total": 2, "completed": 2, "inProgress": 0, "paused": 0, "pending": 0, "waiting": 0, "hours": 2.2, "hoursPerEpic": 1.1}, "upsellStats": {"total": 15, "completed": 14, "inProgress": 1, "paused": 0, "pending": 0, "waiting": 0, "hours": 119.9, "hoursPerEpic": 8.0}}, {"id": 4, "name": "Nino", "total": 25, "completed": 21, "inProgress": 3, "paused": 1, "pending": 0, "waiting": 0, "hours": 258.9, "hoursPerEpic": 10.4, "openCount": 4, "overdueCount": 2, "zeroHoursOpen": 2, "oldest": "2025-10-14", "board": {"novo": 2, "upsell": 2}, "novoHours": 131.9, "upsellHours": 126.9, "totalHours": 258.9, "openEpics": [{"key": "IWN-4772", "title": "[Homologação] Monitoramento de Pontualidade - Mario Gontijo - 0970", "created": "2026-04-30", "status": "Em andamento", "board": "Upsell", "due": "", "hours": 0.0, "overdue": false}, {"key": "IWN-4694", "title": "B2B DB -  LABORATORIO SANDRINI - 10156 ", "created": "2026-04-22", "status": "Em andamento", "board": "Upsell", "due": "2026-05-18", "hours": 4.4, "overdue": true}, {"key": "IWN-3699", "title": "Laboratorio Sandrini - 10156  Medium WMI", "created": "2026-03-03", "status": "Em andamento", "board": "Novo", "due": "2026-07-03", "hours": 143.7, "overdue": false}, {"key": "IWN-2221", "title": "LABORATORIO DIAGNOSTICO VASCONCELOS - 4507", "created": "2025-10-14", "status": "AGUARDANDO CLIENTE", "board": "Novo", "due": "2026-05-15", "hours": 32.1, "overdue": true}], "riskLevel": "low", "prazo": {"epics": 3, "previstoMedio": 44, "realizadoMedio": 81, "desvioMedio": 37, "antecipados": 0, "noPrazo": 0, "atrasados": 0, "pctNoPrazo": 0}, "strengths": ["84% de conclusÃÂÃÂ£o (21/25)", "Mix equilibrado Novo (2) e Upsell (2)"], "risks": ["2 epic(s) vencido(s)", "2 epic(s) sem apontamento de horas"], "novoStats": {"total": 5, "completed": 3, "inProgress": 1, "paused": 1, "pending": 0, "waiting": 0, "hours": 131.9, "hoursPerEpic": 26.4}, "upsellStats": {"total": 20, "completed": 18, "inProgress": 2, "paused": 0, "pending": 0, "waiting": 0, "hours": 126.9, "hoursPerEpic": 6.3}}, {"id": 5, "name": "Jorge", "total": 24, "completed": 13, "inProgress": 8, "paused": 2, "pending": 1, "waiting": 0, "hours": 191.5, "hoursPerEpic": 8.0, "openCount": 11, "overdueCount": 4, "zeroHoursOpen": 0, "oldest": "2025-10-10", "board": {"novo": 4, "upsell": 7}, "novoHours": 114.0, "upsellHours": 77.5, "totalHours": 191.5, "openEpics": [{"key": "IWN-5060", "title": "LAB CLEAN - LABORATORIO DE ANALISES LTDA - 10177 - Medium WMI", "created": "2026-06-02", "status": "Tarefas pendentes", "board": "Novo", "due": "", "hours": 0.5, "overdue": false}, {"key": "IWN-5057", "title": "LABORATORIO CLINICO URSULINA COURAS - 1332 - LAUDOS ILIMITADO - LABORATORIO CLINICO URSULINA COURAS - 1332 ", "created": "2026-06-02", "status": "Em andamento", "board": "Upsell", "due": "2026-06-03", "hours": 0.9, "overdue": true}, {"key": "IWN-5046", "title": "CONFERE - SANTA CASA DE MISERICORDIA DE SABARA - 6691 ", "created": "2026-05-29", "status": "Em andamento", "board": "Upsell", "due": "2026-06-09", "hours": 1.0, "overdue": false}, {"key": "IWN-4938", "title": "TREINAMENTO CONFERE - CENTERLIFE ANALISES CLINICAS E IMAGEM - 4889", "created": "2026-05-13", "status": "Em andamento", "board": "Upsell", "due": "2026-05-28", "hours": 0.5, "overdue": true}, {"key": "IWN-4932", "title": "B2B HP -  LABMEDICA - 1693  ", "created": "2026-05-13", "status": "Em andamento", "board": "Upsell", "due": "2026-05-19", "hours": 2.8, "overdue": true}, {"key": "IWN-4515", "title": "B2B DB - LABORATORIO DIAS - 3135", "created": "2026-04-06", "status": "AGUARDANDO CLIENTE", "board": "Upsell", "due": "2026-06-05", "hours": 5.2, "overdue": false}, {"key": "IWN-3370", "title": "INTEGRAÇÃO SPDATA - LABORATORIO UNIMED - 10037", "created": "2026-01-13", "status": "Em andamento", "board": "Upsell", "due": "", "hours": 47.7, "overdue": false}, {"key": "IWN-3143", "title": "LABORATORIO FMARINI LTDA - 2857 - Integração SPDATA", "created": "2025-11-24", "status": "Em andamento", "board": "Upsell", "due": "2026-08-24", "hours": 3.5, "overdue": false}, {"key": "IWN-2693", "title": "LABORATORIO MAIS SAUDE - 10135 - Implementation Project Plan - Medium WMI", "created": "2025-10-16", "status": "Em andamento", "board": "Novo", "due": "2026-06-30", "hours": 134.0, "overdue": false}, {"key": "IWN-2608", "title": "BIOOS SAUDE INTEGRADA LTDA - 10088 - Implementation Project Plan Template Small", "created": "2025-10-16", "status": "Em andamento", "board": "Novo", "due": "2026-06-12", "hours": 56.0, "overdue": false}, {"key": "IWN-514", "title": "VIAS MED DIAGNOSTICOS - 10102 - Implementation Project Plan Template Small", "created": "2025-10-10", "status": "Paused", "board": "Novo", "due": "2026-05-29", "hours": 57.5, "overdue": true}], "riskLevel": "medium", "prazo": {"epics": 9, "previstoMedio": 44, "realizadoMedio": 81, "desvioMedio": 37, "antecipados": 0, "noPrazo": 0, "atrasados": 0, "pctNoPrazo": 0}, "strengths": ["Todos os epics com apontamento de horas", "Mix equilibrado Novo (4) e Upsell (7)"], "risks": ["4 epic(s) vencido(s)", "11 abertos - WIP elevado"], "novoStats": {"total": 5, "completed": 1, "inProgress": 2, "paused": 1, "pending": 1, "waiting": 0, "hours": 114.0, "hoursPerEpic": 22.8}, "upsellStats": {"total": 19, "completed": 12, "inProgress": 6, "paused": 1, "pending": 0, "waiting": 0, "hours": 77.5, "hoursPerEpic": 4.1}}, {"id": 6, "name": "Anderson", "total": 14, "completed": 8, "inProgress": 4, "paused": 0, "pending": 2, "waiting": 0, "hours": 236.3, "hoursPerEpic": 16.9, "openCount": 6, "overdueCount": 2, "zeroHoursOpen": 0, "oldest": "2025-10-16", "board": {"novo": 4, "upsell": 2}, "novoHours": 164.8, "upsellHours": 71.6, "totalHours": 236.3, "openEpics": [{"key": "IWN-4544", "title": "THECNOLIFE (LAB DA POLICLÍNICA CENTRAL) - 10161- Medium WMI", "created": "2026-04-08", "status": "Em andamento", "board": "Novo", "due": "2026-07-06", "hours": 50.0, "overdue": false}, {"key": "IWN-4132", "title": "IBELAB - 10167", "created": "2026-03-30", "status": "Em andamento", "board": "Novo", "due": "2026-06-27", "hours": 40.6, "overdue": false}, {"key": "IWN-3627", "title": "ASSINATURA  DIGITAL  - LABORATORIO DR. SANDOVAL CARVALHO  - 462", "created": "2026-02-24", "status": "Tarefas pendentes", "board": "Upsell", "due": "2026-05-19", "hours": 1.0, "overdue": true}, {"key": "IWN-3388", "title": "LABORATORIO DR. SANDOVAL CARVALHO - 462  - Autolac Cloud Migration Module - WMI", "created": "2026-01-19", "status": "Tarefas pendentes", "board": "Upsell", "due": "2026-05-29", "hours": 81.7, "overdue": true}, {"key": "IWN-2432", "title": "PAGANI ANALISES CLINICAS LTDA - 10056 - Small", "created": "2025-10-16", "status": "Em andamento", "board": "Novo", "due": "", "hours": 35.7, "overdue": false}, {"key": "IWN-2386", "title": "FERRAGUT DIAGNOSTICO VETERINARIO -10057 - Medium WMI", "created": "2025-10-16", "status": "Em andamento", "board": "Novo", "due": "2026-06-30", "hours": 110.5, "overdue": false}], "riskLevel": "low", "prazo": {"epics": 5, "previstoMedio": 44, "realizadoMedio": 81, "desvioMedio": 37, "antecipados": 0, "noPrazo": 0, "atrasados": 0, "pctNoPrazo": 0}, "strengths": ["Todos os epics com apontamento de horas", "Mix equilibrado Novo (4) e Upsell (2)", "Zero Paused - fluxo contÃÂÃÂ­nuo"], "risks": ["2 epic(s) vencido(s)"], "novoStats": {"total": 8, "completed": 4, "inProgress": 4, "paused": 0, "pending": 0, "waiting": 0, "hours": 164.8, "hoursPerEpic": 20.6}, "upsellStats": {"total": 6, "completed": 4, "inProgress": 0, "paused": 0, "pending": 2, "waiting": 0, "hours": 71.6, "hoursPerEpic": 11.9}}, {"id": 7, "name": "Luiz", "total": 24, "completed": 18, "inProgress": 3, "paused": 2, "pending": 1, "waiting": 0, "hours": 205.8, "hoursPerEpic": 8.6, "openCount": 6, "overdueCount": 4, "zeroHoursOpen": 0, "oldest": "2026-02-24", "board": {"novo": 1, "upsell": 5}, "novoHours": 69.7, "upsellHours": 136.1, "totalHours": 205.8, "openEpics": [{"key": "IWN-4985", "title": " INTERLAC - LAB OSWALDO CRUZ- 7220 ", "created": "2026-05-25", "status": "Em andamento", "board": "Upsell", "due": "2026-06-03", "hours": 5.2, "overdue": true}, {"key": "IWN-4958", "title": " INTERLAC - LABORVIDA S/C LTDA - 772 ", "created": "2026-05-18", "status": "Em andamento", "board": "Upsell", "due": "2026-06-08", "hours": 1.7, "overdue": false}, {"key": "IWN-4954", "title": " INTERLAC - CLINICA E LABORATORIO MAE - 4948 ", "created": "2026-05-15", "status": "AGUARDANDO CLIENTE", "board": "Upsell", "due": "2026-06-02", "hours": 9.7, "overdue": true}, {"key": "IWN-4862", "title": " INTERLAC - LAGPAC - LABORATORIO GOIANO DE PATOLOGIA E CITOLOGIA - 4941 ", "created": "2026-05-07", "status": "Tarefas pendentes", "board": "Upsell", "due": "2026-05-19", "hours": 8.3, "overdue": true}, {"key": "IWN-4122", "title": "INTERLAC - Laboratorio Frota - 312", "created": "2026-03-30", "status": "AGUARDANDO CLIENTE", "board": "Upsell", "due": "2026-04-14", "hours": 46.2, "overdue": true}, {"key": "IWN-3576", "title": "LACOR - 10153 - Implementation Project Plan - Large WMI", "created": "2026-02-24", "status": "Em andamento", "board": "Novo", "due": "2026-06-25", "hours": 53.3, "overdue": false}], "riskLevel": "medium", "prazo": {"epics": 6, "previstoMedio": 44, "realizadoMedio": 81, "desvioMedio": 37, "antecipados": 0, "noPrazo": 0, "atrasados": 0, "pctNoPrazo": 0}, "strengths": ["75% de conclusÃÂÃÂ£o (18/24)", "Todos os epics com apontamento de horas", "Mix equilibrado Novo (1) e Upsell (5)"], "risks": ["4 epic(s) vencido(s)"], "novoStats": {"total": 4, "completed": 3, "inProgress": 1, "paused": 0, "pending": 0, "waiting": 0, "hours": 69.7, "hoursPerEpic": 17.4}, "upsellStats": {"total": 20, "completed": 15, "inProgress": 2, "paused": 2, "pending": 1, "waiting": 0, "hours": 136.1, "hoursPerEpic": 6.8}}, {"id": 8, "name": "Fernanda", "total": 19, "completed": 11, "inProgress": 3, "paused": 1, "pending": 4, "waiting": 0, "hours": 168.3, "hoursPerEpic": 8.9, "openCount": 8, "overdueCount": 1, "zeroHoursOpen": 1, "oldest": "2025-10-09", "board": {"novo": 4, "upsell": 4}, "novoHours": 124.3, "upsellHours": 44.0, "totalHours": 168.3, "openEpics": [{"key": "IWN-5163", "title": "  HEMOLAB ANALISES CLINICAS - 5358 - Medium WMI", "created": "2026-06-03", "status": "Tarefas pendentes", "board": "Novo", "due": "", "hours": 0.5, "overdue": false}, {"key": "IWN-5025", "title": "FERRAMENTA B2B", "created": "2026-05-27", "status": "Tarefas pendentes", "board": "Upsell", "due": "", "hours": 2.3, "overdue": false}, {"key": "IWN-4816", "title": "+SAUDE LABORATORIO DE ANALISES CLINICAS - 10169 - Implementation Project Plan - Small WMI", "created": "2026-05-07", "status": "Tarefas pendentes", "board": "Novo", "due": "", "hours": 5.0, "overdue": false}, {"key": "IWN-4688", "title": "INTERLAC - INSTITUTO DE ANALISES CLINICAS CARLOS CHAGAS LTDA - 2221  ", "created": "2026-04-22", "status": "Em andamento", "board": "Upsell", "due": "", "hours": 16.5, "overdue": false}, {"key": "IWN-4048", "title": "EVOLUCAO DIAGNOSTICO LABORATORIAL - 10166", "created": "2026-03-26", "status": "Em andamento", "board": "Novo", "due": "2026-07-28", "hours": 16.8, "overdue": false}, {"key": "IWN-3994", "title": " LABORATORIO DR. GILSON MOREIRA - 10162 - Small  WMI", "created": "2026-03-26", "status": "Tarefas pendentes", "board": "Novo", "due": "2026-06-29", "hours": 42.7, "overdue": false}, {"key": "IWN-3805", "title": "INTERLACs - LAB NOSSA SENHORA DA PENHA - 6396", "created": "2026-03-10", "status": "Em andamento", "board": "Upsell", "due": "2026-06-03", "hours": 9.8, "overdue": true}, {"key": "IWN-504", "title": "INST DE AN CLINICAS CARLOS CHAGAS - 2221 - Implementation Upsell - Autolac Cloud Migration Module - WMI", "created": "2025-10-09", "status": "AGUARDANDO CLIENTE", "board": "Upsell", "due": "", "hours": 46.2, "overdue": false}], "riskLevel": "medium", "prazo": {"epics": 3, "previstoMedio": 44, "realizadoMedio": 81, "desvioMedio": 37, "antecipados": 0, "noPrazo": 0, "atrasados": 0, "pctNoPrazo": 0}, "strengths": ["Mix equilibrado Novo (4) e Upsell (4)"], "risks": ["1 epic(s) vencido(s)", "1 epic(s) sem apontamento de horas"], "novoStats": {"total": 8, "completed": 4, "inProgress": 1, "paused": 0, "pending": 3, "waiting": 0, "hours": 124.3, "hoursPerEpic": 15.5}, "upsellStats": {"total": 11, "completed": 7, "inProgress": 2, "paused": 1, "pending": 1, "waiting": 0, "hours": 44.0, "hoursPerEpic": 4.0}}], "yasminQueue": [{"key": "IWN-5206", "summary": " INTERLAC - MULTIMED VITORIA - 5192 ", "status": "Tarefas pendentes", "hours": 0.5, "created": "2026-06-03", "duedate": null}, {"key": "IWN-5157", "summary": "INTERLAC - LABORATORIO OS REZENDE - 7108 ", "status": "Tarefas pendentes", "hours": 0.5, "created": "2026-06-03", "duedate": "2026-07-02"}, {"key": "IWN-5154", "summary": "AUTORIZAÇÃO ONLINE - UNIMED (SGU)  - LABORATORIO FMARINI - 2857 ", "status": "Tarefas pendentes", "hours": 0.5, "created": "2026-06-03", "duedate": null}, {"key": "IWN-5151", "summary": "CONFERE - LABORATORIO SAO JOSE - 1272 ", "status": "Tarefas pendentes", "hours": 0.8, "created": "2026-06-03", "duedate": null}, {"key": "IWN-5146", "summary": "  APOIO X APOIADO - SYSLAB (WS)  - LABORATORIO CEARENSE - 3121 ", "status": "Tarefas pendentes", "hours": 0.7, "created": "2026-06-02", "duedate": null}, {"key": "IWN-5050", "summary": " INTERLAC - LABORATORIO PREV-LAB - 432", "status": "Tarefas pendentes", "hours": 0.8, "created": "2026-05-29", "duedate": null}, {"key": "IWN-5036", "summary": "Solicitação de TAP - LAB CLEAN - LABORATORIO DE ANALISES LTDA - 10177 ", "status": "Concluído", "hours": 1.5, "created": "2026-05-28", "duedate": "2026-06-05"}, {"key": "IWN-5032", "summary": " Solicitação de TAP - HEMOLAB ANALISES CLINICAS - 5358", "status": "Concluído", "hours": 3.6, "created": "2026-05-28", "duedate": "2026-06-05"}, {"key": "IWN-5008", "summary": "APOIO INTERNO  - Maio ", "status": "Concluído", "hours": 20.5, "created": "2026-05-26", "duedate": "2026-05-26"}, {"key": "IWN-4968", "summary": " COMUNICAÇÃO COM APOIO - SAUDE-LAB - 3840 ", "status": "Tarefas pendentes", "hours": 0.0, "created": "2026-05-18", "duedate": null}, {"key": "IWN-4967", "summary": "INTERLAC - SAUDE-LAB - 3840 ", "status": "Tarefas pendentes", "hours": 0.5, "created": "2026-05-18", "duedate": null}, {"key": "IWN-4965", "summary": "INTERLAC - LABORATORIO CASTRO - 5848 ", "status": "Tarefas pendentes", "hours": 0.5, "created": "2026-05-18", "duedate": null}, {"key": "IWN-4937", "summary": "USUARIO KUALIZ GESTÃO - LAB OSWALDO CRUZ - 7220 ", "status": "Concluído", "hours": 0.8, "created": "2026-05-13", "duedate": "2026-05-20"}, {"key": "IWN-4919", "summary": " LAB DE ANALISES PRO VIDA - 5255 - Autolac Cloud Migration Module - WMI", "status": "Tarefas pendentes", "hours": 2.5, "created": "2026-05-12", "duedate": null}, {"key": "IWN-4911", "summary": "LABORATORIO PASTEUR ANALISES CLINICAS - 467  - Autolac Cloud Migration Module - WMI", "status": "Tarefas pendentes", "hours": 2.8, "created": "2026-05-12", "duedate": null}, {"key": "IWN-4859", "summary": "INTERLAC ( Desenvolvimento ) -  MULTIMED VITORIA - 5182", "status": "Tarefas pendentes", "hours": 3.3, "created": "2026-05-07", "duedate": "2026-05-28"}, {"key": "IWN-4801", "summary": "Integração APOIO X APOIADO - AUTOLAC (API) - Laboratorio Frota - 312 ", "status": "Tarefas pendentes", "hours": 5.1, "created": "2026-05-06", "duedate": null}, {"key": "IWN-4787", "summary": " FILA DE ATENDIMENTO - LABORATORIO CEPAC - 2171  ", "status": "AGUARDANDO CLIENTE", "hours": 0.6, "created": "2026-05-04", "duedate": null}, {"key": "IWN-4746", "summary": "COMUNICAÇÃO COM APOIO - LAMEP -  1728 ", "status": "Concluído", "hours": 0.0, "created": "2026-04-28", "duedate": null}, {"key": "IWN-4741", "summary": " INTERLAC  ( Desenvolvimento ) - SUNMED - 7087 ", "status": "Cancelado", "hours": 0.7, "created": "2026-04-28", "duedate": "2026-05-20"}, {"key": "IWN-4736", "summary": " INTERLACs - LABMEDICA - 1693", "status": "Tarefas pendentes", "hours": 9.7, "created": "2026-04-28", "duedate": null}, {"key": "IWN-4703", "summary": " INTERLACs -  LABORATORIO UNIMED - 10037 ", "status": "AGUARDANDO CLIENTE", "hours": 3.8, "created": "2026-04-23", "duedate": null}, {"key": "IWN-4683", "summary": " Integração SOC GED - LABORATORIO ROJAN - 1271", "status": "Tarefas pendentes", "hours": 5.0, "created": "2026-04-22", "duedate": null}, {"key": "IWN-4665", "summary": " INTERLAC - LABORATORIO VILA RICA - 3113", "status": "Tarefas pendentes", "hours": 2.5, "created": "2026-04-17", "duedate": null}, {"key": "IWN-4510", "summary": "INTERLACS -  UNIDADE DE BIOANALISE - 407", "status": "AGUARDANDO CLIENTE", "hours": 4.7, "created": "2026-04-06", "duedate": null}, {"key": "IWN-4109", "summary": "KUALIZ GESTÃO ( treinamento ) - LABORATORIO SAO PAULO - 2158", "status": "Concluído", "hours": 3.8, "created": "2026-03-30", "duedate": null}, {"key": "IWN-4104", "summary": "Solicitação de TAP - IBELAB - INSTITUTO MEDICO DE EXAMES LABORATORIAIS LTDA", "status": "Concluído", "hours": 1.6, "created": "2026-03-27", "duedate": "2026-04-06"}, {"key": "IWN-3991", "summary": "INTERLAC - CENTRO MEDICO DR JERRY MOREIRA - 6709", "status": "Concluído", "hours": 0.0, "created": "2026-03-25", "duedate": "2026-03-26"}, {"key": "IWN-3977", "summary": "Solicitação de TAP -  LABORATORIO DR. GILSON MOREIRA", "status": "Concluído", "hours": 0.0, "created": "2026-03-25", "duedate": "2026-03-31"}, {"key": "IWN-3972", "summary": " Assinatura - SAUDE-LAB - 3840", "status": "AGUARDANDO CLIENTE", "hours": 2.5, "created": "2026-03-24", "duedate": null}, {"key": "IWN-3971", "summary": "B2B HP -  VAZLAB - 10098", "status": "Tarefas pendentes", "hours": 0.0, "created": "2026-03-24", "duedate": null}, {"key": "IWN-3970", "summary": "FILA DE ATENDIMENTO - LABORATORIO ANALISE - 5292", "status": "Cancelado", "hours": 0.0, "created": "2026-03-24", "duedate": "2026-04-14"}, {"key": "IWN-3922", "summary": "Solicitação de TAP - THECNOLIFE (LAB DA POLICLÍNICA CENTRAL)", "status": "Concluído", "hours": 0.0, "created": "2026-03-20", "duedate": null}, {"key": "IWN-3837", "summary": "INTERLACs desenvolvimento - LABORATORIO CLINICO PREVENCAO - 10028", "status": "Concluído", "hours": 1.0, "created": "2026-03-13", "duedate": "2026-04-07"}, {"key": "IWN-3830", "summary": " FILA DE ATENDIMENTO E COLETA - LABORATORIO FLOR - 10093 ", "status": "Cancelado", "hours": 0.0, "created": "2026-03-12", "duedate": null}, {"key": "IWN-3828", "summary": "INTERLAC -  LAMEP - 1728", "status": "AGUARDANDO CLIENTE", "hours": 0.0, "created": "2026-03-11", "duedate": null}, {"key": "IWN-3809", "summary": "LOCAL DE CONTROLE INTERNO - LAB QUALITY DIAGNOSTICOS LTDA - 4843", "status": "Concluído", "hours": 0.0, "created": "2026-03-11", "duedate": "2026-03-11"}, {"key": "IWN-3798", "summary": "INTERLAC - CID-CENTRO DE INVESTIGACOES DE DIAGNOSTICOS LTDA - 4310", "status": "Concluído", "hours": 0.0, "created": "2026-03-09", "duedate": "2026-03-18"}, {"key": "IWN-3774", "summary": "INTERLACs - LABORATORIO SAMARITANO - 10021", "status": "Concluído", "hours": 3.7, "created": "2026-03-04", "duedate": "2026-03-26"}, {"key": "IWN-3753", "summary": "BIOSOFIA LABORATORIO   - 7179 - APOIO AO CLIENTE", "status": "Concluído", "hours": 0.0, "created": "2026-03-03", "duedate": "2026-03-16"}, {"key": "IWN-3659", "summary": "Solicitação de TAP - Laboratório Sandrini", "status": "Concluído", "hours": 0.0, "created": "2026-02-27", "duedate": null}, {"key": "IWN-3567", "summary": "Assinatura Dig - Subst de Interlac - Aprenda EAD -  MUNICIPIO DE PIRACEMA - 5809", "status": "Concluído", "hours": 0.8, "created": "2026-02-20", "duedate": null}, {"key": "IWN-3564", "summary": "ATIVAR LOCAL DE CONTROLE INTERNO - NEFROLAB LABORATORIO DE ANALISES CLINICAS LTDA - 269", "status": "Concluído", "hours": 0.0, "created": "2026-02-19", "duedate": null}, {"key": "IWN-3539", "summary": "Solicitação de TAP /  LACOR", "status": "Concluído", "hours": 0.0, "created": "2026-02-10", "duedate": "2026-02-11"}, {"key": "IWN-3537", "summary": "LABORATORIO DR. SANDOVAL CARVALHO -462 - integração Apoio x Apoiado (API) ", "status": "AGUARDANDO CLIENTE", "hours": 1.8, "created": "2026-02-10", "duedate": "2026-06-30"}, {"key": "IWN-3507", "summary": "AUTORIZAÇÃO ONLINE -  LABORATORIO VITACENTER LTDA - 502", "status": "AGUARDANDO CLIENTE", "hours": 2.9, "created": "2026-02-05", "duedate": "2026-05-29"}, {"key": "IWN-3472", "summary": "LAPECCO - 1666 - INTEGRAÇÃO - APOIO X APOIADO - COMLAB (WS)", "status": "Em andamento", "hours": 2.0, "created": "2026-02-04", "duedate": "2026-06-05"}, {"key": "IWN-3460", "summary": "POSTO DE COLETA ( ativação ) - Lab Santa Clara - 1056", "status": "Concluído", "hours": 0.0, "created": "2026-02-02", "duedate": "2026-02-02"}, {"key": "IWN-3428", "summary": "NOTA FISCAL - LAB DE AN CLINICAS SANDOVAL DE CARVALHO - 5678", "status": "Tarefas pendentes", "hours": 0.8, "created": "2026-01-29", "duedate": "2026-05-18"}, {"key": "IWN-3423", "summary": "INTEGRAÇÃO HP - UNIDADE FILIAL ( usa mesmo banco ) - Laboratório Santanna - 1192", "status": "Concluído", "hours": 0.0, "created": "2026-01-28", "duedate": "2026-01-28"}, {"key": "IWN-3405", "summary": "APOIO AO CLIENTE ( TREINAMENTO B2B / HP ) - Laboratório São Judas - 1685 ", "status": "Concluído", "hours": 0.0, "created": "2026-01-20", "duedate": "2026-02-06"}, {"key": "IWN-3379", "summary": "B2B HP - BIOOS SAUDE INTEGRADA - 10088", "status": "Concluído", "hours": 0.0, "created": "2026-01-15", "duedate": "2026-01-20"}, {"key": "IWN-3359", "summary": "INTERLAC DESENVOLVIMENTO - LABOTARIO GONTIJO GUIMARÃES - 970", "status": "Concluído", "hours": 0.0, "created": "2026-01-09", "duedate": "2026-02-09"}, {"key": "IWN-3327", "summary": "INTERLAC - LABORATORIO FRANCISMAR MOREIRA - 3608", "status": "Concluído", "hours": 0.0, "created": "2025-12-24", "duedate": "2026-01-20"}, {"key": "IWN-3316", "summary": "INTERLAC - VYTTRA DIAGNOSTICOS - 5365", "status": "Concluído", "hours": 0.0, "created": "2025-12-19", "duedate": "2026-01-16"}, {"key": "IWN-3262", "summary": " AUTORIZAÇÃO ONLINE UNIMED SGU - LABORATORIO LINHARES - 3138", "status": "Concluído", "hours": 0.0, "created": "2025-12-11", "duedate": "2026-01-16"}, {"key": "IWN-3256", "summary": "FILA / INTERLAC / ADEQUAÇÕES  - VITALABOR - 3763", "status": "Concluído", "hours": 1.4, "created": "2025-12-11", "duedate": "2026-01-16"}, {"key": "IWN-3254", "summary": "INTERLAC DESENVOLVIMENTO - PAX MINAS AVELAR SERVICOS ADMINISTRATIVOS LTDA - 1781", "status": "Concluído", "hours": 0.0, "created": "2025-12-11", "duedate": "2026-01-16"}, {"key": "IWN-3181", "summary": "B2B HP - PAMER LABORATORIO - 3747", "status": "Concluído", "hours": 0.0, "created": "2025-12-03", "duedate": "2025-12-17"}, {"key": "IWN-3171", "summary": "INTERLAC DESENVOLVIMENTO - LABORATORIO DIVINOPOLIS - 767", "status": "Concluído", "hours": 0.0, "created": "2025-12-03", "duedate": "2026-02-06"}, {"key": "IWN-3155", "summary": "INTERLAC DESENVOLVIMENTO - MULTIMED - 5182", "status": "Concluído", "hours": 0.0, "created": "2025-11-26", "duedate": "2026-01-16"}, {"key": "IWN-3152", "summary": "INTERLAC - LABCITO - 6204", "status": "Concluído", "hours": 0.0, "created": "2025-11-26", "duedate": "2026-01-16"}, {"key": "IWN-3148", "summary": "INTERLAC - RAD LABORATORIO DE ANALISES - 265", "status": "Concluído", "hours": 0.0, "created": "2025-11-26", "duedate": null}, {"key": "IWN-3141", "summary": "Interlac/ Interlac desenvolvimento- Laboratório Cliomel 2182", "status": "Concluído", "hours": 0.0, "created": "2025-11-24", "duedate": "2025-11-24"}, {"key": "IWN-1548", "summary": "INTERLAC - CELULA DIAGNOSTICOS CITOLOGICOS LTDA - 10087", "status": "Concluído", "hours": 0.0, "created": "2025-10-13", "duedate": "2025-09-19"}, {"key": "IWN-926", "summary": "JCA + SAÚDE - 10070 - Implementation Upsell - Stock Module - WMI", "status": "Cancelado", "hours": 0.0, "created": "2025-10-10", "duedate": "2025-08-26"}, {"key": "IWN-585", "summary": "INSTITUTO DE PESQUISA YOVA RAFHA - 10010 - Implementation Project Plan - Medium WMI", "status": "Paused", "hours": 0.0, "created": "2025-10-10", "duedate": null}], "migracaoCloud": [{"key": "IWN-4919", "summary": " LAB DE ANALISES PRO VIDA - 5255 - Autolac Cloud Migration Module - WMI", "assignee": "Yasmin Wiltlher Toledo", "status": "Tarefas pendentes", "hours": 2.5}, {"key": "IWN-4911", "summary": "LABORATORIO PASTEUR ANALISES CLINICAS - 467  - Autolac Cloud Migration Module - WMI", "assignee": "Yasmin Wiltlher Toledo", "status": "Tarefas pendentes", "hours": 2.8}, {"key": "IWN-4224", "summary": " LABORTEST LABORATORIO E TESTES CLINICOS - 2205- Autolac Cloud Migration Module - WMI", "assignee": "Daniel", "status": "Concluído", "hours": 20.5}, {"key": "IWN-3907", "summary": "LABORATORIO THIAGO HUGO - 4215 - Autolac Cloud Migration Module - WMI", "assignee": "Daniel", "status": "Concluído", "hours": 23.7}, {"key": "IWN-3779", "summary": "INSTITUTO DE PATOLOGIA E HEMATOLOGIA SIQUEIRA LTDA – 249-Autolac Cloud Migration Module - WMI", "assignee": "Anderson", "status": "Concluído", "hours": 0.0}, {"key": "IWN-3396", "summary": "Laboratório São Geraldo -491 - Autolac Cloud Migration Module - WMI", "assignee": "Daniel", "status": "Concluído", "hours": 12.0}, {"key": "IWN-3388", "summary": "LABORATORIO DR. SANDOVAL CARVALHO - 462  - Autolac Cloud Migration Module - WMI", "assignee": "Anderson", "status": "Tarefas pendentes", "hours": 68.7}, {"key": "IWN-1892", "summary": "NEXO - 10097 - Autolac Cloud - NEXO - 10097", "assignee": "Nino", "status": "Concluído", "hours": 0.0}, {"key": "IWN-675", "summary": "LABORATORIO GONTIJO GUIMARAES - 970 - Migração Autolac Cloud ", "assignee": "Fernanda", "status": "Concluído", "hours": 2.0}, {"key": "IWN-504", "summary": "INST DE AN CLINICAS CARLOS CHAGAS - 2221 - Implementation Upsell - Autolac Cloud Migration Module - WMI", "assignee": "Fernanda", "status": "AGUARDANDO CLIENTE", "hours": 0.0}], "novoSummary": {"total": 32, "completed": 17, "inProgress": 9, "paused": 2, "pending": 4, "totalHours": 606.9, "activeHours": 0.0, "avgHoursPerEpic": 19.0}, "upsellSummary": {"total": 201, "completed": 151, "inProgress": 35, "paused": 9, "pending": 6, "totalHours": 1039.1, "activeHours": 0.0, "avgHoursPerEpic": 5.2}, "excludedOpenHours": 94.3, "backlogSummary": {"totalRestante": 3974.7, "novoRestante": 2070.9, "novoPercent": 52, "upsellRestante": 1569.0, "upsellPercent": 39, "yasminEpics": 26, "yasminHours": 334.8, "yasminPercent": 8, "backlogMonths": 3.5}, "capacityTable": [{"name": "Jorge", "epicsAbertos": "11 (4N + 7U)", "horasNovo": 452.0, "horasUpsell": 127.8, "totalRestante": 579.8, "meses": 4.1, "novosSimultaneos": "2 em andamento", "ocupacao": 138.0, "risco": "ALTO"}, {"name": "Fernanda", "epicsAbertos": "8 (4N + 4U)", "horasNovo": 534.9, "horasUpsell": 38.2, "totalRestante": 573.1, "meses": 4.1, "novosSimultaneos": "1 em andamento", "ocupacao": 136.4, "risco": "ALTO"}, {"name": "Luiz", "epicsAbertos": "6 (1N + 5U)", "horasNovo": 346.7, "horasUpsell": 126.1, "totalRestante": 472.8, "meses": 3.4, "novosSimultaneos": "1 em andamento", "ocupacao": 112.6, "risco": "ALTO"}, {"name": "Anderson", "epicsAbertos": "6 (4N + 2U)", "horasNovo": 413.2, "horasUpsell": 26.1, "totalRestante": 439.3, "meses": 3.1, "novosSimultaneos": "4 em andamento", "ocupacao": 104.6, "risco": "ALTO"}, {"name": "Jessica", "epicsAbertos": "22 (0N + 22U)", "horasNovo": 0, "horasUpsell": 382.3, "totalRestante": 382.3, "meses": 2.7, "novosSimultaneos": "0", "ocupacao": 91.0, "risco": "MÃÂÃÂDIO"}, {"name": "Nino", "epicsAbertos": "4 (2N + 2U)", "horasNovo": 124.1, "horasUpsell": 130.6, "totalRestante": 254.7, "meses": 1.8, "novosSimultaneos": "1 em andamento", "ocupacao": 60.6, "risco": "MÃÂÃÂDIO"}, {"name": "Daniel", "epicsAbertos": "7 (0N + 7U)", "horasNovo": 0, "horasUpsell": 246.1, "totalRestante": 246.1, "meses": 1.8, "novosSimultaneos": "0", "ocupacao": 58.6, "risco": "MÃÂÃÂDIO"}, {"name": "Fabio", "epicsAbertos": "1 (0N + 1U)", "horasNovo": 0, "horasUpsell": 63.6, "totalRestante": 63.6, "meses": 0.5, "novosSimultaneos": "0", "ocupacao": 15.2, "risco": "BAIXO"}], "backlogNovo": [{"key": "IWN-3699", "summary": "Laboratorio Sandrini - 10156  Medium WMI", "assignee": "Nino", "porte": "Medium", "status": "Em andamento", "gasto": 143.7, "meta": 200.0, "restante": 56.3, "progresso": 0.72, "criacao": "2026-03-03", "prazoWmi": "03/07/2026", "statusPrazo": "28 dias", "statusPrazoType": "warning"}, {"key": "IWN-2693", "summary": "LABORATORIO MAIS SAUDE - 10135 - Implementation Project Plan - Medium WMI", "assignee": "Jorge", "porte": "Medium", "status": "Em andamento", "gasto": 134.0, "meta": 200.0, "restante": 66.0, "progresso": 0.67, "criacao": "2025-10-16", "prazoWmi": "30/06/2026", "statusPrazo": "25 dias", "statusPrazoType": "warning"}, {"key": "IWN-2386", "summary": "FERRAGUT DIAGNOSTICO VETERINARIO -10057 - Medium WMI", "assignee": "Anderson", "porte": "Medium", "status": "Em andamento", "gasto": 110.5, "meta": 200.0, "restante": 89.5, "progresso": 0.55, "criacao": "2025-10-16", "prazoWmi": "30/06/2026", "statusPrazo": "25 dias", "statusPrazoType": "warning"}, {"key": "IWN-514", "summary": "VIAS MED DIAGNOSTICOS - 10102 - Implementation Project Plan Template Small", "assignee": "Jorge", "porte": "Small", "status": "Paused", "gasto": 57.5, "meta": 150.0, "restante": 92.5, "progresso": 0.38, "criacao": "2025-10-10", "prazoWmi": "Pausado", "statusPrazo": "Pausado", "statusPrazoType": "paused"}, {"key": "IWN-2608", "summary": "BIOOS SAUDE INTEGRADA LTDA - 10088 - Implementation Project Plan Template Small", "assignee": "Jorge", "porte": "Small", "status": "Em andamento", "gasto": 56.0, "meta": 150.0, "restante": 94.0, "progresso": 0.37, "criacao": "2025-10-16", "prazoWmi": "12/06/2026", "statusPrazo": "7 dias", "statusPrazoType": "warning"}, {"key": "IWN-3576", "summary": "LACOR - 10153 - Implementation Project Plan - Large WMI", "assignee": "Luiz", "porte": "Large", "status": "Em andamento", "gasto": 53.3, "meta": 400.0, "restante": 346.7, "progresso": 0.13, "criacao": "2026-02-24", "prazoWmi": "25/06/2026", "statusPrazo": "20 dias", "statusPrazoType": "warning"}, {"key": "IWN-4544", "summary": "THECNOLIFE (LAB DA POLICLÍNICA CENTRAL) - 10161- Medium WMI", "assignee": "Anderson", "porte": "Medium", "status": "Em andamento", "gasto": 50.0, "meta": 200.0, "restante": 150.0, "progresso": 0.25, "criacao": "2026-04-08", "prazoWmi": "06/07/2026", "statusPrazo": "31 dias", "statusPrazoType": "warning"}, {"key": "IWN-3994", "summary": " LABORATORIO DR. GILSON MOREIRA - 10162 - Small  WMI", "assignee": "Fernanda", "porte": "Small", "status": "Tarefas pendentes", "gasto": 42.7, "meta": 150.0, "restante": 107.3, "progresso": 0.28, "criacao": "2026-03-26", "prazoWmi": "29/06/2026", "statusPrazo": "24 dias", "statusPrazoType": "warning"}, {"key": "IWN-4132", "summary": "IBELAB - 10167", "assignee": "Anderson", "porte": "N/D", "status": "Em andamento", "gasto": 40.6, "meta": 100.0, "restante": 59.4, "progresso": 0.41, "criacao": "2026-03-30", "prazoWmi": "27/06/2026", "statusPrazo": "22 dias", "statusPrazoType": "warning"}, {"key": "IWN-2432", "summary": "PAGANI ANALISES CLINICAS LTDA - 10056 - Small", "assignee": "Anderson", "porte": "Small", "status": "Em andamento", "gasto": 35.7, "meta": 150.0, "restante": 114.3, "progresso": 0.24, "criacao": "2025-10-16", "prazoWmi": "03/07/2026", "statusPrazo": "28 dias", "statusPrazoType": "warning"}, {"key": "IWN-2221", "summary": "LABORATORIO DIAGNOSTICO VASCONCELOS - 4507", "assignee": "Nino", "porte": "N/D", "status": "AGUARDANDO CLIENTE", "gasto": 32.1, "meta": 100.0, "restante": 67.8, "progresso": 0.32, "criacao": "2025-10-14", "prazoWmi": "15/05/2026", "statusPrazo": "+21 dias", "statusPrazoType": "overdue"}, {"key": "IWN-4048", "summary": "EVOLUCAO DIAGNOSTICO LABORATORIAL - 10166", "assignee": "Fernanda", "porte": "N/D", "status": "Em andamento", "gasto": 16.8, "meta": 100.0, "restante": 83.2, "progresso": 0.17, "criacao": "2026-03-26", "prazoWmi": "28/07/2026", "statusPrazo": "53 dias", "statusPrazoType": "warning"}, {"key": "IWN-4816", "summary": "+SAUDE LABORATORIO DE ANALISES CLINICAS - 10169 - Implementation Project Plan - Small WMI", "assignee": "Fernanda", "porte": "Small", "status": "Tarefas pendentes", "gasto": 5.0, "meta": 150.0, "restante": 144.9, "progresso": 0.03, "criacao": "2026-05-07", "prazoWmi": "06/07/2026", "statusPrazo": "31 dias", "statusPrazoType": "warning"}, {"key": "IWN-5163", "summary": "  HEMOLAB ANALISES CLINICAS - 5358 - Medium WMI", "assignee": "Fernanda", "porte": "Medium", "status": "Tarefas pendentes", "gasto": 0.5, "meta": 200.0, "restante": 199.5, "progresso": 0.0, "criacao": "2026-06-03", "prazoWmi": "31/08/2026", "statusPrazo": "87 dias", "statusPrazoType": "warning"}, {"key": "IWN-5060", "summary": "LAB CLEAN - LABORATORIO DE ANALISES LTDA - 10177 - Medium WMI", "assignee": "Jorge", "porte": "Medium", "status": "Tarefas pendentes", "gasto": 0.5, "meta": 200.0, "restante": 199.5, "progresso": 0.0, "criacao": "2026-06-02", "prazoWmi": "31/08/2026", "statusPrazo": "87 dias", "statusPrazoType": "warning"}, {"key": "IWN-585", "summary": "INSTITUTO DE PESQUISA YOVA RAFHA - 10010 - Implementation Project Plan - Medium WMI", "assignee": "Yasmin", "porte": "Medium", "status": "Paused", "gasto": 0.0, "meta": 200.0, "restante": 200.0, "progresso": 0.0, "criacao": "2025-10-10", "prazoWmi": "Pausado", "statusPrazo": "Pausado", "statusPrazoType": "paused"}], "filaYasmin": [{"key": "IWN-5206", "summary": " INTERLAC - MULTIMED VITORIA - 5192 ", "tipo": "Interlac", "status": "Tarefas pendentes", "hours": 0.5, "estimatedHours": 4.5, "criado": "2026-06-03", "dueDate": "-"}, {"key": "IWN-5157", "summary": "INTERLAC - LABORATORIO OS REZENDE - 7108 ", "tipo": "Interlac", "status": "Tarefas pendentes", "hours": 0.5, "estimatedHours": 4.5, "criado": "2026-06-03", "dueDate": "2026-07-02"}, {"key": "IWN-5154", "summary": "AUTORIZAÇÃO ONLINE - UNIMED (SGU)  - LABORATORIO FMARINI - 2857 ", "tipo": "Upsell", "status": "Tarefas pendentes", "hours": 0.5, "estimatedHours": 12.0, "criado": "2026-06-03", "dueDate": "-"}, {"key": "IWN-5151", "summary": "CONFERE - LABORATORIO SAO JOSE - 1272 ", "tipo": "Treinamento", "status": "Tarefas pendentes", "hours": 0.8, "estimatedHours": 12.0, "criado": "2026-06-03", "dueDate": "-"}, {"key": "IWN-5146", "summary": "  APOIO X APOIADO - SYSLAB (WS)  - LABORATORIO CEARENSE - 3121 ", "tipo": "Upsell", "status": "Tarefas pendentes", "hours": 0.7, "estimatedHours": 12.0, "criado": "2026-06-02", "dueDate": "-"}, {"key": "IWN-5050", "summary": " INTERLAC - LABORATORIO PREV-LAB - 432", "tipo": "Interlac", "status": "Tarefas pendentes", "hours": 0.8, "estimatedHours": 4.5, "criado": "2026-05-29", "dueDate": "-"}, {"key": "IWN-4968", "summary": " COMUNICAÇÃO COM APOIO - SAUDE-LAB - 3840 ", "tipo": "Upsell", "status": "Tarefas pendentes", "hours": 0.0, "estimatedHours": 12.0, "criado": "2026-05-18", "dueDate": "-"}, {"key": "IWN-4967", "summary": "INTERLAC - SAUDE-LAB - 3840 ", "tipo": "Interlac", "status": "Tarefas pendentes", "hours": 0.5, "estimatedHours": 4.5, "criado": "2026-05-18", "dueDate": "-"}, {"key": "IWN-4965", "summary": "INTERLAC - LABORATORIO CASTRO - 5848 ", "tipo": "Interlac", "status": "Tarefas pendentes", "hours": 0.5, "estimatedHours": 4.5, "criado": "2026-05-18", "dueDate": "-"}, {"key": "IWN-4919", "summary": " LAB DE ANALISES PRO VIDA - 5255 - Autolac Cloud Migration Module - WMI", "tipo": "Cloud", "status": "Tarefas pendentes", "hours": 2.5, "estimatedHours": 47.0, "criado": "2026-05-12", "dueDate": "-"}, {"key": "IWN-4911", "summary": "LABORATORIO PASTEUR ANALISES CLINICAS - 467  - Autolac Cloud Migration Module - WMI", "tipo": "Cloud", "status": "Tarefas pendentes", "hours": 2.8, "estimatedHours": 47.0, "criado": "2026-05-12", "dueDate": "-"}, {"key": "IWN-4859", "summary": "INTERLAC ( Desenvolvimento ) -  MULTIMED VITORIA - 5182", "tipo": "Interlac", "status": "Tarefas pendentes", "hours": 3.3, "estimatedHours": 4.5, "criado": "2026-05-07", "dueDate": "2026-05-28"}, {"key": "IWN-4801", "summary": "Integração APOIO X APOIADO - AUTOLAC (API) - Laboratorio Frota - 312 ", "tipo": "Integração", "status": "Tarefas pendentes", "hours": 5.1, "estimatedHours": 24.7, "criado": "2026-05-06", "dueDate": "-"}, {"key": "IWN-4787", "summary": " FILA DE ATENDIMENTO - LABORATORIO CEPAC - 2171  ", "tipo": "Fila", "status": "AGUARDANDO CLIENTE", "hours": 0.6, "estimatedHours": 12.0, "criado": "2026-05-04", "dueDate": "-"}, {"key": "IWN-4736", "summary": " INTERLACs - LABMEDICA - 1693", "tipo": "Interlac", "status": "Tarefas pendentes", "hours": 7.2, "estimatedHours": 4.5, "criado": "2026-04-28", "dueDate": "-"}, {"key": "IWN-4703", "summary": " INTERLACs -  LABORATORIO UNIMED - 10037 ", "tipo": "Interlac", "status": "AGUARDANDO CLIENTE", "hours": 1.1, "estimatedHours": 4.5, "criado": "2026-04-23", "dueDate": "-"}, {"key": "IWN-4683", "summary": " Integração SOC GED - LABORATORIO ROJAN - 1271", "tipo": "Integração", "status": "Tarefas pendentes", "hours": 5.0, "estimatedHours": 24.7, "criado": "2026-04-22", "dueDate": "-"}, {"key": "IWN-4665", "summary": " INTERLAC - LABORATORIO VILA RICA - 3113", "tipo": "Interlac", "status": "Tarefas pendentes", "hours": 2.5, "estimatedHours": 4.5, "criado": "2026-04-17", "dueDate": "-"}, {"key": "IWN-4510", "summary": "INTERLACS -  UNIDADE DE BIOANALISE - 407", "tipo": "Interlac", "status": "AGUARDANDO CLIENTE", "hours": 4.8, "estimatedHours": 4.5, "criado": "2026-04-06", "dueDate": "-"}, {"key": "IWN-3972", "summary": " Assinatura - SAUDE-LAB - 3840", "tipo": "Assinatura", "status": "AGUARDANDO CLIENTE", "hours": 3.3, "estimatedHours": 5.3, "criado": "2026-03-24", "dueDate": "-"}, {"key": "IWN-3971", "summary": "B2B HP -  VAZLAB - 10098", "tipo": "B2B", "status": "Tarefas pendentes", "hours": 0.5, "estimatedHours": 12.0, "criado": "2026-03-24", "dueDate": "-"}, {"key": "IWN-3828", "summary": "INTERLAC -  LAMEP - 1728", "tipo": "Interlac", "status": "AGUARDANDO CLIENTE", "hours": 2.5, "estimatedHours": 4.5, "criado": "2026-03-11", "dueDate": "-"}, {"key": "IWN-3537", "summary": "LABORATORIO DR. SANDOVAL CARVALHO -462 - integração Apoio x Apoiado (API) ", "tipo": "Integração", "status": "AGUARDANDO CLIENTE", "hours": 2.3, "estimatedHours": 24.7, "criado": "2026-02-10", "dueDate": "2026-06-30"}, {"key": "IWN-3507", "summary": "AUTORIZAÇÃO ONLINE -  LABORATORIO VITACENTER LTDA - 502", "tipo": "Upsell", "status": "AGUARDANDO CLIENTE", "hours": 7.2, "estimatedHours": 12.0, "criado": "2026-02-05", "dueDate": "2026-05-29"}, {"key": "IWN-3472", "summary": "LAPECCO - 1666 - INTEGRAÇÃO - APOIO X APOIADO - COMLAB (WS)", "tipo": "Integração", "status": "Em andamento", "hours": 7.9, "estimatedHours": 24.7, "criado": "2026-02-04", "dueDate": "2026-06-05"}, {"key": "IWN-3428", "summary": "NOTA FISCAL - LAB DE AN CLINICAS SANDOVAL DE CARVALHO - 5678", "tipo": "NF", "status": "Tarefas pendentes", "hours": 2.5, "estimatedHours": 3.2, "criado": "2026-01-29", "dueDate": "2026-05-18"}], "backlogInsights": [{"title": "1 Novo epics com porte estÃÂÃÂ£o ATRASADOS", "text": "Dos epics Novo com porte definido, 1 jÃÂÃÂ¡ ultrapassaram o prazo WMI.", "level": "danger"}, {"title": "4 tÃÂÃÂ©cnico(s) acima da capacidade trimestral", "text": "Jorge, Fernanda, Luiz, Anderson tÃÂÃÂªm ocupaÃÂÃÂ§ÃÂÃÂ£o >100%.", "level": "danger"}, {"title": "Capacidade disponÃÂÃÂ­vel: Fabio", "text": "Estes tÃÂÃÂ©cnicos tÃÂÃÂªm espaÃÂÃÂ§o para absorver mais Novos.", "level": "success"}]};</script>
+<div class="aurora-bg"></div>
+<div class="container" style="padding-top:1rem;padding-bottom:3rem">
 
-    <div class="container">
-        <header>
-            <h1>Performance Dashboard Time</h1>
-            <p class="subtitle">Visão consolidada de carga de trabalho por tipo de negócio (Novo Cliente vs Upsell)</p>
-            <div class="meta-info">
-                <div class="meta-item">
-                    <span>Data:</span>
-                    <span class="badge" id="headerTimestamp">—</span>
-                </div>
-                <div class="meta-item">
-                    <span>Total Implantadores:</span>
-                    <span class="badge" id="headerTechCount">—</span>
-                </div>
-                <div class="meta-item">
-                    <span>Total Epics em Aberto:</span>
-                    <span class="badge" id="headerEpicCount">—</span>
-                </div>
-            </div>
-        </header>
-
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('visao-geral')">Visão Geral Comparativa</button>
-            <button class="tab-btn" onclick="switchTab('novos-clientes')">Quadro Clientes Novos</button>
-            <button class="tab-btn" onclick="switchTab('upsell')">Quadro Upsell/Existentes</button>
-            <button class="tab-btn" onclick="switchTab('comportamento')">Comparativo de Comportamento</button>
-
-            <button class="tab-btn" onclick="switchTab('backlog')">Backlog & Capacity</button>
-            <button class="tab-btn" onclick="switchTab('fichas')">Fichas Individuais</button>
-        </div>
-
-        <!-- TAB 1: Visão Geral -->
-        <div id="visao-geral" class="tab-content active">
-            <div class="section">
-                <h2 class="section-title">Visão Geral: Andamento das Demandas Q2</h2>
-
-                <div class="metrics-grid" id="overview-kpi-row1"></div>
-                <div class="metrics-grid" id="overview-kpi-row2"></div>
-
-                <div class="charts-grid">
-                    <div class="chart-container">
-                        <canvas id="distributionChart"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="doughnutChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="charts-grid">
-                    <div class="chart-container full-width">
-                        <canvas id="workloadPerTechChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="charts-grid">
-                    <div class="chart-container full-width">
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="charts-grid">
-                    <div class="chart-container full-width">
-                        <canvas id="completionChart"></canvas>
-                    </div>
-                </div>
-
-                <div id="overview-insights"></div>
-            </div>
-        </div>
-
-        <!-- TAB 2: Novo -->
-        <div id="novos-clientes" class="tab-content">
-            <div class="section">
-                <h2 class="section-title" id="novo-title">Quadro Clientes Novos</h2>
-                <div class="scope-info" id="novo-scope"></div>
-
-                <h3 class="section-title">Resumo por Implantador</h3>
-                <div class="table-wrapper" id="novo-summary-table"></div>
-
-                <div class="charts-grid">
-                    <div class="chart-container">
-                        <canvas id="novosCompletionChart"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="novosHoursChart"></canvas>
-                    </div>
-                </div>
-
-                <div id="novo-insights"></div>
-            </div>
-        </div>
-
-        <!-- TAB 3: Upsell -->
-        <div id="upsell" class="tab-content">
-            <div class="section">
-                <h2 class="section-title" id="upsell-title">Quadro Upsell/Existentes</h2>
-                <div class="scope-info" id="upsell-scope"></div>
-
-                <div class="metrics-grid" id="upsell-kpis"></div>
-
-                <h3 class="section-title">Resumo por Implantador</h3>
-                <div class="table-wrapper" id="upsell-summary-table"></div>
-
-                <div class="section">
-                    <h3 class="section-title">Migração Cloud</h3>
-                    <div class="table-wrapper" id="cloud-migration-table"></div>
-                </div>
-
-                <div class="charts-grid">
-                    <div class="chart-container">
-                        <canvas id="upsellCompletionChart"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="upsellStackedChart"></canvas>
-                    </div>
-                </div>
-
-                <div id="upsell-insights"></div>
-            </div>
-        </div>
-
-        <!-- TAB 4: Comportamento -->
-        <div id="comportamento" class="tab-content">
-            <div class="section">
-                <h2 class="section-title">Comparativo de Comportamento</h2>
-
-                <div class="metrics-grid" id="comportamento-metrics"></div>
-
-                <div class="charts-grid">
-                    <div class="chart-container full-width">
-                        <canvas id="volumeQualityChart"></canvas>
-                    </div>
-                </div>
-
-                <div id="comportamento-insights"></div>
-            </div>
-        </div>
-
-
-        <!-- TAB 6: Backlog & Capacity -->
-        <div id="backlog" class="tab-content">
-            <div class="section">
-                <h2 class="section-title">Backlog & Capacity</h2>
-
-                <div class="insight-box info" style="margin-bottom: 30px;">
-                    <strong>Metodologia:</strong>
-                    Tempo de referência WMI por porte. <strong>Small: 150h / 60 dias</strong> | <strong>Medium: 200h / 90 dias</strong> | <strong>Large: 400h / 120 dias</strong> | <strong>Sem porte: 100h</strong> | <strong>Upsell: 12h/epic</strong>.
-                    Capacidade: <strong>140h/mês</strong> por implantador (7h/dia útil). Dedicação por cliente: <strong>2-4h/dia</strong> → máx. <strong>2-3 Novos simultâneos</strong>.
-                </div>
-
-                <!-- KPI Cards -->
-                <div class="metrics-grid" id="backlog-kpi-cards"></div>
-
-                <!-- Capacity por Implantador -->
-                <div class="card" style="margin-top: 20px;">
-                    <div class="card-title">Capacity por Implantador (140h/mês)</div>
-                    <div class="table-wrapper" id="backlog-capacity-table"></div>
-                </div>
-
-                <!-- Charts -->
-                <div class="charts-grid">
-                    <div class="chart-container">
-                        <canvas id="backlogCapacityChart"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="backlogTimelineChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Backlog Detalhado: Novo Cliente -->
-                <div class="card" style="margin-top: 20px;">
-                    <div class="card-title" id="backlog-novo-title">Backlog Detalhado: Novo Cliente</div>
-                    <div class="table-wrapper" id="backlog-novo-table"></div>
-                </div>
-
-                <!-- Fila Yasmin -->
-                <div class="card" style="margin-top: 20px; border-left: 3px solid #f59e0b;">
-                    <div class="card-title" style="display:flex; align-items:center; gap:10px;">
-                        <span style="font-size:1.2em;">📋</span> Fila para Distribuir (Yasmin) — Impacto no Capacity
-                        <span id="backlog-yasmin-badge" style="background:rgba(245,158,11,0.2); color:#f59e0b; padding:2px 10px; border-radius:12px; font-size:0.85em; margin-left:auto;">—</span>
-                    </div>
-
-                    <div class="insight-box warning" style="margin: 15px 0;">
-                        <strong>Essas demandas estão aguardando distribuição e precisam entrar no capacity dos implantadores.</strong>
-                    </div>
-
-                    <div class="table-wrapper" id="backlog-yasmin-table"></div>
-                </div>
-
-                <!-- Insights -->
-                <div class="card" style="margin-top: 20px;">
-                    <div class="card-title">Insights de Capacity</div>
-                    <div id="backlog-insights"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 7: Fichas Individuais -->
-        <div id="fichas" class="tab-content">
-            <!-- Grid View -->
-            <div id="fichas-grid-view" class="fichas-grid-view">
-                <div class="section">
-                    <h2 class="section-title">Fichas Individuais - Implantadores</h2>
-
-                    <div class="controls">
-                        <label>
-                            Ordenar por:
-                            <select id="fichas-sort" onchange="renderFichasGrid()">
-                                <option value="rate">Taxa de Conclusão</option>
-                                <option value="total">Total de Epics</option>
-                                <option value="risk">Nível de Risco</option>
-                                <option value="hours">Horas Totais</option>
-                                <option value="overdue">Epics Vencidos</option>
-                            </select>
-                        </label>
-                    </div>
-
-                    <div class="fichas-grid" id="fichas-container"></div>
-                </div>
-            </div>
-
-            <!-- Detail View -->
-            <div id="fichas-detail-view" class="fichas-detail-view">
-                <button class="detail-back-btn" onclick="fichasShowGrid()">← Voltar à Grade</button>
-                <h2 class="detail-title" id="fichas-detail-name"></h2>
-
-                <!-- KPIs Row -->
-                <div class="kpi-row" id="fichas-kpi-row"></div>
-
-                <!-- Epic Panel (summary + table) -->
-                <div class="detail-section" id="fichas-epic-section">
-                    <h3 class="detail-section-title">Detalhamento de Epics Abertos</h3>
-                    <div class="table-responsive" id="fichas-epic-table-container"></div>
-                </div>
-
-                <!-- Charts Row: Status + Novo vs Upsell -->
-                <div class="detail-section" id="fichas-charts-section">
-                    <div id="fichas-charts-container"></div>
-                </div>
-
-                <!-- Prazo Previsto vs Realizado -->
-                <div class="detail-section" id="fichas-prazo-section">
-                    <div id="fichas-prazo-container"></div>
-                </div>
-
-                <!-- Distribuição por Tipo de Demanda -->
-                <div class="detail-section" id="fichas-subtypes-section">
-                    <h3 class="detail-section-title">Distribuição por Tipo de Demanda</h3>
-                    <div class="table-responsive" id="fichas-subtypes-container"></div>
-                </div>
-
-                <!-- Análise do Coordenador (Risk box) -->
-                <div class="detail-section" id="fichas-analysis-section">
-                    <div id="fichas-analysis-container"></div>
-                </div>
-
-                <!-- Pontos Fortes & Riscos -->
-                <div class="detail-section" id="fichas-sr-section">
-                    <div id="fichas-sr-container"></div>
-                </div>
-            </div>
-        </div>
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-logo">W</div>
+    <div>
+      <div class="nav-title">Dashboard <span class="text-gradient">Implantação</span></div>
+      <div style="font-size:0.5rem;color:var(--color-gray-500);text-transform:uppercase;letter-spacing:0.1em">WMI Solutions</div>
     </div>
-
-    <footer>
-        <p>Dashboard atualizado em: <span id="footerTimestamp">—</span></p>
-    </footer>
-
-    <script>
-        const COLORS = {
-            novo: '#06b6d4',
-            upsell: '#f97316',
-            success: '#22c55e',
-            warning: '#facc15',
-            danger: '#ef4444',
-            info: '#79c0ff'
-        };
-
-        function formatHours(h) {
-            if (!h || h === 0) return '0h';
-            const rounded = h.toFixed(1);
-            const parts = rounded.split('.');
-            const whole = parseInt(parts[0]).toLocaleString('pt-BR');
-            return whole + ',' + parts[1] + 'h';
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
-            if (tabId === 'fichas') { fichasShowGrid(); }
-        }
-
-        function getCompletionRate(tech) {
-            if (tech.total === 0) return 0;
-            return Math.round((tech.completed / tech.total) * 100);
-        }
-
-        function sortTechs(sortBy) {
-            const arr = [...DATA.technicians];
-            switch(sortBy) {
-                case 'total': return arr.sort((a, b) => b.total - a.total);
-                case 'rate': return arr.sort((a, b) => getCompletionRate(b) - getCompletionRate(a));
-                case 'open': return arr.sort((a, b) => b.openCount - a.openCount);
-                case 'overdue': return arr.sort((a, b) => b.overdueCount - a.overdueCount);
-                case 'hours': return arr.sort((a, b) => b.hours - a.hours);
-                default: return arr;
-            }
-        }
-
-        function renderOverview() {
-            const techHoras = DATA.technicians.reduce((s, t) => s + t.novoHours + t.upsellHours, 0);
-            const excludedHoras = DATA.excludedOpenHours || 0;
-            const totHoras = techHoras + excludedHoras;
-            const novoHoras = DATA.technicians.reduce((s, t) => s + t.novoHours, 0);
-            const upsellHoras = DATA.technicians.reduce((s, t) => s + t.upsellHours, 0);
-            const pctNovo = totHoras > 0 ? Math.round((novoHoras / totHoras) * 100) : 0;
-            const pctUpsell = 100 - pctNovo;
-
-            const totEpics = DATA.technicians.reduce((s, t) => s + t.board.novo + t.board.upsell, 0);
-            const totNovoEpics = DATA.technicians.reduce((s, t) => s + t.board.novo, 0);
-            const totUpsellEpics = DATA.technicians.reduce((s, t) => s + t.board.upsell, 0);
-            const avgHPerNovoEpic = totNovoEpics > 0 ? (novoHoras / totNovoEpics).toFixed(1) : 0;
-            const avgHPerUpsellEpic = totUpsellEpics > 0 ? (upsellHoras / totUpsellEpics).toFixed(1) : 0;
-
-            document.getElementById('overview-kpi-row1').innerHTML = `
-                <div class="metric-card">
-                    <div class="metric-value">${formatHours(totHoras)}</div>
-                    <div class="metric-label">Total Horas Apontadas</div>
-                </div>
-                <div class="metric-card" style="border-left: 3px solid #06b6d4;">
-                    <div class="metric-value" style="color:#06b6d4;">${formatHours(novoHoras)}</div>
-                    <div class="metric-label">Novo Cliente</div>
-                </div>
-                <div class="metric-card" style="border-left: 3px solid #f97316;">
-                    <div class="metric-value" style="color:#f97316;">${formatHours(upsellHoras)}</div>
-                    <div class="metric-label">Upsell/Existente</div>
-                </div>
-                <div class="metric-card" style="border-left: 3px solid #06b6d4;">
-                    <div class="metric-value" style="color:#06b6d4;">${pctNovo}%</div>
-                    <div class="metric-label">Tempo em Novo</div>
-                </div>
-                <div class="metric-card" style="border-left: 3px solid #f97316;">
-                    <div class="metric-value" style="color:#f97316;">${pctUpsell}%</div>
-                    <div class="metric-label">Tempo em Upsell</div>
-                </div>
-            `;
-
-            document.getElementById('overview-kpi-row2').innerHTML = `
-                <div class="metric-card">
-                    <div class="metric-value">${totEpics}</div>
-                    <div class="metric-label">Total Epics em Aberto</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">${totNovoEpics}</div>
-                    <div class="metric-label">Epics Novo</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">${totUpsellEpics}</div>
-                    <div class="metric-label">Epics Upsell</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value" style="color:#06b6d4;">${avgHPerNovoEpic}h</div>
-                    <div class="metric-label">Média h/Epic Novo</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value" style="color:#f97316;">${avgHPerUpsellEpic}h</div>
-                    <div class="metric-label">Média h/Epic Upsell</div>
-                </div>
-            `;
-
-            const techNames = DATA.technicians.map(t => t.name.split(' ')[0]);
-            const novoData = DATA.technicians.map(t => t.novoHours);
-            const upsellData = DATA.technicians.map(t => t.upsellHours);
-
-            const ctx1 = document.getElementById('distributionChart').getContext('2d');
-            new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: techNames,
-                    datasets: [
-                        { label: 'Novo', data: novoData, backgroundColor: COLORS.novo, borderRadius: 4 },
-                        { label: 'Upsell', data: upsellData, backgroundColor: COLORS.upsell, borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Distribuição de Horas: Novo vs Upsell por Pessoa', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
-                        legend: { labels: { color: '#c9d1d9', padding: 15 } }
-                    },
-                    scales: {
-                        x: { stacked: true, ticks: { color: '#8b949e' }, grid: { display: false } },
-                        y: { stacked: true, ticks: { color: '#8b949e', callback: function(v) { return v + 'h'; } }, grid: { color: '#30363d' } }
-                    }
-                }
-            });
-
-            const ctx2 = document.getElementById('doughnutChart').getContext('2d');
-            new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Novo', 'Upsell'],
-                    datasets: [{
-                        data: [novoHoras, upsellHoras],
-                        backgroundColor: [COLORS.novo, COLORS.upsell],
-                        borderColor: '#0d1117',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Proporção de Horas: Novo vs Upsell', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
-                        legend: { labels: { color: '#c9d1d9', padding: 15 } }
-                    }
-                }
-            });
-
-            const ctx3 = document.getElementById('workloadPerTechChart').getContext('2d');
-            new Chart(ctx3, {
-                type: 'bar',
-                data: {
-                    labels: techNames,
-                    datasets: [
-                        { label: 'Novo', data: novoData, backgroundColor: COLORS.novo, borderRadius: 4 },
-                        { label: 'Upsell', data: upsellData, backgroundColor: COLORS.upsell, borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    plugins: {
-                        title: { display: true, text: 'Carga de Trabalho por Técnico', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
-                        legend: { labels: { color: '#c9d1d9', padding: 15 } }
-                    },
-                    scales: {
-                        x: { stacked: true, ticks: { color: '#8b949e', callback: function(v) { return v + 'h'; } }, grid: { color: '#30363d' } },
-                        y: { stacked: true, ticks: { color: '#8b949e' }, grid: { display: false } }
-                    }
-                }
-            });
-
-            const completedData = DATA.technicians.map(t => t.completed);
-            const inProgressData = DATA.technicians.map(t => t.inProgress);
-            const pausedData = DATA.technicians.map(t => t.paused);
-            const pendingData = DATA.technicians.map(t => t.pending);
-
-            const ctx4 = document.getElementById('statusChart').getContext('2d');
-            new Chart(ctx4, {
-                type: 'bar',
-                data: {
-                    labels: techNames,
-                    datasets: [
-                        { label: 'Concluído', data: completedData, backgroundColor: COLORS.success, borderRadius: 4 },
-                        { label: 'Em Andamento', data: inProgressData, backgroundColor: COLORS.novo, borderRadius: 4 },
-                        { label: 'Paused', data: pausedData, backgroundColor: COLORS.warning, borderRadius: 4 },
-                        { label: 'Pendente', data: pendingData, backgroundColor: COLORS.danger, borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Status dos Epics por Técnico', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
-                        legend: { labels: { color: '#c9d1d9', padding: 15 } }
-                    },
-                    scales: {
-                        x: { stacked: true, ticks: { color: '#8b949e' }, grid: { display: false } },
-                        y: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
-                    }
-                }
-            });
-
-            const ctx5 = document.getElementById('completionChart').getContext('2d');
-            new Chart(ctx5, {
-                type: 'bar',
-                data: {
-                    labels: techNames,
-                    datasets: [
-                        { label: 'Concluído', data: completedData, backgroundColor: COLORS.success, borderRadius: 4 },
-                        { label: 'Aberto', data: DATA.technicians.map(t => t.total - t.completed), backgroundColor: COLORS.danger, borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Taxa de Conclusão por Técnico', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
-                        legend: { labels: { color: '#c9d1d9', padding: 15 } }
-                    },
-                    scales: {
-                        x: { stacked: true, ticks: { color: '#8b949e' }, grid: { display: false } },
-                        y: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
-                    }
-                }
-            });
-
-            const highOverdueCount = DATA.technicians.filter(t => t.overdueCount > 3).length;
-            const insights = [];
-            if (highOverdueCount > 0) {
-                insights.push(`<div class="insight-box critical"><strong>Atenção:</strong> ${highOverdueCount} técnico(s) com mais de 3 epics vencidos.</div>`);
-            }
-            if (pctNovo > 70) {
-                insights.push(`<div class="insight-box positive"><strong>Foco em Novo:</strong> ${pctNovo}% das horas estão alocadas em clientes novos.</div>`);
-            }
-            if (insights.length === 0) {
-                insights.push(`<div class="insight-box info"><strong>Status:</strong> Dashboard em dia com ${totEpics} epics ativos.</div>`);
-            }
-            document.getElementById('overview-insights').innerHTML = insights.join('');
-
-        }
-
-        function renderNovoTab() {
-            const novo = DATA.novoSummary;
-            document.getElementById('novo-title').textContent = `Quadro Clientes Novos (${novo.total} epics)`;
-            document.getElementById('novo-scope').innerHTML = `<strong>Escopo Novo:</strong> Total ${novo.total} epics | Concluídos ${novo.completed} | Em Andamento ${novo.inProgress} | ${formatHours(novo.totalHours)} distribuídas`;
-
-            let tableHtml = '<table><thead><tr><th>Implantador</th><th>Em Andamento</th><th>Concluído</th><th>Paused</th><th>Pendente</th><th>Taxa %</th><th>Horas</th><th>h/Epic</th><th>Total</th></tr></thead><tbody>';
-
-            const techWithNovo = DATA.technicians.filter(t => t.novoStats && t.novoStats.total > 0);
-            let tAnd = 0, tConcl = 0, tPaused = 0, tPend = 0, tHrs = 0, tTotal = 0;
-
-            techWithNovo.forEach(tech => {
-                const ns = tech.novoStats;
-                const rate = ns.total > 0 ? Math.round((ns.completed / ns.total) * 100) : 0;
-                const hPerEpic = ns.total > 0 ? (ns.hours / ns.total).toFixed(1) : '0';
-
-                tableHtml += `<tr>
-                    <td><strong>${tech.name}</strong></td>
-                    <td>${ns.inProgress}</td>
-                    <td><span class="status-badge status-completed">${ns.completed}</span></td>
-                    <td>${ns.paused}</td>
-                    <td>${ns.pending + (ns.waiting || 0)}</td>
-                    <td><strong>${rate}%</strong></td>
-                    <td>${formatHours(ns.hours)}</td>
-                    <td>${hPerEpic}h</td>
-                    <td>${ns.total}</td>
-                </tr>`;
-
-                tAnd += ns.inProgress;
-                tConcl += ns.completed;
-                tPaused += ns.paused;
-                tPend += ns.pending + (ns.waiting || 0);
-                tHrs += ns.hours;
-                tTotal += ns.total;
-            });
-
-            const totalRate = tTotal > 0 ? Math.round((tConcl / tTotal) * 100) : 0;
-            tableHtml += `<tr style="background: #0d1117; font-weight: 600;">
-                <td><strong>TOTAL</strong></td>
-                <td><strong>${tAnd}</strong></td>
-                <td><strong><span class="status-badge status-completed">${tConcl}</span></strong></td>
-                <td><strong>${tPaused}</strong></td>
-                <td><strong>${tPend}</strong></td>
-                <td><strong>${totalRate}%</strong></td>
-                <td><strong>${formatHours(tHrs)}</strong></td>
-                <td><strong>${tTotal > 0 ? (tHrs / tTotal).toFixed(1) : 0}h</strong></td>
-                <td><strong>${tTotal}</strong></td>
-            </tr>`;
-
-            tableHtml += '</tbody></table>';
-            document.getElementById('novo-summary-table').innerHTML = tableHtml;
-
-            const techNames = techWithNovo.map(t => t.name.split(' ')[0]);
-
-            const ctx1 = document.getElementById('novosCompletionChart').getContext('2d');
-            new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: techNames,
-                    datasets: [
-                        { label: 'Concluído', data: techWithNovo.map(t => t.novoStats.completed), backgroundColor: COLORS.success, borderRadius: 4 },
-                        { label: 'Aberto', data: techWithNovo.map(t => t.board.novo), backgroundColor: COLORS.novo, borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Novo: Conclusão por Técnico', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
-                        legend: { labels: { color: '#c9d1d9' } }
-                    },
-                    scales: {
-                        y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
-                        x: { ticks: { color: '#8b949e' } }
-                    }
-                }
-            });
-
-            const ctx2 = document.getElementById('novosHoursChart').getContext('2d');
-            new Chart(ctx2, {
-                type: 'line',
-                data: {
-                    labels: techNames,
-                    datasets: [{
-                        label: 'Horas/Epic',
-                        data: techWithNovo.map(t => (t.novoHours / Math.max(1, t.board.novo)).toFixed(1)),
-                        borderColor: COLORS.novo,
-                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Novo: Horas/Epic por Técnico', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
-                        legend: { labels: { color: '#c9d1d9' } }
-                    },
-                    scales: {
-                        y: { ticks: { color: '#8b949e', callback: v => v + 'h' }, grid: { color: '#30363d' } },
-                        x: { ticks: { color: '#8b949e' } }
-                    }
-                }
-            });
-
-            document.getElementById('novo-insights').innerHTML = '<div class="insight-box info"><strong>Resumo Novo:</strong> ' + novo.total + ' epics em curso com ' + formatHours(novo.totalHours) + ' alocadas.</div>';
-        }
-
-        function renderUpsellTab() {
-            const upsell = DATA.upsellSummary;
-            document.getElementById('upsell-title').textContent = `Quadro Upsell/Existentes (${upsell.total} epics)`;
-            document.getElementById('upsell-scope').innerHTML = `<strong>Escopo Upsell:</strong> Total ${upsell.total} epics | Concluídos ${upsell.completed} | Em Andamento ${upsell.inProgress} | ${formatHours(upsell.totalHours)} distribuídas`;
-
-            document.getElementById('upsell-kpis').innerHTML = `
-                <div class="metric-card">
-                    <div class="metric-value">${upsell.total}</div>
-                    <div class="metric-label">Total Epics</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">${upsell.completed}</div>
-                    <div class="metric-label">Concluídos</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">${upsell.inProgress}</div>
-                    <div class="metric-label">Em Andamento</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">${Math.round((upsell.completed / upsell.total) * 100)}%</div>
-                    <div class="metric-label">Taxa Conclusão</div>
-                </div>
-            `;
-
-            let tableHtml = '<table><thead><tr><th>Implantador</th><th>Em Andamento</th><th>Concluído</th><th>Paused</th><th>Pendente</th><th>Taxa %</th><th>Horas</th><th>h/Epic</th><th>Total</th></tr></thead><tbody>';
-
-            const techWithUpsell = DATA.technicians.filter(t => t.upsellStats && t.upsellStats.total > 0);
-            let tAnd = 0, tConcl = 0, tPaused = 0, tPend = 0, tHrs = 0, tTotal = 0;
-
-            techWithUpsell.forEach(tech => {
-                const us = tech.upsellStats;
-                const rate = us.total > 0 ? Math.round((us.completed / us.total) * 100) : 0;
-                const hPerEpic = us.total > 0 ? (us.hours / us.total).toFixed(1) : '0';
-
-                tableHtml += `<tr>
-                    <td><strong>${tech.name}</strong></td>
-                    <td>${us.inProgress}</td>
-                    <td><span class="status-badge status-completed">${us.completed}</span></td>
-                    <td>${us.paused}</td>
-                    <td>${us.pending + (us.waiting || 0)}</td>
-                    <td><strong>${rate}%</strong></td>
-                    <td>${formatHours(us.hours)}</td>
-                    <td>${hPerEpic}h</td>
-                    <td>${us.total}</td>
-                </tr>`;
-
-                tAnd += us.inProgress;
-                tConcl += us.completed;
-                tPaused += us.paused;
-                tPend += us.pending + (us.waiting || 0);
-                tHrs += us.hours;
-                tTotal += us.total;
-            });
-
-            const totalRate = tTotal > 0 ? Math.round((tConcl / tTotal) * 100) : 0;
-            tableHtml += `<tr style="background: #0d1117; font-weight: 600;">
-                <td><strong>TOTAL</strong></td>
-                <td><strong>${tAnd}</strong></td>
-                <td><strong><span class="status-badge status-completed">${tConcl}</span></strong></td>
-                <td><strong>${tPaused}</strong></td>
-                <td><strong>${tPend}</strong></td>
-                <td><strong>${totalRate}%</strong></td>
-                <td><strong>${formatHours(tHrs)}</strong></td>
-                <td><strong>${tTotal > 0 ? (tHrs / tTotal).toFixed(1) : 0}h</strong></td>
-                <td><strong>${tTotal}</strong></td>
-            </tr>`;
-
-            tableHtml += '</tbody></table>';
-            document.getElementById('upsell-summary-table').innerHTML = tableHtml;
-
-            const cloudMig = DATA.migracaoCloud || [];
-            let cloudHtml = '<table><thead><tr><th>Chave</th><th>Resumo</th><th>Assignee</th><th>Status</th><th>Horas</th></tr></thead><tbody>';
-            if (cloudMig.length === 0) {
-                cloudHtml += '<tr><td colspan="5" style="text-align:center;color:#8b949e;">Nenhum item em migração cloud.</td></tr>';
-            } else {
-                cloudMig.forEach(item => {
-                    cloudHtml += `<tr>
-                        <td><a href="https://wmi-solutions.atlassian.net/browse/${item.key}" target="_blank" style="color:#06b6d4;">${item.key}</a></td>
-                        <td>${item.summary}</td>
-                        <td>${item.assignee}</td>
-                        <td><span class="status-badge status-progress">${item.status}</span></td>
-                        <td>${item.hours ? formatHours(item.hours) : '—'}</td>
-                    </tr>`;
-                });
-            }
-            cloudHtml += '</tbody></table>';
-            document.getElementById('cloud-migration-table').innerHTML = cloudHtml;
-
-            const techNames = techWithUpsell.map(t => t.name.split(' ')[0]);
-
-            const ctx1 = document.getElementById('upsellCompletionChart').getContext('2d');
-            new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: techNames,
-                    datasets: [
-                        { label: 'Concluído', data: techWithUpsell.map(t => t.upsellStats.completed), backgroundColor: COLORS.success, borderRadius: 4 },
-                        { label: 'Aberto', data: techWithUpsell.map(t => t.board.upsell), backgroundColor: COLORS.upsell, borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Upsell: Conclusão por Técnico', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
-                        legend: { labels: { color: '#c9d1d9' } }
-                    },
-                    scales: {
-                        y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
-                        x: { ticks: { color: '#8b949e' } }
-                    }
-                }
-            });
-
-            const ctx2 = document.getElementById('upsellStackedChart').getContext('2d');
-            new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: techNames,
-                    datasets: [
-                        { label: 'Concluído', data: techWithUpsell.map(t => t.upsellStats.completed), backgroundColor: COLORS.success, borderRadius: 4 },
-                        { label: 'Em Andamento', data: techWithUpsell.map(t => t.inProgress), backgroundColor: COLORS.novo, borderRadius: 4 },
-                        { label: 'Pendente', data: techWithUpsell.map(t => t.pending), backgroundColor: COLORS.danger, borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Upsell: Status dos Epics', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
-                        legend: { labels: { color: '#c9d1d9' } }
-                    },
-                    scales: {
-                        x: { stacked: true, ticks: { color: '#8b949e' } },
-                        y: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } }
-                    }
-                }
-            });
-
-            document.getElementById('upsell-insights').innerHTML = '<div class="insight-box warning"><strong>Resumo Upsell:</strong> ' + upsell.total + ' epics em curso com ' + formatHours(upsell.totalHours) + ' alocadas.</div>';
-        }
-
-        function renderComportamento() {
-            const novoAvgRate = Math.round(DATA.technicians.filter(t => t.board.novo > 0).reduce((s, t) => s + getCompletionRate(t), 0) / Math.max(1, DATA.technicians.filter(t => t.board.novo > 0).length));
-            const upsellAvgRate = Math.round(DATA.technicians.filter(t => t.board.upsell > 0).reduce((s, t) => s + getCompletionRate(t), 0) / Math.max(1, DATA.technicians.filter(t => t.board.upsell > 0).length));
-
-            document.getElementById('comportamento-metrics').innerHTML = `
-                <div class="metric-card">
-                    <div class="metric-value" style="color:#06b6d4;">${novoAvgRate}%</div>
-                    <div class="metric-label">Taxa Média Novo</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value" style="color:#f97316;">${upsellAvgRate}%</div>
-                    <div class="metric-label">Taxa Média Upsell</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">${DATA.technicians.filter(t => t.board.novo > 0).length}</div>
-                    <div class="metric-label">Técnicos Novo</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value">${DATA.technicians.filter(t => t.board.upsell > 0).length}</div>
-                    <div class="metric-label">Técnicos Upsell</div>
-                </div>
-            `;
-
-            const ctx = document.getElementById('volumeQualityChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'scatter',
-                data: {
-                    datasets: [
-                        {
-                            label: 'Novo',
-                            data: DATA.technicians.filter(t => t.board.novo > 0).map(t => ({ x: t.openCount, y: getCompletionRate(t), name: t.name })),
-                            backgroundColor: COLORS.novo + '80',
-                            borderColor: COLORS.novo,
-                            borderWidth: 2
-                        },
-                        {
-                            label: 'Upsell',
-                            data: DATA.technicians.filter(t => t.board.upsell > 0).map(t => ({ x: t.openCount, y: getCompletionRate(t), name: t.name })),
-                            backgroundColor: COLORS.upsell + '80',
-                            borderColor: COLORS.upsell,
-                            borderWidth: 2
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Volume vs Qualidade: Epics Abertos vs Taxa de Conclusão', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
-                        legend: { labels: { color: '#c9d1d9' } }
-                    },
-                    scales: {
-                        x: { title: { display: true, text: 'Epics Abertos', color: '#8b949e' }, ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
-                        y: { title: { display: true, text: 'Taxa de Conclusão %', color: '#8b949e' }, ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, max: 100 }
-                    }
-                }
-            });
-
-            document.getElementById('comportamento-insights').innerHTML = '<div class="insight-box info"><strong>Análise Comparativa:</strong> Taxa média ' + Math.min(novoAvgRate, upsellAvgRate) + '% a ' + Math.max(novoAvgRate, upsellAvgRate) + '% entre tipos.</div>';
-        }
-
-        function renderBacklog() {
-            if (!DATA.backlogSummary) {
-                console.warn('No backlog data available');
-                return;
-            }
-
-            const summary = DATA.backlogSummary;
-
-            // Render KPI Cards
-            const kpiHtml = `
-                <div class="metric-card">
-                    <div class="metric-value" style="color: #06b6d4;">${formatHours(summary.totalRestante)}</div>
-                    <div class="metric-label">Total Restante Estimado</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value" style="color: #f97316;">${formatHours(summary.novoRestante)}</div>
-                    <div class="metric-label">Novo Cliente (${summary.novoPercent}%)</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value" style="color: #22c55e;">${formatHours(summary.upsellRestante)}</div>
-                    <div class="metric-label">Upsell Atribuído (${summary.upsellPercent}%)</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-value" style="color: #a78bfa;">${summary.backlogMonths.toFixed(1)} meses</div>
-                    <div class="metric-label">Backlog / Capacity Equipe</div>
-                </div>
-            `;
-            document.getElementById('backlog-kpi-cards').innerHTML = kpiHtml;
-
-            // Render Capacity Table
-            if (DATA.capacityTable && DATA.capacityTable.length > 0) {
-                let capTableHtml = '<table><thead><tr><th>Implantador</th><th>Epics Abertos</th><th>Horas Restantes (Novo)</th><th>Horas Restantes (Upsell)</th><th>Total Restante</th><th>Meses Necessários</th><th>Novos Simultâneos</th><th>Ocupação Trimestre</th><th>Risco</th></tr></thead><tbody>';
-
-                DATA.capacityTable.forEach(tech => {
-                    const riskColor = tech.risco === 'ALTO' ? '#ef4444' : tech.risco === 'MÉDIO' ? '#f59e0b' : '#22c55e';
-                    const riskBg = tech.risco === 'ALTO' ? 'rgba(239,68,68,0.15)' : tech.risco === 'MÉDIO' ? 'rgba(245,158,11,0.15)' : 'rgba(34,197,94,0.15)';
-                    const mesesColor = tech.meses > 2.5 ? '#ef4444' : tech.meses > 1.5 ? '#f59e0b' : '#22c55e';
-                    const ocupacaoColor = tech.ocupacao > 100 ? '#ef4444' : tech.ocupacao > 50 ? '#f59e0b' : '#22c55e';
-
-                    capTableHtml += `<tr>
-                        <td><strong>${tech.name}</strong></td>
-                        <td>${tech.epicsAbertos}</td>
-                        <td>${formatHours(tech.horasNovo)}</td>
-                        <td>${formatHours(tech.horasUpsell)}</td>
-                        <td><strong>${formatHours(tech.totalRestante)}</strong></td>
-                        <td><span style="color:${mesesColor};font-weight:600;">${tech.meses.toFixed(1)} meses</span></td>
-                        <td><span style="color:${tech.novosSimultaneos.includes('0') ? '#22c55e' : '#f59e0b'};font-weight:600;">${tech.novosSimultaneos}</span></td>
-                        <td><span style="color:${ocupacaoColor};font-weight:600;">${tech.ocupacao.toFixed(0)}%</span></td>
-                        <td><span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:${riskBg};color:${riskColor};">${tech.risco}</span></td>
-                    </tr>`;
-                });
-
-                // Add TOTAL row
-                const totals = DATA.capacityTable.reduce((acc, t) => ({
-                    epicsAbertos: (acc.epicsAbertos || '') + (typeof t.epicsAbertos === 'string' ? parseInt(t.epicsAbertos.split(' ')[0]) || 0 : 0),
-                    horasNovo: (acc.horasNovo || 0) + t.horasNovo,
-                    horasUpsell: (acc.horasUpsell || 0) + t.horasUpsell,
-                    totalRestante: (acc.totalRestante || 0) + t.totalRestante,
-                    meses: (acc.meses || 0) + t.meses,
-                    novosSimultaneos: (acc.novosSimultaneos || 0) + (parseInt(t.novosSimultaneos.split(' ')[0]) || 0)
-                }), {});
-
-                capTableHtml += `<tr style="background: #0d1117; font-weight: 600;">
-                    <td><strong>TOTAL</strong></td>
-                    <td><strong>${summary.yasminEpics + DATA.technicians.reduce((s,t) => s + (t.total - t.completed), 0)}</strong></td>
-                    <td><strong>${formatHours(summary.novoRestante)}</strong></td>
-                    <td><strong>${formatHours(summary.upsellRestante)}</strong></td>
-                    <td><strong>${formatHours(summary.totalRestante)}</strong></td>
-                    <td><strong>${summary.backlogMonths.toFixed(1)} meses</strong></td>
-                    <td><strong>${totals.novosSimultaneos} em andamento</strong></td>
-                    <td><strong>—</strong></td>
-                    <td><strong>—</strong></td>
-                </tr>`;
-                capTableHtml += '</tbody></table>';
-                document.getElementById('backlog-capacity-table').innerHTML = capTableHtml;
-            }
-
-            // Render Capacity Chart
-            const techNames = DATA.technicians.map(t => t.name.split(' ')[0]);
-            const ctx1 = document.getElementById('backlogCapacityChart').getContext('2d');
-            new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: techNames,
-                    datasets: [
-                        { label: 'Novo', data: DATA.technicians.map(t => t.novoHours || 0), backgroundColor: COLORS.novo, borderRadius: 4 },
-                        { label: 'Upsell', data: DATA.technicians.map(t => t.upsellHours || 0), backgroundColor: COLORS.upsell, borderRadius: 4 },
-                        { label: 'Capacity (140h)', data: Array(DATA.technicians.length).fill(140), type: 'line', borderColor: COLORS.danger, borderDash: [5, 5], borderWidth: 2, pointRadius: 0, fill: false }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: { display: true, text: 'Backlog Restante vs Capacity Mensal (140h)', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
-                        legend: { labels: { color: '#c9d1d9' } }
-                    },
-                    scales: {
-                        x: { ticks: { color: '#8b949e' } },
-                        y: { ticks: { color: '#8b949e', callback: v => v + 'h' }, grid: { color: '#30363d' } }
-                    }
-                }
-            });
-
-            // Render Timeline Chart
-            if (DATA.capacityTable && DATA.capacityTable.length > 0) {
-                const timelineData = DATA.capacityTable.map(t => ({
-                    name: t.name.split(' ')[0],
-                    meses: t.meses,
-                    risco: t.risco
-                })).sort((a, b) => b.meses - a.meses);
-
-                const ctx2 = document.getElementById('backlogTimelineChart').getContext('2d');
-                new Chart(ctx2, {
-                    type: 'bar',
-                    data: {
-                        labels: timelineData.map(t => t.name),
-                        datasets: [{
-                            label: 'Meses',
-                            data: timelineData.map(t => t.meses),
-                            backgroundColor: timelineData.map(t =>
-                                t.risco === 'ALTO' ? '#ef4444' : t.risco === 'MÉDIO' ? '#f59e0b' : '#22c55e'
-                            ),
-                            borderRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        indexAxis: 'y',
-                        plugins: {
-                            title: { display: true, text: 'Projeção de Conclusão do Backlog (meses)', color: '#c9d1d9', font: { size: 14, weight: 'bold' } },
-                            legend: { labels: { color: '#c9d1d9' } }
-                        },
-                        scales: {
-                            x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
-                            y: { ticks: { color: '#8b949e' }, grid: { display: false } }
-                        }
-                    }
-                });
-            }
-
-            // Render Backlog Novo Table
-            if (DATA.backlogNovo && DATA.backlogNovo.length > 0) {
-                document.getElementById('backlog-novo-title').textContent = `Backlog Detalhado: Novo Cliente (${DATA.backlogNovo.length} epics abertos)`;
-
-                let novoTableHtml = '<table><thead><tr><th>Epic</th><th>Cliente</th><th>Implantador</th><th>Porte</th><th>Status</th><th>Gasto</th><th>Meta</th><th>Restante Est.</th><th>Progresso</th><th>Criação</th><th>Prazo WMI</th><th>Status Prazo</th></tr></thead><tbody>';
-
-                DATA.backlogNovo.forEach(epic => {
-                    const progressPct = epic.progresso * 100;
-                    const progColor = progressPct >= 80 ? '#22c55e' : progressPct >= 40 ? '#facc15' : '#ef4444';
-                    let statusPrazoHtml = '';
-
-                    if (epic.statusPrazoType === 'overdue') {
-                        statusPrazoHtml = `<span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(239,68,68,0.15);color:#ef4444;">⚠️ ${epic.statusPrazo}</span>`;
-                    } else if (epic.statusPrazoType === 'noporte') {
-                        statusPrazoHtml = `<span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(107,114,128,0.15);color:#9ca3af;">Sem porte</span>`;
-                    } else if (epic.statusPrazoType === 'ok') {
-                        statusPrazoHtml = `<span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(34,197,94,0.15);color:#22c55e;">${epic.statusPrazo}</span>`;
-                    } else if (epic.statusPrazoType === 'warning') {
-                        statusPrazoHtml = `<span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(245,158,11,0.15);color:#f59e0b;">${epic.statusPrazo}</span>`;
-                    }
-
-                    novoTableHtml += `<tr>
-                        <td><a href="https://wmi-solutions.atlassian.net/browse/${epic.key}" target="_blank" style="color:#58a6ff;">${epic.key}</a></td>
-                        <td>${epic.summary}</td>
-                        <td>${epic.assignee}</td>
-                        <td>${epic.porte}</td>
-                        <td><span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(59,130,246,0.15);color:#3b82f6;">${epic.status}</span></td>
-                        <td>${formatHours(epic.gasto)}</td>
-                        <td>${formatHours(epic.meta)}</td>
-                        <td>${formatHours(epic.restante)}</td>
-                        <td><div style="height:8px;background:#21262d;border-radius:4px;overflow:hidden;width:80px;"><div style="height:100%;width:${progressPct}%;background:${progColor};border-radius:4px;"></div></div></td>
-                        <td style="color:#8b949e;">${epic.criacao}</td>
-                        <td style="color:#8b949e;">${epic.prazoWmi}</td>
-                        <td>${statusPrazoHtml}</td>
-                    </tr>`;
-                });
-
-                novoTableHtml += '</tbody></table>';
-                document.getElementById('backlog-novo-table').innerHTML = novoTableHtml;
-            }
-
-            // Render Fila Yasmin
-            if (DATA.filaYasmin && DATA.filaYasmin.length > 0) {
-                const totalEstimated = DATA.filaYasmin.reduce((s,e) => s + (e.estimatedHours || 0), 0);
-                document.getElementById('backlog-yasmin-badge').innerHTML = `${DATA.filaYasmin.length} epics | ${formatHours(totalEstimated)} estimadas`;
-
-                let filaTableHtml = '<table><thead><tr><th>Epic</th><th>Demanda</th><th>Tipo</th><th>Status</th><th>Horas Est.</th><th>Criado</th><th>Due Date</th></tr></thead><tbody>';
-
-                DATA.filaYasmin.forEach(item => {
-                    filaTableHtml += `<tr>
-                        <td><a href="https://wmi-solutions.atlassian.net/browse/${item.key}" target="_blank" style="color:#58a6ff;">${item.key}</a></td>
-                        <td>${item.summary}</td>
-                        <td>${item.tipo}</td>
-                        <td><span style="padding:2px 8px;border-radius:12px;font-size:0.85em;background:rgba(59,130,246,0.15);color:#3b82f6;">${item.status}</span></td>
-                        <td style="font-weight:600;color:#f59e0b;">${formatHours(item.estimatedHours)}</td>
-                        <td>${item.criado}</td>
-                        <td style="color:#8b949e;">${item.dueDate || '—'}</td>
-                    </tr>`;
-                });
-
-                const totalHorasPendentes = DATA.filaYasmin.reduce((s,e) => s + (e.estimatedHours || 0), 0);
-                filaTableHtml += '</tbody><tfoot><tr style="border-top:2px solid rgba(0,224,255,0.3);font-weight:700;"><td colspan="4" style="text-align:right;color:#8b949e;">Total horas pendentes (tempo gasto):</td><td style="color:#f59e0b;">' + formatHours(totalHorasPendentes) + '</td><td colspan="2"></td></tr></tfoot></table>';
-                document.getElementById('backlog-yasmin-table').innerHTML = filaTableHtml;
-            }
-
-            // Render Insights
-            if (DATA.backlogInsights && DATA.backlogInsights.length > 0) {
-                let insightsHtml = '';
-                DATA.backlogInsights.forEach(insight => {
-                    const boxClass = insight.level === 'danger' ? 'critical' : insight.level === 'warning' ? 'warning' : 'positive';
-                    insightsHtml += `<div class="insight-box ${boxClass}"><strong>${insight.title}</strong> ${insight.text}</div>`;
-                });
-                document.getElementById('backlog-insights').innerHTML = insightsHtml;
-            }
-        }
-
-        function getFichasRiskLevel(tech) {
-            if (tech.riskLevel) return tech.riskLevel;
-            if (tech.overdueCount > 5 || (tech.openCount > 8 && getCompletionRate(tech) < 40)) return 'high';
-            if (tech.overdueCount > 3 || tech.openCount > 6) return 'medium';
-            return 'low';
-        }
-
-        function fichasSortTechs(sortBy) {
-            const arr = [...DATA.technicians];
-            switch(sortBy) {
-                case 'total': return arr.sort((a,b) => b.total - a.total);
-                case 'rate': return arr.sort((a,b) => getCompletionRate(b) - getCompletionRate(a));
-                case 'open': return arr.sort((a,b) => b.openCount - a.openCount);
-                case 'overdue': return arr.sort((a,b) => b.overdueCount - a.overdueCount);
-                case 'hours': return arr.sort((a,b) => b.hours - a.hours);
-                case 'risk': return arr.sort((a,b) => {
-                    const riskOrder = {high:3, medium:2, low:1};
-                    return (riskOrder[getFichasRiskLevel(b)]||0) - (riskOrder[getFichasRiskLevel(a)]||0);
-                });
-                default: return arr.sort((a,b) => b.total - a.total);
-            }
-        }
-
-        function getStatusStyle(status) {
-            if (!status) return 'background:rgba(139,148,158,0.2);color:#8b949e;';
-            const s = status.toLowerCase();
-            if (s === 'em andamento') return 'background:rgba(59,130,246,0.25);color:#60a5fa;';
-            if (s.includes('conclu')) return 'background:rgba(163,230,53,0.2);color:#a3e635;';
-            if (s === 'cancelado') return 'background:rgba(239,68,68,0.2);color:#ef4444;';
-            if (s === 'paused' || s === 'pausado') return 'background:rgba(96,165,250,0.15);color:#93c5fd;';
-            if (s.includes('pendente')) return 'background:rgba(96,165,250,0.2);color:#60a5fa;';
-            if (s.includes('aguardando')) return 'background:rgba(139,148,158,0.2);color:#8b949e;';
-            return 'background:rgba(139,148,158,0.2);color:#8b949e;';
-        }
-
-        function renderFichasGrid() {
-            const sortBy = document.getElementById('fichas-sort').value;
-            const sorted = fichasSortTechs(sortBy);
-
-            let html = '';
-            sorted.forEach(tech => {
-                const rate = getCompletionRate(tech);
-                const risk = getFichasRiskLevel(tech);
-                const rateColor = rate > 70 ? 'high' : rate > 50 ? 'medium' : 'low';
-                const riskBadge = tech.overdueCount > 3 ? `<span class="risk-badge ${risk}">${risk.toUpperCase()}</span>` : '';
-
-                html += `
-                    <div class="ficha-card" onclick="fichasShowDetail(${tech.id})">
-                        <div class="ficha-card-header">
-                            <div class="ficha-name">${tech.name}</div>
-                            ${riskBadge}
-                        </div>
-
-                        <div class="ficha-metrics">
-                            <div class="ficha-metric">
-                                <div class="ficha-metric-label">Total de Epics</div>
-                                <div class="ficha-metric-value">${tech.total}</div>
-                            </div>
-                            <div class="ficha-metric">
-                                <div class="ficha-metric-label">Taxa Conclusão</div>
-                                <div class="ficha-metric-value">${rate}%</div>
-                                <div class="completion-bar">
-                                    <div class="completion-fill ${rateColor}" style="width:${rate}%"></div>
-                                </div>
-                            </div>
-                            <div class="ficha-metric">
-                                <div class="ficha-metric-label">Abertos/Vencidos</div>
-                                <div class="ficha-metric-value">${tech.openCount}/<span style="color:${tech.overdueCount > 0 ? '#ef4444' : '#c9d1d9'}">${tech.overdueCount}</span></div>
-                            </div>
-                            <div class="ficha-metric">
-                                <div class="ficha-metric-label">Horas Totais</div>
-                                <div class="ficha-metric-value" style="color:#79c0ff;">${tech.hours.toFixed(1)}h</div>
-                            </div>
-                        </div>
-
-                        <div class="ficha-footer">
-                            <div>
-                                <strong>${tech.hoursPerEpic.toFixed(1)}h</strong>/Epic
-                            </div>
-                            <div class="board-split">
-                                <div class="board-split-section" style="background:#06b6d4;flex:${tech.board.novo || 1}"></div>
-                                <div class="board-split-section" style="background:#f97316;flex:${tech.board.upsell || 1}"></div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            document.getElementById('fichas-container').innerHTML = html;
-        }
-
-        function fichasShowGrid() {
-            document.getElementById('fichas-grid-view').classList.remove('hidden');
-            document.getElementById('fichas-detail-view').classList.remove('active');
-        }
-
-        function fichasBuildBar(label, value, total, color) {
-            const pct = total > 0 ? Math.round((value / total) * 100) : 0;
-            return `<div>
-                <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#8b949e;margin-bottom:0.2rem;">
-                    <span>${label}</span><span style="color:${color};font-weight:600;">${value} (${pct}%)</span>
-                </div>
-                <div style="height:8px;background:#21262d;border-radius:4px;overflow:hidden;">
-                    <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;"></div>
-                </div>
-            </div>`;
-        }
-
-        function fichasShowDetail(techId) {
-            const tech = DATA.technicians.find(t => t.id === techId);
-            if (!tech) return;
-
-            document.getElementById('fichas-grid-view').classList.add('hidden');
-            document.getElementById('fichas-detail-view').classList.add('active');
-            document.getElementById('fichas-detail-name').textContent = tech.name;
-            window.scrollTo(0, 0);
-
-            const rate = getCompletionRate(tech);
-            const rateColor = rate >= 70 ? '#22c55e' : rate >= 40 ? '#facc15' : '#ef4444';
-            const riskClass = getFichasRiskLevel(tech);
-
-            // ========== 1. KPIs ==========
-            const kpis = [
-                {label:'Total Epics', value:tech.total, icon:'📋'},
-                {label:'Concluídos', value:tech.completed, icon:'✅'},
-                {label:'Em Andamento', value:tech.inProgress, icon:'🔄'},
-                {label:'Pausados', value:tech.paused, icon:'⏸'},
-                {label:'Pendentes', value:tech.pending, icon:'⏳'},
-                {label:'Taxa Conclusão', value:rate+'%', icon:'📊', color:rateColor},
-                {label:'Horas Totais', value:tech.hours.toFixed(1)+'h', icon:'⏱'},
-                {label:'h/Epic', value:tech.hoursPerEpic.toFixed(1)+'h', icon:'📐'},
-                {label:'Abertos', value:tech.openCount, icon:'📂'},
-                {label:'Vencidos', value:tech.overdueCount, icon:'🚨', color:tech.overdueCount > 3 ? '#ef4444' : ''},
-                {label:'Novo', value:tech.board.novo, icon:'🆕'},
-                {label:'Upsell', value:tech.board.upsell, icon:'🔁'}
-            ];
-            document.getElementById('fichas-kpi-row').innerHTML = kpis.map(k =>
-                `<div class="kpi-card"><div class="kpi-label">${k.icon} ${k.label}</div><div class="kpi-value" style="color:${k.color||'#e6edf3'}">${k.value}</div></div>`
-            ).join('');
-
-            // ========== 2. Epic Table ==========
-            const excludeStatus = ['concluído','cancelado','concluido'];
-            const epics = (tech.openEpics || []).filter(e => !excludeStatus.includes(e.status.toLowerCase()));
-            if (epics.length > 0) {
-                document.getElementById('fichas-epic-section').style.display = 'block';
-                const overdueCount = epics.filter(e => e.overdue).length;
-                let tableHtml = `<p style="margin-bottom:0.8rem;font-size:0.9rem;color:#8b949e;"><span style="color:#ef4444;font-weight:600;">${overdueCount} vencidos</span> de ${epics.length} abertos</p>`;
-                tableHtml += `<table class="epic-detail-table"><thead><tr>
-                    <th>Epic</th><th>Título</th><th>Board</th><th>Status</th><th>Criado</th><th>Due Date</th><th style="text-align:right">Horas</th>
-                </tr></thead><tbody>`;
-                epics.forEach(e => {
-                    const rowBg = e.overdue ? 'rgba(239,68,68,0.08)' : 'transparent';
-                    const boardColor = e.board === 'Novo' ? '#06b6d4' : '#f97316';
-                    const dueColor = e.overdue ? '#ef4444' : '#8b949e';
-                    tableHtml += `<tr style="background:${rowBg}">
-                        <td><a href="https://wmi-solutions.atlassian.net/browse/${e.key}" target="_blank">${e.key}</a></td>
-                        <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.title}</td>
-                        <td><span style="color:${boardColor};font-size:0.75rem;font-weight:600;">${e.board}</span></td>
-                        <td><span style="${getStatusStyle(e.status)}padding:3px 10px;border-radius:4px;font-weight:600;font-size:0.75rem;text-transform:uppercase;">${e.status}</span></td>
-                        <td style="color:#8b949e;font-size:0.75rem;">${e.created}</td>
-                        <td style="color:${dueColor};font-size:0.75rem;font-weight:${e.overdue?'600':'400'};">${e.due || '—'}</td>
-                        <td style="text-align:right">${e.hours.toFixed(1)}h</td>
-                    </tr>`;
-                });
-                tableHtml += '</tbody></table>';
-                document.getElementById('fichas-epic-table-container').innerHTML = tableHtml;
-            } else {
-                document.getElementById('fichas-epic-section').style.display = 'none';
-            }
-
-            // ========== 3. Charts: Status + Novo vs Upsell ==========
-            const novoP = tech.total > 0 ? Math.round((tech.board.novo / tech.total) * 100) : 0;
-            const upsellP = 100 - novoP;
-            document.getElementById('fichas-charts-container').innerHTML = `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-                    <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1rem;">
-                        <h3 style="color:#e6edf3;font-size:0.85rem;margin-bottom:0.8rem;">Status dos Epics</h3>
-                        <div style="display:flex;flex-direction:column;gap:0.5rem;">
-                            ${fichasBuildBar('Concluído', tech.completed, tech.total, '#22c55e')}
-                            ${fichasBuildBar('Em Andamento', tech.inProgress, tech.total, '#3b82f6')}
-                            ${fichasBuildBar('Pausado', tech.paused, tech.total, '#facc15')}
-                            ${fichasBuildBar('Pendente', tech.pending, tech.total, '#6e7681')}
-                        </div>
-                    </div>
-                    <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1rem;">
-                        <h3 style="color:#e6edf3;font-size:0.85rem;margin-bottom:0.8rem;">Distribuição Novo vs Upsell</h3>
-                        <div style="display:flex;align-items:center;gap:1rem;margin-top:1.5rem;">
-                            <div style="flex:1;height:18px;border-radius:9px;overflow:hidden;display:flex;background:#21262d;">
-                                ${tech.board.novo > 0 ? `<div style="width:${novoP}%;background:#06b6d4;height:100%;"></div>` : ''}
-                                ${tech.board.upsell > 0 ? `<div style="width:${upsellP}%;background:#f97316;height:100%;"></div>` : ''}
-                            </div>
-                        </div>
-                        <div style="display:flex;justify-content:space-between;margin-top:0.8rem;font-size:0.8rem;">
-                            <span style="color:#06b6d4;">🆕 Novo: ${tech.board.novo} (${novoP}%)</span>
-                            <span style="color:#f97316;">🔁 Upsell: ${tech.board.upsell} (${upsellP}%)</span>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-top:1rem;font-size:0.8rem;">
-                            <div style="background:#0d1117;border-radius:6px;padding:0.6rem;text-align:center;">
-                                <div style="color:#8b949e;font-size:0.7rem;">Horas Novo</div>
-                                <div style="color:#06b6d4;font-weight:700;font-size:1.1rem;">${tech.novoHours}h</div>
-                            </div>
-                            <div style="background:#0d1117;border-radius:6px;padding:0.6rem;text-align:center;">
-                                <div style="color:#8b949e;font-size:0.7rem;">Horas Upsell</div>
-                                <div style="color:#f97316;font-weight:700;font-size:1.1rem;">${tech.upsellHours}h</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-
-            // ========== 4. Prazo Previsto vs Realizado ==========
-            const prazo = tech.prazo;
-            if (prazo && prazo.epics > 0) {
-                document.getElementById('fichas-prazo-section').style.display = 'block';
-                const desvioColor = prazo.desvioMedio <= 0 ? '#22c55e' : prazo.desvioMedio <= 7 ? '#facc15' : '#ef4444';
-                const pctColor = prazo.pctNoPrazo >= 50 ? '#22c55e' : prazo.pctNoPrazo >= 30 ? '#facc15' : '#ef4444';
-                const totalP = prazo.antecipados + prazo.noPrazo + prazo.atrasados;
-                const pctAnt = totalP > 0 ? Math.round((prazo.antecipados / totalP) * 100) : 0;
-                const pctNo = totalP > 0 ? Math.round((prazo.noPrazo / totalP) * 100) : 0;
-                const pctAt = totalP > 0 ? Math.round((prazo.atrasados / totalP) * 100) : 0;
-                const maxDays = Math.max(prazo.previstoMedio, prazo.realizadoMedio);
-                const prevW = Math.min(100, Math.round((prazo.previstoMedio / maxDays) * 100));
-                const realW = Math.min(100, Math.round((prazo.realizadoMedio / maxDays) * 100));
-
-                document.getElementById('fichas-prazo-container').innerHTML = `
-                    <div style="background:#161b22;border:1px solid #30363d;border-left:4px solid ${desvioColor};border-radius:8px;padding:1.2rem;">
-                        <h3 style="color:#e6edf3;font-size:0.95rem;margin:0 0 1rem 0;">📅 Prazo Previsto vs Realizado <span style="font-size:0.75rem;color:#8b949e;font-weight:400;">(${prazo.epics} epics concluídos com due date)</span></h3>
-                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.8rem;margin-bottom:1.2rem;">
-                            <div style="background:#0d1117;border-radius:6px;padding:0.8rem;text-align:center;">
-                                <div style="font-size:0.7rem;color:#8b949e;margin-bottom:0.2rem;">Prazo Previsto</div>
-                                <div style="font-size:1.3rem;font-weight:700;color:#58a6ff;">${prazo.previstoMedio}d</div>
-                            </div>
-                            <div style="background:#0d1117;border-radius:6px;padding:0.8rem;text-align:center;">
-                                <div style="font-size:0.7rem;color:#8b949e;margin-bottom:0.2rem;">Prazo Realizado</div>
-                                <div style="font-size:1.3rem;font-weight:700;color:#e6edf3;">${prazo.realizadoMedio}d</div>
-                            </div>
-                            <div style="background:#0d1117;border-radius:6px;padding:0.8rem;text-align:center;">
-                                <div style="font-size:0.7rem;color:#8b949e;margin-bottom:0.2rem;">Desvio Médio</div>
-                                <div style="font-size:1.3rem;font-weight:700;color:${desvioColor};">${prazo.desvioMedio > 0 ? '+' : ''}${prazo.desvioMedio}d</div>
-                            </div>
-                            <div style="background:#0d1117;border-radius:6px;padding:0.8rem;text-align:center;">
-                                <div style="font-size:0.7rem;color:#8b949e;margin-bottom:0.2rem;">No Prazo ou Antes</div>
-                                <div style="font-size:1.3rem;font-weight:700;color:${pctColor};">${prazo.pctNoPrazo}%</div>
-                            </div>
-                        </div>
-                        <div style="margin-bottom:0.6rem;">
-                            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#8b949e;margin-bottom:0.3rem;">
-                                <span style="color:#22c55e;">Antecipados: ${prazo.antecipados}</span>
-                                <span style="color:#58a6ff;">No prazo: ${prazo.noPrazo}</span>
-                                <span style="color:#ef4444;">Atrasados: ${prazo.atrasados}</span>
-                            </div>
-                            <div style="height:12px;border-radius:6px;overflow:hidden;display:flex;background:#21262d;">
-                                ${pctAnt > 0 ? `<div style="width:${pctAnt}%;background:#22c55e;height:100%;"></div>` : ''}
-                                ${pctNo > 0 ? `<div style="width:${pctNo}%;background:#58a6ff;height:100%;"></div>` : ''}
-                                ${pctAt > 0 ? `<div style="width:${pctAt}%;background:#ef4444;height:100%;"></div>` : ''}
-                            </div>
-                        </div>
-                        <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.8rem;">
-                            <div style="flex:1;height:6px;background:#21262d;border-radius:3px;position:relative;">
-                                <div style="position:absolute;left:0;top:0;height:100%;width:${prevW}%;background:#58a6ff;border-radius:3px;"></div>
-                            </div>
-                            <span style="font-size:0.7rem;color:#58a6ff;min-width:80px;">Previsto ${prazo.previstoMedio}d</span>
-                        </div>
-                        <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.3rem;">
-                            <div style="flex:1;height:6px;background:#21262d;border-radius:3px;position:relative;">
-                                <div style="position:absolute;left:0;top:0;height:100%;width:${realW}%;background:${desvioColor};border-radius:3px;"></div>
-                            </div>
-                            <span style="font-size:0.7rem;color:${desvioColor};min-width:80px;">Realizado ${prazo.realizadoMedio}d</span>
-                        </div>
-                    </div>`;
-            } else {
-                document.getElementById('fichas-prazo-section').style.display = 'block';
-                document.getElementById('fichas-prazo-container').innerHTML = '<div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1.2rem;text-align:center;color:#8b949e;">Sem dados de prazo disponíveis (nenhum epic concluído com data de entrega definida).</div>';
-            }
-
-            // ========== 5. Distribuição por Tipo (Novo Stats + Upsell Stats) ==========
-            const ns = tech.novoStats;
-            const us = tech.upsellStats;
-            if (ns && us && (ns.total > 0 || us.total > 0)) {
-                document.getElementById('fichas-subtypes-section').style.display = 'block';
-                const types = [];
-                if (ns.total > 0) types.push({name:'Novo Cliente', ...ns});
-                if (us.total > 0) types.push({name:'Upsell/Existente', ...us});
-
-                let stHtml = '<table class="epic-detail-table"><thead><tr>' +
-                    '<th>Tipo</th><th style="text-align:center">Total</th><th style="text-align:center">Concluídos</th>' +
-                    '<th style="text-align:center">Em Aberto</th><th style="text-align:center">Taxa</th><th style="text-align:center">h/Epic</th><th>Progresso</th>' +
-                    '</tr></thead><tbody>';
-                types.forEach(s => {
-                    const open = s.total - s.completed;
-                    const pct = s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0;
-                    const barColor = pct >= 70 ? '#22c55e' : pct >= 40 ? '#facc15' : '#ef4444';
-                    stHtml += `<tr>
-                        <td style="font-weight:600;color:#e6edf3;">${s.name}</td>
-                        <td style="text-align:center">${s.total}</td>
-                        <td style="text-align:center;color:#22c55e;">${s.completed}</td>
-                        <td style="text-align:center;color:#f97316;">${open}</td>
-                        <td style="text-align:center;color:${barColor};font-weight:600;">${pct}%</td>
-                        <td style="text-align:center">${s.hoursPerEpic || 0}h</td>
-                        <td style="min-width:120px;">
-                            <div style="height:6px;background:#21262d;border-radius:3px;overflow:hidden;">
-                                <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;"></div>
-                            </div>
-                        </td>
-                    </tr>`;
-                });
-                stHtml += '</tbody></table>';
-                document.getElementById('fichas-subtypes-container').innerHTML = stHtml;
-            } else {
-                document.getElementById('fichas-subtypes-section').style.display = 'none';
-            }
-
-            // ========== 6. Análise do Coordenador (Risk Box) ==========
-            const borderColor = riskClass === 'high' ? '#ef4444' : riskClass === 'medium' ? '#facc15' : '#22c55e';
-            const bgColor = riskClass === 'high' ? 'rgba(239,68,68,0.06)' : riskClass === 'medium' ? 'rgba(250,204,21,0.06)' : 'rgba(34,197,94,0.06)';
-            const riskLabel = riskClass === 'high' ? '🔴 ALTO' : riskClass === 'medium' ? '🟡 MÉDIO' : '🟢 BAIXO';
-            const openCount = tech.openCount;
-            const horasAtivas = tech.totalHours;
-
-            // Auto-generate analysis text
-            let analysisText = `${tech.name} possui ${tech.total} epics no total, com taxa de conclusão de ${rate}%. `;
-            if (openCount > 0) {
-                analysisText += `Atualmente com ${openCount} epics abertos (${tech.board.novo} Novo, ${tech.board.upsell} Upsell) totalizando ${horasAtivas}h de carga ativa. `;
-            }
-            if (tech.overdueCount > 0) {
-                analysisText += `Atenção: ${tech.overdueCount} epic(s) vencido(s). `;
-            }
-            if (tech.zeroHoursOpen > 0) {
-                analysisText += `${tech.zeroHoursOpen} epic(s) aberto(s) sem apontamento de horas. `;
-            }
-            if (rate >= 70) {
-                analysisText += `Performance sólida com boa taxa de conclusão.`;
-            } else if (rate >= 40) {
-                analysisText += `Taxa de conclusão moderada — avaliar gargalos.`;
-            } else {
-                analysisText += `Taxa de conclusão baixa — necessita acompanhamento próximo.`;
-            }
-
-            document.getElementById('fichas-analysis-container').innerHTML = `
-                <div style="background:${bgColor};border-left:4px solid ${borderColor};border-radius:8px;padding:1.2rem;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
-                        <h3 style="color:#e6edf3;font-size:0.9rem;margin:0;">Análise do Coordenador</h3>
-                        <span style="font-size:0.75rem;font-weight:700;color:${borderColor};">Risco: ${riskLabel}</span>
-                    </div>
-                    <p style="color:#c9d1d9;font-size:0.85rem;line-height:1.6;margin:0;">${analysisText}</p>
-                </div>`;
-
-            // ========== 7. Pontos Fortes & Riscos ==========
-            const strengths = tech.strengths || [];
-            const risks = tech.risks || [];
-            document.getElementById('fichas-sr-container').innerHTML = `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-                    <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1rem;">
-                        <h3 style="color:#22c55e;font-size:0.85rem;margin-bottom:0.6rem;">💪 Pontos Fortes</h3>
-                        ${strengths.length > 0 ? strengths.map(s =>
-                            `<div style="display:flex;gap:0.4rem;padding:0.3rem 0;font-size:0.8rem;color:#c9d1d9;border-bottom:1px solid #21262d;"><span style="color:#22c55e;">✓</span><span>${s}</span></div>`
-                        ).join('') : '<div style="color:#8b949e;font-size:0.8rem;">—</div>'}
-                    </div>
-                    <div style="background:#161b22;border:1px solid #30363d;border-radius:8px;padding:1rem;">
-                        <h3 style="color:#ef4444;font-size:0.85rem;margin-bottom:0.6rem;">⚠️ Riscos Identificados</h3>
-                        ${risks.length > 0 ? risks.map(r =>
-                            `<div style="display:flex;gap:0.4rem;padding:0.3rem 0;font-size:0.8rem;color:#c9d1d9;border-bottom:1px solid #21262d;"><span style="color:#ef4444;">!</span><span>${r}</span></div>`
-                        ).join('') : '<div style="color:#8b949e;font-size:0.8rem;">—</div>'}
-                    </div>
-                </div>`;
-        }
-
-        function renderFichas() { renderFichasGrid(); }
-
-        function initDashboard() {
-            document.getElementById('headerTimestamp').textContent = DATA.timestamp || '—';
-            document.getElementById('headerTechCount').textContent = DATA.technicians.length || 0;
-            document.getElementById('headerEpicCount').textContent = DATA.technicians.reduce((s, t) => s + t.total, 0) || 0;
-            document.getElementById('footerTimestamp').textContent = DATA.timestamp || '—';
-
-            renderOverview();
-            renderNovoTab();
-            renderUpsellTab();
-            renderComportamento();
-            renderBacklog();
-            renderFichas();
-        }
-
-        document.addEventListener('DOMContentLoaded', initDashboard);
-    </script>
+  </div>
+  <div class="nav-meta">
+    <div class="nav-timestamp" id="timestamp">Carregando...</div>
+    <button class="btn-refresh" id="btnRefresh" onclick="doRefresh()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+      Atualizar
+    </button>
+  </div>
+</nav>
+
+<!-- TABS -->
+<div class="tabs" id="tabs">
+  <button class="tab active" data-tab="resumo">Resumo</button>
+  <button class="tab" data-tab="implantadores">Implantadores</button>
+  <button class="tab" data-tab="backlog">Backlog Detalhado</button>
+  <button class="tab" data-tab="capacity">Capacity</button>
+  <button class="tab" data-tab="tempomodulos">Tempo Módulos</button>
+</div>
+
+<!-- TAB: RESUMO -->
+<div class="tab-panel active" id="panel-resumo">
+  <div class="kpi-grid" id="kpiGrid"></div>
+  <div class="section-header"><div class="section-number">01 — Insights</div><h2>Alertas e Recomendações</h2></div>
+  <div class="insight-grid" id="insightsGrid"></div>
+  <div class="section-header"><div class="section-number">02 — Equipe</div><h2>Resumo por Implantador</h2></div>
+  <div id="resumoTable"></div>
+</div>
+
+<!-- TAB: IMPLANTADORES -->
+<div class="tab-panel" id="panel-implantadores">
+  <div class="section-header"><div class="section-number">Visão Individual</div><h2>Cards dos Implantadores</h2></div>
+  <div class="tech-grid" id="techGrid"></div>
+</div>
+
+<!-- TAB: BACKLOG DETALHADO -->
+<div class="tab-panel" id="panel-backlog">
+  <div class="section-header"><div class="section-number">Backlog Novo</div><h2>Épicos Novos em Aberto</h2></div>
+  <div id="backlogTable"></div>
+  <div class="section-header" style="margin-top:2rem"><div class="section-number">Fila Yasmin</div><h2>Épicos sem Implantador</h2></div>
+  <div id="filaYasminTable"></div>
+</div>
+
+<!-- TAB: CAPACITY -->
+<div class="tab-panel" id="panel-capacity">
+  <div class="kpi-grid" id="capacityKpis"></div>
+  <div class="section-header"><div class="section-number">Capacity</div><h2>Capacity por Implantador</h2></div>
+  <div id="capacityTable"></div>
+</div>
+
+<!-- TAB: TEMPO MÓDULOS -->
+<div class="tab-panel" id="panel-tempomodulos">
+  <div class="kpi-grid" id="tempoKpis"></div>
+  <div class="section-header"><div class="section-number">Tempo Módulos</div><h2>Tempo Médio por Módulo de Upsell</h2></div>
+  <div style="display:flex;gap:12px;margin-bottom:1rem;flex-wrap:wrap">
+    <label style="font-size:13px;color:var(--color-text-secondary)">Período:</label>
+    <select id="tmFilterMonth" style="padding:6px 12px;border-radius:8px;background:var(--color-surface);color:var(--color-text);border:1px solid rgba(255,255,255,0.1);font-size:13px"><option value="all">Todos os meses</option></select>
+    <label style="font-size:13px;color:var(--color-text-secondary)">Módulo:</label>
+    <select id="tmFilterModule" style="padding:6px 12px;border-radius:8px;background:var(--color-surface);color:var(--color-text);border:1px solid rgba(255,255,255,0.1);font-size:13px"><option value="all">Todos os módulos</option></select>
+  </div>
+  <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px">Dados em tempo real do Jira: epics concluídos classificados pelo campo <strong>Upsell Module</strong> (exclui templates e epics sem módulo). Horas = tempo total apontado no epic (aggregatetimespent). &quot;Tempo Mínimo&quot; = menor implantação registrada no módulo, desconsiderando epics com 0h.</div>
+  <div id="tempoMainTable"></div>
+  <div class="section-header" style="margin-top:2rem"><div class="section-number">Comparativo</div><h2>Comparativo Mensal por Módulo</h2></div>
+  <div id="tempoMonthlyTable"></div>
+</div>
+
+<!-- LOADING STATE -->
+<div class="loading-state" id="loadingState" style="display:none">
+  <div class="loading-spinner"></div>
+  <div>Buscando dados do Jira...</div>
+</div>
+
+</div>
+
+<script>
+let DATA = null;
+
+// ─── Tab switching ─────────────────────────────
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+  });
+});
+
+// ─── Refresh ───────────────────────────────────
+async function doRefresh() {
+  const btn = document.getElementById('btnRefresh');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  try {
+    await fetch('/api/refresh', { method: 'POST' });
+    await loadData();
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+
+async function loadData() {
+  try {
+    const resp = await fetch('/api/data');
+    DATA = await resp.json();
+    if (DATA.error) {
+      document.getElementById('loadingState').style.display = 'block';
+      return;
+    }
+    document.getElementById('loadingState').style.display = 'none';
+    renderAll();
+  } catch(e) {
+    console.error('Load failed:', e);
+  }
+}
+
+// ─── Badge helper ──────────────────────────────
+function statusBadge(status) {
+  const map = {
+    'Em andamento': 'badge-blue', 'Paused': 'badge-warning', 'AGUARDANDO CLIENTE': 'badge-warning',
+    'Tarefas pendentes': 'badge-neutral', 'Escalado': 'badge-neutral',
+    'Concluído': 'badge-success', 'Cancelado': 'badge-neutral'
+  };
+  return `<span class="badge ${map[status] || 'badge-neutral'}">${status}</span>`;
+}
+
+function riskBadge(risk) {
+  const map = { 'ALTO': 'badge-error', 'MÉDIO': 'badge-warning', 'BAIXO': 'badge-success' };
+  return `<span class="badge ${map[risk] || 'badge-neutral'}">${risk}</span>`;
+}
+
+function prazoBadge(type, text) {
+  const map = { 'overdue': 'badge-error', 'warning': 'badge-warning', 'ok': 'badge-success', 'noporte': 'badge-neutral' };
+  return `<span class="badge ${map[type] || 'badge-neutral'}">${text}</span>`;
+}
+
+// ─── Render All ────────────────────────────────
+function renderAll() {
+  document.getElementById('timestamp').textContent = 'Atualizado: ' + DATA.timestamp;
+  renderKPIs();
+  renderInsights();
+  renderResumoTable();
+  renderTechCards();
+  renderBacklogTable();
+  renderFilaYasmin();
+  renderCapacityKPIs();
+  renderCapacityTable();
+  TM_RAW = DATA.tempoModulos || [];
+  initTempoModulos();
+}
+
+// ─── KPIs ──────────────────────────────────────
+function renderKPIs() {
+  const d = DATA;
+  const totalOpen = d.technicians.reduce((a,t) => a + t.openCount, 0);
+  const totalCompleted = d.technicians.reduce((a,t) => a + t.completed, 0);
+  const totalHours = d.technicians.reduce((a,t) => a + t.hours, 0);
+  const totalEpics = d.technicians.reduce((a,t) => a + t.total, 0);
+  const novoOpen = d.novoSummary.total - d.novoSummary.completed;
+  const upsellOpen = d.upsellSummary.total - d.upsellSummary.completed;
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Épicos Abertos</div>
+      <div class="kpi-value text-gradient">${totalOpen}</div>
+      <div class="kpi-sub">${novoOpen} Novo · ${upsellOpen} Upsell</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Concluídos</div>
+      <div class="kpi-value" style="color:var(--color-success)">${totalCompleted}</div>
+      <div class="kpi-sub">${totalEpics > 0 ? Math.round(totalCompleted/totalEpics*100) : 0}% do total</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Horas Ativas (Q2+)</div>
+      <div class="kpi-value text-gradient">${totalHours.toFixed(0)}h</div>
+      <div class="kpi-sub">Em épicos abertos</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Novo — Em Andamento</div>
+      <div class="kpi-value" style="color:var(--color-blue-400)">${d.novoSummary.inProgress}</div>
+      <div class="kpi-sub">${d.novoSummary.activeHours.toFixed(0)}h investidas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Upsell — Em Andamento</div>
+      <div class="kpi-value" style="color:var(--color-cyan-400)">${d.upsellSummary.inProgress}</div>
+      <div class="kpi-sub">${d.upsellSummary.activeHours.toFixed(0)}h investidas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Backlog Total</div>
+      <div class="kpi-value text-gradient">${d.backlogSummary.totalRestante.toFixed(0)}h</div>
+      <div class="kpi-sub">${d.backlogSummary.backlogMonths} meses estimados</div>
+    </div>
+  `;
+}
+
+// ─── Insights ──────────────────────────────────
+function renderInsights() {
+  const insights = DATA.backlogInsights || [];
+  const icons = { danger: '🔴', warning: '🟡', success: '🟢' };
+  document.getElementById('insightsGrid').innerHTML = insights.map(i => `
+    <div class="insight-card ${i.level}">
+      <div class="insight-icon">${icons[i.level] || '📊'}</div>
+      <div>
+        <div class="insight-title">${i.title}</div>
+        <div class="insight-text">${i.text}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── Resumo Table ──────────────────────────────
+function renderResumoTable() {
+  const rows = DATA.technicians.map(t => `
+    <tr>
+      <td class="td-main">${t.name}</td>
+      <td>${t.total}</td>
+      <td style="color:var(--color-success)">${t.completed}</td>
+      <td style="color:var(--color-blue-400)">${t.inProgress}</td>
+      <td style="color:var(--color-warning)">${t.paused + t.pending + t.waiting}</td>
+      <td class="td-right">${t.hours.toFixed(0)}h</td>
+      <td>
+        <span style="color:var(--color-blue-300)">${t.board.novo}N</span> /
+        <span style="color:var(--color-cyan-300)">${t.board.upsell}U</span>
+      </td>
+      <td><span class="risk risk-${t.riskLevel}">${t.riskLevel === 'high' ? 'Alto' : t.riskLevel === 'medium' ? 'Médio' : 'Baixo'}</span></td>
+    </tr>
+  `).join('');
+  document.getElementById('resumoTable').innerHTML = `
+    <div class="table-wrapper">
+      <div class="table-header"><span class="table-title">Resumo da Equipe</span></div>
+      <table>
+        <thead><tr><th>Implantador</th><th>Total</th><th>Concluídos</th><th>Andamento</th><th>Pendente</th><th>Horas</th><th>Novo/Upsell</th><th>Risco</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── Tech Cards ────────────────────────────────
+function renderTechCards() {
+  document.getElementById('techGrid').innerHTML = DATA.technicians.map(t => {
+    const openCount = t.total - t.completed;
+    const rate = t.total > 0 ? Math.round(t.completed / t.total * 100) : 0;
+    return `
+    <div class="tech-card">
+      <div class="tech-card-header">
+        <span class="tech-name">${t.name}</span>
+        <span class="risk risk-${t.riskLevel}">${t.riskLevel === 'high' ? 'Alto' : t.riskLevel === 'medium' ? 'Médio' : 'Baixo'}</span>
+      </div>
+      <div class="tech-stats">
+        <div class="tech-stat"><div class="tech-stat-val" style="color:var(--color-success)">${t.completed}</div><div class="tech-stat-label">Concluídos</div></div>
+        <div class="tech-stat"><div class="tech-stat-val" style="color:var(--color-blue-400)">${t.inProgress}</div><div class="tech-stat-label">Andamento</div></div>
+        <div class="tech-stat"><div class="tech-stat-val" style="color:var(--color-warning)">${t.paused + t.pending}</div><div class="tech-stat-label">Pendentes</div></div>
+      </div>
+      <div style="margin-bottom:0.75rem">
+        <div style="display:flex;justify-content:space-between;font-size:0.625rem;color:var(--color-gray-400);margin-bottom:4px">
+          <span>Conclusão</span><span>${rate}%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill ${rate >= 70 ? 'success' : rate >= 40 ? '' : 'danger'}" style="width:${rate}%"></div>
+        </div>
+      </div>
+      <div class="tech-board">
+        <div class="tech-board-item board-novo">${t.board.novo} Novo · ${t.novoHours.toFixed(0)}h</div>
+        <div class="tech-board-item board-upsell">${t.board.upsell} Upsell · ${t.upsellHours.toFixed(0)}h</div>
+      </div>
+      <div class="tech-meta">
+        <span>${t.hours.toFixed(0)}h total abertas</span>
+        <span>${t.overdueCount} vencido(s)</span>
+      </div>
+      ${t.openEpics.length > 0 ? `
+      <details style="margin-top:0.75rem">
+        <summary style="font-size:0.625rem;color:var(--color-blue-400);cursor:pointer;font-weight:600">Ver ${t.openEpics.length} épicos abertos</summary>
+        <div style="margin-top:0.5rem;max-height:200px;overflow-y:auto">
+          ${t.openEpics.map(e => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:0.625rem">
+              <div>
+                <span class="td-key">${e.key}</span>
+                <span style="color:var(--color-gray-300);margin-left:6px">${e.title.substring(0,40)}${e.title.length > 40 ? '...' : ''}</span>
+              </div>
+              <span style="color:var(--color-gray-500)">${e.hours}h</span>
+            </div>
+          `).join('')}
+        </div>
+      </details>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ─── Backlog Table ─────────────────────────────
+function renderBacklogTable() {
+  const rows = (DATA.backlogNovo || []).map(e => `
+    <tr>
+      <td class="td-key">${e.key}</td>
+      <td class="td-main">${e.summary.substring(0,50)}${e.summary.length > 50 ? '...' : ''}</td>
+      <td>${e.assignee}</td>
+      <td><span class="badge badge-${e.porte === 'Large' ? 'error' : e.porte === 'Medium' ? 'warning' : e.porte === 'Small' ? 'success' : 'neutral'}">${e.porte}</span></td>
+      <td>${statusBadge(e.status)}</td>
+      <td class="td-right">${e.gasto}h</td>
+      <td class="td-right">${e.meta}h</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="progress-track" style="width:60px;height:4px">
+            <div class="progress-fill ${e.progresso > 1 ? 'danger' : e.progresso > 0.7 ? 'warning' : ''}" style="width:${Math.min(e.progresso * 100, 100)}%"></div>
+          </div>
+          <span style="font-size:0.5rem;color:var(--color-gray-500)">${Math.round(e.progresso * 100)}%</span>
+        </div>
+      </td>
+      <td>${prazoBadge(e.statusPrazoType, e.statusPrazo)}</td>
+    </tr>
+  `).join('');
+  document.getElementById('backlogTable').innerHTML = `
+    <div class="table-wrapper">
+      <div class="table-header"><span class="table-title">Backlog Novo (${DATA.backlogNovo?.length || 0} épicos)</span></div>
+      <table>
+        <thead><tr><th>Key</th><th>Épico</th><th>Responsável</th><th>Porte</th><th>Status</th><th>Gasto</th><th>Meta</th><th>Progresso</th><th>Status Prazo</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── Fila Yasmin ───────────────────────────────
+function renderFilaYasmin() {
+  const rows = (DATA.filaYasmin || []).map(e => `
+    <tr>
+      <td class="td-key">${e.key}</td>
+      <td class="td-main">${e.summary.substring(0,50)}${e.summary.length > 50 ? '...' : ''}</td>
+      <td><span class="badge badge-cyan">${e.tipo}</span></td>
+      <td>${statusBadge(e.status)}</td>
+      <td class="td-right">${e.estimatedHours}h</td>
+      <td>${e.criado}</td>
+      <td>${e.dueDate}</td>
+    </tr>
+  `).join('');
+  const totalEstimated = (DATA.filaYasmin || []).reduce((s,e) => s + (e.estimatedHours || 0), 0);
+  document.getElementById('filaYasminTable').innerHTML = `
+    <div class="table-wrapper">
+      <div class="table-header"><span class="table-title">Fila Yasmin (${DATA.filaYasmin?.length || 0} épicos · ${totalEstimated.toFixed(0)}h estimadas)</span></div>
+      <table>
+        <thead><tr><th>Key</th><th>Épico</th><th>Tipo</th><th>Status</th><th>Horas Est.</th><th>Criado</th><th>Due Date</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── Capacity KPIs ─────────────────────────────
+function renderCapacityKPIs() {
+  const s = DATA.backlogSummary;
+  document.getElementById('capacityKpis').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Backlog Total</div>
+      <div class="kpi-value text-gradient">${s.totalRestante.toFixed(0)}h</div>
+      <div class="kpi-sub">${s.backlogMonths} meses estimados</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Horas Novo</div>
+      <div class="kpi-value" style="color:var(--color-blue-400)">${s.novoRestante.toFixed(0)}h</div>
+      <div class="kpi-sub">${s.novoPercent}% do backlog</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Horas Upsell</div>
+      <div class="kpi-value" style="color:var(--color-cyan-400)">${s.upsellRestante.toFixed(0)}h</div>
+      <div class="kpi-sub">${s.upsellPercent}% do backlog</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Fila Yasmin</div>
+      <div class="kpi-value" style="color:var(--color-warning)">${s.yasminEpics}</div>
+      <div class="kpi-sub">${s.yasminHours.toFixed(0)}h (${s.yasminPercent}%)</div>
+    </div>
+  `;
+}
+
+// ─── Capacity Table ────────────────────────────
+function renderCapacityTable() {
+  const rows = (DATA.capacityTable || []).map(t => `
+    <tr>
+      <td class="td-main">${t.name}</td>
+      <td>${t.epicsAbertos}</td>
+      <td class="td-right">${t.horasNovo}h</td>
+      <td class="td-right">${t.horasUpsell}h</td>
+      <td class="td-right" style="font-weight:600">${t.totalRestante}h</td>
+      <td class="td-right">${t.meses}</td>
+      <td>${t.novosSimultaneos}</td>
+      <td class="td-right">${t.ocupacao}%</td>
+      <td>${riskBadge(t.risco)}</td>
+    </tr>
+  `).join('');
+  document.getElementById('capacityTable').innerHTML = `
+    <div class="table-wrapper">
+      <div class="table-header"><span class="table-title">Capacity por Implantador</span></div>
+      <table>
+        <thead><tr><th>Implantador</th><th>Épicos Abertos</th><th>Horas Novo</th><th>Horas Upsell</th><th>Total Restante</th><th>Meses</th><th>Novos Simult.</th><th>Ocupação</th><th>Risco</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── Tempo Módulos Tab ─────────────────────────
+let TM_RAW = []; // preenchido dinamicamente via DATA.tempoModulos
+const TM_JIRA = 'https://wmi-solutions.atlassian.net/browse/';
+
+function tmGetMonth(d){return d?d.substring(0,7):'N/A'}
+function tmMonthLabel(ym){if(ym==='N/A')return'Sem data';const[y,m]=ym.split('-');return['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(m)-1]+'/'+y}
+
+function tmProcess(data,fm,fmod){
+  let f=data;
+  if(fm!=='all')f=f.filter(d=>tmGetMonth(d.r)===fm);
+  if(fmod!=='all')f=f.filter(d=>d.m===fmod);
+  const mods={};
+  f.forEach(d=>{if(!mods[d.m])mods[d.m]=[];mods[d.m].push(d)});
+  return Object.entries(mods).map(([mod,items])=>{
+    const t=items.reduce((s,i)=>s+i.h,0);
+    const nz=items.filter(i=>i.h>0).map(i=>i.h);
+    const minH=nz.length?Math.round(Math.min(...nz)*100)/100:null;
+    return{module:mod,count:items.length,totalHours:Math.round(t*100)/100,avgHours:Math.round((t/items.length)*100)/100,minHours:minH,items:items.sort((a,b)=>(b.r||'').localeCompare(a.r||''))}
+  }).sort((a,b)=>b.avgHours-a.avgHours);
+}
+
+function tmMonthlyBreakdown(data){
+  const bd={},ms=new Set();
+  data.forEach(d=>{const m=tmGetMonth(d.r);if(m==='N/A')return;ms.add(m);const k=d.m+'|'+m;if(!bd[k])bd[k]=[];bd[k].push(d)});
+  return{breakdown:bd,months:[...ms].sort()};
+}
+
+function renderTempoModulos(){
+  const fm=document.getElementById('tmFilterMonth').value;
+  const fmod=document.getElementById('tmFilterModule').value;
+  const mData=tmProcess(TM_RAW,fm,fmod);
+  const tEpics=mData.reduce((s,m)=>s+m.count,0);
+  const tHours=mData.reduce((s,m)=>s+m.totalHours,0);
+  const gAvg=tEpics>0?Math.round((tHours/tEpics)*100)/100:0;
+
+  document.getElementById('tempoKpis').innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">Total Epics</div><div class="kpi-value text-gradient">${tEpics}</div><div class="kpi-sub">Concluídos com módulo Upsell</div></div>
+    <div class="kpi-card"><div class="kpi-label">Módulos Ativos</div><div class="kpi-value" style="color:var(--color-cyan-400)">${mData.length}</div><div class="kpi-sub">Com implantações finalizadas</div></div>
+    <div class="kpi-card"><div class="kpi-label">Média Geral</div><div class="kpi-value" style="color:var(--color-warning)">${gAvg}h</div><div class="kpi-sub">Tempo médio por implantação</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Horas</div><div class="kpi-value" style="color:var(--color-success)">${Math.round(tHours)}h</div><div class="kpi-sub">Investidas em upsell</div></div>`;
+
+  const {breakdown,months}=tmMonthlyBreakdown(TM_RAW);
+  const lastM=months.length>=1?months[months.length-1]:null;
+  const prevM=months.length>=2?months[months.length-2]:null;
+  const maxAvg=Math.max(...mData.map(m=>m.avgHours),1);
+
+  let rows='';
+  mData.forEach(mod=>{
+    const barW=Math.round((mod.avgHours/maxAvg)*100);
+    let badge='';
+    if(mod.avgHours>20)badge='<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:rgba(239,68,68,0.15);color:#ef4444">Alto</span>';
+    else if(mod.avgHours>8)badge='<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:rgba(245,158,11,0.15);color:#f59e0b">Médio</span>';
+    else badge='<span style="padding:2px 8px;border-radius:10px;font-size:11px;background:rgba(34,197,94,0.15);color:#22c55e">Baixo</span>';
+
+    let delta='<span style="color:var(--color-text-secondary)">—</span>';
+    if(lastM&&prevM){
+      const ci=breakdown[mod.module+'|'+lastM]||[];
+      const pi=breakdown[mod.module+'|'+prevM]||[];
+      if(ci.length>0&&pi.length>0){
+        const ca=ci.reduce((s,i)=>s+i.h,0)/ci.length;
+        const pa=pi.reduce((s,i)=>s+i.h,0)/pi.length;
+        const df=Math.round((ca-pa)*100)/100;
+        if(df>0)delta='<span style="color:#ef4444">▲ +'+df+'h</span>';
+        else if(df<0)delta='<span style="color:#22c55e">▼ '+df+'h</span>';
+        else delta='<span style="color:var(--color-text-secondary)">= 0h</span>';
+      }
+    }
+
+    const minCell=(mod.minHours===null||mod.minHours===undefined)?'<span style="color:var(--color-text-secondary)">—</span>':`<span style="color:var(--color-cyan-400);font-weight:600">${mod.minHours}h</span>`;
+    rows+=`<tr class="tm-expand" data-mod="${mod.module}" style="cursor:pointer">
+      <td><strong>${mod.module}</strong></td><td>${mod.count}</td>
+      <td><div style="position:relative"><div style="position:absolute;left:0;top:50%;transform:translateY(-50%);height:20px;width:${barW}%;background:var(--color-brand);opacity:0.15;border-radius:4px"></div><span style="position:relative;font-weight:600">${mod.avgHours}h</span></div></td>
+      <td>${minCell}</td>
+      <td>${mod.totalHours}h</td><td>${delta}</td><td>${badge}</td></tr>`;
+    mod.items.forEach(item=>{
+      rows+=`<tr class="tm-detail" data-parent="${mod.module}" style="display:none"><td colspan="7" style="padding-left:2rem;font-size:12px;color:var(--color-text-secondary)"><a href="${TM_JIRA}${item.k}" target="_blank" style="color:var(--color-brand)">${item.k}</a> — ${item.s.substring(0,60)} — <strong>${item.h}h</strong> — ${item.r||'Sem data'}</td></tr>`;
+    });
+  });
+
+  document.getElementById('tempoMainTable').innerHTML=`<div class="table-wrapper"><table><thead><tr><th>Módulo</th><th>Qtd Epics</th><th>Tempo Médio</th><th>Tempo Mínimo</th><th>Total</th><th>Var. Mês Ant.</th><th>Classificação</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+
+  // Monthly comparison
+  const allMods=[...new Set(TM_RAW.map(d=>d.m))].sort();
+  let mHead=months.map(m=>`<th>${tmMonthLabel(m)}</th>`).join('');
+  let mRows='';
+  allMods.forEach(mod=>{
+    mRows+=`<tr><td><strong>${mod}</strong></td>`;
+    months.forEach(month=>{
+      const items=breakdown[mod+'|'+month]||[];
+      if(items.length>0){
+        const avg=Math.round((items.reduce((s,i)=>s+i.h,0)/items.length)*100)/100;
+        mRows+=`<td>${avg}h <span style="color:var(--color-text-secondary);font-size:11px">(${items.length})</span></td>`;
+      }else{mRows+=`<td style="color:var(--color-text-secondary)">—</td>`}
+    });
+    mRows+='</tr>';
+  });
+  document.getElementById('tempoMonthlyTable').innerHTML=`<div class="table-wrapper"><table><thead><tr><th>Módulo</th>${mHead}</tr></thead><tbody>${mRows}</tbody></table></div>`;
+
+  // Expand/collapse
+  document.querySelectorAll('.tm-expand').forEach(row=>{
+    row.onclick=()=>{
+      const open=row.classList.toggle('open');
+      document.querySelectorAll(`.tm-detail[data-parent="${row.dataset.mod}"]`).forEach(dr=>dr.style.display=open?'table-row':'none');
+    };
+  });
+}
+
+// Popula filtros de Tempo Módulos (chamado após cada carga de dados)
+function initTempoModulos(){
+  const sel=document.getElementById('tmFilterMonth');
+  const sel2=document.getElementById('tmFilterModule');
+  if(!sel||!sel2)return;
+  const prevM=sel.value,prevMod=sel2.value;
+  sel.length=1;sel2.length=1;
+  const ms=[...new Set(TM_RAW.filter(d=>d.r).map(d=>tmGetMonth(d.r)))].sort().reverse();
+  ms.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=tmMonthLabel(m);sel.appendChild(o)});
+  const mods=[...new Set(TM_RAW.map(d=>d.m))].sort();
+  mods.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;sel2.appendChild(o)});
+  if([...sel.options].some(o=>o.value===prevM))sel.value=prevM;
+  if([...sel2.options].some(o=>o.value===prevMod))sel2.value=prevMod;
+  sel.onchange=renderTempoModulos;
+  sel2.onchange=renderTempoModulos;
+  renderTempoModulos();
+}
+
+
+// ─── Init ──────────────────────────────────────
+document.getElementById('loadingState').style.display = 'block';
+loadData();
+// Auto-refresh every 5 minutes on the frontend
+setInterval(loadData, 300000);
+</script>
 </body>
 </html>
