@@ -202,6 +202,8 @@ tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
 <!-- TAB: CAPACITY -->
 <div class="tab-panel" id="panel-capacity">
   <div class="kpi-grid" id="capacityKpis"></div>
+  <div class="section-header" style="margin-top:1.5rem"><div class="section-number">Visão</div><h2>Ocupação e Backlog da Equipe</h2></div>
+  <div id="capacityCharts"></div>
   <div class="section-header"><div class="section-number">Capacity</div><h2>Capacity por Implantador</h2></div>
   <div id="capacityTable"></div>
 </div>
@@ -303,6 +305,7 @@ function renderAll() {
   renderFilaYasmin();
   renderCapacityKPIs();
   renderCapacityTable();
+  renderCapacityCharts();
   TM_RAW = DATA.tempoModulos || [];
   initTempoModulos();
 }
@@ -531,6 +534,54 @@ function renderCapacityKPIs() {
       <div class="kpi-sub">${s.yasminHours.toFixed(0)}h (${s.yasminPercent}%)</div>
     </div>
   `;
+}
+
+// ─── Capacity Charts (inline, sem dependências) ─
+function renderCapacityCharts() {
+  const el = document.getElementById('capacityCharts');
+  if (!el) return;
+  const data = (DATA.capacityTable || []);
+  if (!data.length) { el.innerHTML = ''; return; }
+  const barRow = (name, valText, pct, color, markPct, markColor) => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="width:84px;font-size:12px;color:var(--color-gray-400);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
+      <div style="flex:1;position:relative;height:22px;background:rgba(255,255,255,0.05);border-radius:6px">
+        <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${color};opacity:0.85;border-radius:6px"></div>
+        ${markPct != null ? `<div style="position:absolute;left:${markPct}%;top:-2px;height:calc(100% + 4px);border-left:2px dashed ${markColor || 'rgba(255,255,255,0.5)'}"></div>` : ''}
+        <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.6)">${valText}</span>
+      </div>
+    </div>`;
+  // Ocupação
+  const occ = data.slice().sort((a,b)=>b.ocupacao-a.ocupacao);
+  const maxOcc = Math.max(120, ...occ.map(t=>t.ocupacao));
+  const mark100 = Math.round((100/maxOcc)*100);
+  const occHtml = occ.map(t=>{
+    const c = t.ocupacao>100?'#ef4444':t.ocupacao>=70?'#f59e0b':'#22c55e';
+    return barRow(t.name, t.ocupacao+'%', Math.min(100,(t.ocupacao/maxOcc)*100), c, mark100, 'rgba(239,68,68,0.7)');
+  }).join('');
+  // Meses de backlog
+  const mb = data.slice().sort((a,b)=>b.meses-a.meses);
+  const maxM = Math.max(3.5, ...mb.map(t=>t.meses));
+  const mark3 = Math.round((3/maxM)*100);
+  const mbHtml = mb.map(t=>{
+    const c = t.meses>3?'#ef4444':t.meses>=2?'#f59e0b':'#22c55e';
+    return barRow(t.name, t.meses+' m', Math.min(100,(t.meses/maxM)*100), c, mark3, 'rgba(239,68,68,0.7)');
+  }).join('');
+  const overCap = data.filter(t=>t.ocupacao>100).length;
+  const avgOcc = Math.round(data.reduce((s,t)=>s+t.ocupacao,0)/data.length);
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:1.25rem;margin-bottom:1.5rem">
+      <div class="table-wrapper" style="padding:1.25rem;margin-bottom:0">
+        <div style="font-size:0.875rem;font-weight:700">Ocupação por Implantador</div>
+        <div style="font-size:0.625rem;color:var(--color-gray-400);margin-bottom:14px">Linha tracejada = 100% da capacidade trimestral · média ${avgOcc}% · ${overCap} acima de 100%</div>
+        ${occHtml}
+      </div>
+      <div class="table-wrapper" style="padding:1.25rem;margin-bottom:0">
+        <div style="font-size:0.875rem;font-weight:700">Meses de Backlog por Implantador</div>
+        <div style="font-size:0.625rem;color:var(--color-gray-400);margin-bottom:14px">Linha tracejada = 3 meses (trimestre)</div>
+        ${mbHtml}
+      </div>
+    </div>`;
 }
 
 // ─── Capacity Table ────────────────────────────
