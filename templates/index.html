@@ -396,7 +396,9 @@ function renderResumoTable() {
 
 // ─── Tech Cards ────────────────────────────────
 function renderTechCards() {
-  document.getElementById('techGrid').innerHTML = DATA.technicians.map(t => {
+  const _grid = document.getElementById('techGrid');
+  const _openTechs = new Set([..._grid.querySelectorAll('details[data-tech]')].filter(d=>d.open).map(d=>d.getAttribute('data-tech')));
+  _grid.innerHTML = DATA.technicians.map(t => {
     const openCount = t.total - t.completed;
     const rate = t.total > 0 ? Math.round(t.completed / t.total * 100) : 0;
     return `
@@ -427,7 +429,7 @@ function renderTechCards() {
         <span>${t.overdueCount} vencido(s)</span>
       </div>
       ${t.openEpics.length > 0 ? `
-      <details style="margin-top:0.75rem">
+      <details data-tech="${t.name}" style="margin-top:0.75rem">
         <summary style="font-size:0.625rem;color:var(--color-blue-400);cursor:pointer;font-weight:600">Ver ${t.openEpics.length} épicos abertos</summary>
         <div style="margin-top:0.5rem;max-height:200px;overflow-y:auto">
           ${t.openEpics.map(e => `
@@ -443,6 +445,7 @@ function renderTechCards() {
       </details>` : ''}
     </div>`;
   }).join('');
+  _openTechs.forEach(name=>{const sel='details[data-tech="'+(window.CSS&&CSS.escape?CSS.escape(name):name)+'"]';const d=_grid.querySelector(sel);if(d)d.open=true;});
 }
 
 // ─── Backlog Table ─────────────────────────────
