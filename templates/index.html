@@ -216,7 +216,7 @@ tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
     <label style="font-size:13px;color:var(--color-text-secondary)">Módulo:</label>
     <select id="tmFilterModule" style="padding:6px 12px;border-radius:8px;background:var(--color-surface);color:var(--color-text);border:1px solid rgba(255,255,255,0.1);font-size:13px"><option value="all">Todos os módulos</option></select>
   </div>
-  <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px">Dados em tempo real do Jira: epics concluídos classificados pelo campo <strong>Upsell Module</strong> (exclui templates e epics sem módulo). Horas = tempo total apontado no epic (aggregatetimespent). &quot;Tempo Mínimo&quot; = menor implantação registrada no módulo, desconsiderando epics com 0h.</div>
+  <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px">Dados em tempo real do Jira: epics concluídos classificados pelo campo <strong>Upsell Module</strong> (exclui templates e epics sem módulo). Horas = tempo total apontado no epic (aggregatetimespent). &quot;Tempo Mínimo&quot; = menor implantação registrada no módulo, desconsiderando epics com menos de 1h.</div>
   <div id="tempoMainTable"></div>
   <div class="section-header" style="margin-top:2rem"><div class="section-number">Comparativo</div><h2>Comparativo Mensal por Módulo</h2></div>
   <div id="tempoMonthlyTable"></div>
@@ -571,7 +571,7 @@ function tmProcess(data,fm,fmod){
   f.forEach(d=>{if(!mods[d.m])mods[d.m]=[];mods[d.m].push(d)});
   return Object.entries(mods).map(([mod,items])=>{
     const t=items.reduce((s,i)=>s+i.h,0);
-    const nz=items.filter(i=>i.h>0).map(i=>i.h);
+    const nz=items.filter(i=>i.h>=1).map(i=>i.h);
     const minH=nz.length?Math.round(Math.min(...nz)*100)/100:null;
     return{module:mod,count:items.length,totalHours:Math.round(t*100)/100,avgHours:Math.round((t/items.length)*100)/100,minHours:minH,items:items.sort((a,b)=>(b.r||'').localeCompare(a.r||''))}
   }).sort((a,b)=>b.avgHours-a.avgHours);
