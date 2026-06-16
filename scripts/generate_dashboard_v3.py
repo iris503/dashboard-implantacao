@@ -626,13 +626,24 @@ def detect_porte(summary: str) -> Tuple[str, int, int]:
         return ('N/D', 100, 0)
 
 
+def _is_cloud_mig(epic: Dict) -> bool:
+    """True se o epic for uma migração para o Autolac Cloud.
+    Usa o campo Upsell Module (customfield_10124) quando indica 'migração',
+    com fallback para detecção por palavras-chave no summary."""
+    fields = epic.get('fields', {})
+    mod = _extract_upsell_module(fields.get('customfield_10124')).lower()
+    if 'migra' in mod:
+        return True
+    return is_cloud_migration(fields.get('summary', '') or '')
+
+
 def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str) -> Dict:
     """Generate backlog-specific data for capacity planning"""
     CAPACITY_MONTHLY = 140
 
-    # Separate novo and upsell epics
-    novo_epics = [e for e in epics if classify_epic(e) == 'Novo']
-    upsell_epics = [e for e in epics if classify_epic(e) == 'Upsell']
+    # Separate novo and upsell epics (migrações Autolac Cloud entram junto com os Novos)
+    novo_epics = [e for e in epics if classify_epic(e) == 'Novo' or _is_cloud_mig(e)]
+    upsell_epics = [e for e in epics if classify_epic(e) == 'Upsell' and not _is_cloud_mig(e)]
 
     # Calculate remaining hours per epic
     novo_with_data = []
@@ -655,6 +666,9 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
 
         # Detect porte
         porte, meta, days = detect_porte(summary)
+        # Migração Autolac Cloud: porte dedicado e meta de 40h
+        if _is_cloud_mig(epic):
+            porte, meta, days = 'Cloud', 40, 60
         restante = max(meta - gasto, 10) if gasto < meta else max(meta - gasto, 10)
         progresso = (gasto / meta) if meta > 0 else 0
 
@@ -736,6 +750,10 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         hours = time_spent / 3600
 
         impl = extract_implementer_name(assignee)
+
+        # Migrações Cloud já aparecem no Backlog Novo — não duplicar na fila
+        if _is_cloud_mig(epic):
+            continue
 
         # Add to fila if not assigned to implementer or is in waiting
         if not impl or impl in EXCLUDE_ASSIGNEES:
