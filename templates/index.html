@@ -492,6 +492,7 @@ function renderBacklogTable() {
       <td>${statusBadge(e.status)}</td>
       <td class="td-right">${e.gasto}h</td>
       <td class="td-right">${e.meta}h</td>
+      <td class="td-right" style="color:var(--color-cyan-400);font-weight:600">${Math.max(0,(e.meta||0)-(e.gasto||0)).toFixed(1)}h</td>
       <td>
         <div style="display:flex;align-items:center;gap:6px">
           <div class="progress-track" style="width:60px;height:4px">
@@ -503,12 +504,23 @@ function renderBacklogTable() {
       <td>${prazoBadge(e.statusPrazoType, e.statusPrazo)}</td>
     </tr>
   `).join('');
+  const _bn = DATA.backlogNovo || [];
+  const _tGasto = _bn.reduce((s,e)=>s+(e.gasto||0),0);
+  const _tMeta = _bn.reduce((s,e)=>s+(e.meta||0),0);
+  const _tRest = _bn.reduce((s,e)=>s+Math.max(0,(e.meta||0)-(e.gasto||0)),0);
   document.getElementById('backlogTable').innerHTML = `
     <div class="table-wrapper">
-      <div class="table-header"><span class="table-title">Backlog Novo (${DATA.backlogNovo?.length || 0} épicos)</span></div>
+      <div class="table-header"><span class="table-title">Backlog Novo (${_bn.length} épicos)</span></div>
       <table>
-        <thead><tr><th>Key</th><th>Épico</th><th>Responsável</th><th>Porte</th><th>Status</th><th>Gasto</th><th>Meta</th><th>Progresso</th><th>Status Prazo</th></tr></thead>
+        <thead><tr><th>Key</th><th>Épico</th><th>Responsável</th><th>Porte</th><th>Status</th><th>Gasto</th><th>Meta</th><th>Restante Est.</th><th>Progresso</th><th>Status Prazo</th></tr></thead>
         <tbody>${rows}</tbody>
+        <tfoot><tr style="border-top:2px solid var(--glass-border);font-weight:700;background:rgba(37,99,235,0.06)">
+          <td colspan="5" class="td-right" style="color:var(--color-gray-100)">Totais:</td>
+          <td class="td-right">${_tGasto.toFixed(1)}h</td>
+          <td class="td-right">${_tMeta.toFixed(1)}h</td>
+          <td class="td-right" style="color:var(--color-cyan-400)">${_tRest.toFixed(1)}h</td>
+          <td colspan="2"></td>
+        </tr></tfoot>
       </table>
     </div>
   `;
