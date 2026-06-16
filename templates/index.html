@@ -195,7 +195,7 @@ tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
 
 <!-- TAB: BACKLOG DETALHADO -->
 <div class="tab-panel" id="panel-backlog">
-  <div class="section-header"><div class="section-number">Backlog Novo</div><h2>Épicos Novos em Aberto</h2></div>
+  <div class="section-header"><div class="section-number">Backlog Novo</div><h2>Clientes Novos + Migrações Cloud</h2></div>
   <div id="backlogTable"></div>
   <div class="section-header" style="margin-top:2rem"><div class="section-number">Fila Yasmin</div><h2>Épicos sem Implantador</h2></div>
   <div id="filaYasminTable"></div>
@@ -510,7 +510,7 @@ function renderBacklogTable() {
   const _tRest = _bn.reduce((s,e)=>s+Math.max(0,(e.meta||0)-(e.gasto||0)),0);
   document.getElementById('backlogTable').innerHTML = `
     <div class="table-wrapper">
-      <div class="table-header"><span class="table-title">Backlog Novo (${_bn.length} épicos)</span></div>
+      <div class="table-header"><span class="table-title">Backlog Novo + Migrações Cloud (${_bn.length} épicos)</span></div>
       <table>
         <thead><tr><th>Key</th><th>Épico</th><th>Responsável</th><th>Porte</th><th>Status</th><th>Gasto</th><th>Meta</th><th>Restante Est.</th><th>Progresso</th><th>Status Prazo</th></tr></thead>
         <tbody>${rows}</tbody>
