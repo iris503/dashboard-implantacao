@@ -115,6 +115,43 @@ class JiraClient:
 
         return epics
 
+    def get_module_tasks(self) -> List[Dict]:
+        """Busca TAREFAS (nao-Epic) CONCLUIDAS do ano corrente para o tempo por modulo.
+        Filtra Upsell Module (customfield_10124) em codigo (evita problema de
+        indexacao do Jira ao combinar cf[...] is not EMPTY + statusCategory=Done)."""
+        issues = []
+        next_page_token = None
+        current_year = datetime.now().strftime('%Y')
+        jql = (
+            f'project = IWN AND issuetype != Epic AND statusCategory = Done '
+            f'AND resolutiondate >= {current_year}-01-01 ORDER BY resolutiondate DESC'
+        )
+        fields = [
+            'summary', 'status', 'issuetype', 'parent',
+            'customfield_10124', 'aggregatetimespent', 'timespent',
+            'resolutiondate', 'updated'
+        ]
+        while True:
+            try:
+                url = f"{self.base_url}/rest/api/3/search/jql"
+                params = {'jql': jql, 'maxResults': 100, 'fields': ','.join(fields)}
+                if next_page_token:
+                    params['nextPageToken'] = next_page_token
+                response = requests.get(url, headers=self.headers, params=params, timeout=30)
+                response.raise_for_status()
+                data = response.json()
+                batch = data.get('issues', [])
+                if not batch:
+                    break
+                issues.extend(batch)
+                next_page_token = data.get('nextPageToken')
+                if not next_page_token:
+                    break
+            except requests.exceptions.RequestException as e:
+                print(f"Error fetching module tasks: {e}", file=sys.stderr)
+                break
+        return issues
+
     def get_epic_worklogs(self, issue_key: str) -> List[Dict]:
         """Fetch all worklogs for an epic"""
         worklogs = []
@@ -328,31 +365,32 @@ def _extract_upsell_module(cf) -> str:
     return str(cf).strip()
 
 
-def generate_tempo_modulos(epics: List[Dict]) -> List[Dict]:
-    """Monta a lista de epics de upsell CONCLUIDOS com tempo por modulo,
-    para alimentar a aba 'Tempo Modulos' do dashboard.
+def generate_tempo_modulos(module_tasks: List[Dict]) -> List[Dict]:
+    """Tempo por modulo a partir das TAREFAS (nao dos Epics).
+    No modelo WMI o campo Upsell Module e preenchido em cada tarefa-filho do Epic
+    (um cliente pode contratar mais de um modulo), entao somamos o tempo de CADA
+    tarefa pelo modulo da propria tarefa.
 
-    Regras (fonte: licoes aprendidas do dashboard original):
-    - Apenas concluidos (statusCategory = Done);
-    - Exclui templates (summary contendo 'template');
-    - Modulo = campo customizado customfield_10124 (Upsell Module). Epics sem
-      esse campo preenchido sao ignorados (nao sao upsell de modulo);
-    - Horas = aggregatetimespent (epic + subtarefas, vida toda do epic).
-
-    Cada item: {k: key, s: summary, m: modulo, h: horas, r: data de resolucao}.
+    Regras: so tarefas concluidas; exclui templates; so com Upsell Module preenchido;
+    conta apenas filhas diretas de Epic (evita contar subtarefa/epico em dobro);
+    horas = aggregatetimespent (tarefa + suas subtarefas).
+    Cada item: {k, s, m, h, r}.
     """
     result = []
-    for epic in epics:
-        fields = epic.get('fields', {})
-        status = fields.get('status', {}).get('name', '')
+    for it in (module_tasks or []):
+        fields = it.get('fields', {})
         cat_key = fields.get('status', {}).get('statusCategory', {}).get('key', '')
-
-        if cat_key == 'done':
-            status_cat = 'completed'
-        else:
-            status_cat = get_status_category(status)
-        if status_cat != 'completed':
+        status = fields.get('status', {}).get('name', '')
+        if cat_key != 'done' and get_status_category(status) != 'completed':
             continue
+
+        itype = fields.get('issuetype', {}).get('name', '')
+        if itype == 'Epic':
+            continue
+        parent = fields.get('parent') or {}
+        parent_type = ((parent.get('fields', {}) or {}).get('issuetype', {}) or {}).get('name', '')
+        if parent_type and parent_type != 'Epic':
+            continue  # subtarefa de uma tarefa -> tempo ja entra na tarefa-mae
 
         summary = (fields.get('summary', '') or '').strip()
         if 'template' in summary.lower():
@@ -360,14 +398,14 @@ def generate_tempo_modulos(epics: List[Dict]) -> List[Dict]:
 
         modulo = _extract_upsell_module(fields.get('customfield_10124'))
         if not modulo:
-            continue  # sem modulo de upsell -> fora (regra do dashboard original)
+            continue
 
         resolution = parse_date(fields.get('resolutiondate', '')) or parse_date(fields.get('updated', ''))
         time_spent = fields.get('aggregatetimespent', 0) or 0
         hours = round(time_spent / 3600, 2)
 
         result.append({
-            'k': epic.get('key', ''),
+            'k': it.get('key', ''),
             's': summary,
             'm': modulo,
             'h': hours,
@@ -617,7 +655,7 @@ def detect_porte(summary: str) -> Tuple[str, int, int]:
     summary_lower = summary.lower()
 
     if 'large' in summary_lower or 'grande' in summary_lower:
-        return ('Large', 400, 120)
+        return ('Large', 350, 120)
     elif 'medium' in summary_lower or 'mÃÂÃÂ©dio' in summary_lower:
         return ('Medium', 200, 90)
     elif 'small' in summary_lower or 'pequeno' in summary_lower:
@@ -669,6 +707,10 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         # Migração Autolac Cloud: porte dedicado e meta de 40h
         if _is_cloud_mig(epic):
             porte, meta, days = 'Cloud', 40, 60
+        # Meta manual: prioriza a Estimativa Original do Jira quando preenchida no epico
+        orig_est = (fields.get('timetracking') or {}).get('originalEstimateSeconds', 0) or 0
+        if orig_est > 0:
+            meta = orig_est / 3600
         restante = max(meta - gasto, 10) if gasto < meta else max(meta - gasto, 10)
         progresso = (gasto / meta) if meta > 0 else 0
 
@@ -892,7 +934,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
     }
 
 
-def generate_dashboard_data(epics: List[Dict]) -> Dict:
+def generate_dashboard_data(epics: List[Dict], module_tasks: List[Dict] = None) -> Dict:
     """Generate complete DATA object for dashboard"""
     today = datetime.now().strftime('%Y-%m-%d')
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M BRT')
@@ -964,7 +1006,7 @@ def generate_dashboard_data(epics: List[Dict]) -> Dict:
         'backlogNovo': backlog_data['backlogNovo'],
         'filaYasmin': backlog_data['filaYasmin'],
         'backlogInsights': backlog_data['backlogInsights'],
-        'tempoModulos': generate_tempo_modulos(epics)
+        'tempoModulos': generate_tempo_modulos(module_tasks or [])
     }
 
 
