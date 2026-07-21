@@ -492,7 +492,7 @@ function renderBacklogTable() {
       <td>${statusBadge(e.status)}</td>
       <td class="td-right">${e.gasto}h</td>
       <td class="td-right">${e.meta}h</td>
-      <td class="td-right" style="color:var(--color-cyan-400);font-weight:600">${Math.max(0,(e.meta||0)-(e.gasto||0)).toFixed(1)}h</td>
+      <td class="td-right" style="color:var(--color-cyan-400);font-weight:600">${(/paus/i.test(e.status||'') ? 0 : Math.max(0,(e.meta||0)-(e.gasto||0))).toFixed(1)}h</td>
       <td>
         <div style="display:flex;align-items:center;gap:6px">
           <div class="progress-track" style="width:60px;height:4px">
@@ -507,7 +507,7 @@ function renderBacklogTable() {
   const _bn = DATA.backlogNovo || [];
   const _tGasto = _bn.reduce((s,e)=>s+(e.gasto||0),0);
   const _tMeta = _bn.reduce((s,e)=>s+(e.meta||0),0);
-  const _tRest = _bn.reduce((s,e)=>s+Math.max(0,(e.meta||0)-(e.gasto||0)),0);
+  const _tRest = _bn.reduce((s,e)=>s+(/paus/i.test(e.status||'') ? 0 : Math.max(0,(e.meta||0)-(e.gasto||0))),0);
   document.getElementById('backlogTable').innerHTML = `
     <div class="table-wrapper">
       <div class="table-header"><span class="table-title">Backlog Novo + Migrações Cloud (${_bn.length} épicos)</span></div>
