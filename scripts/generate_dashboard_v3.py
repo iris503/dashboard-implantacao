@@ -683,6 +683,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             prazo_wmi = 'Pausado'
             status_prazo = 'Pausado'
             status_prazo_type = 'paused'
+            restante = 0  # pausado nao conta tempo no backlog (tempo congelado)
         else:
             deadline = None
             if duedate:
@@ -755,6 +756,10 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         if _is_cloud_mig(epic):
             continue
 
+        # Pausado nao conta no backlog (tempo congelado)
+        if status.strip().lower() in ('paused', 'pausado'):
+            continue
+
         # Add to fila if not assigned to implementer or is in waiting
         if not impl or impl in EXCLUDE_ASSIGNEES:
             # Extract tipo (module) from summary
@@ -780,7 +785,9 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
     total_novo_restante = sum(e['restante'] for e in novo_open)
     upsell_restante = sum(
         max(12 - (e.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600, 0)
-        for e in upsell_epics if e.get('fields', {}).get('status', {}).get('name', '') not in STATUS_COMPLETED
+        for e in upsell_epics
+        if e.get('fields', {}).get('status', {}).get('name', '') not in STATUS_COMPLETED
+        and e.get('fields', {}).get('status', {}).get('name', '').strip().lower() not in ('paused', 'pausado')
     )
     yasmin_hours = sum(e['estimatedHours'] for e in fila_yasmin)
     total_restante = total_novo_restante + upsell_restante + yasmin_hours
@@ -808,6 +815,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             max(12 - (ep.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600, 0)
             for ep in upsell_epics
             if extract_implementer_name(ep.get('fields', {}).get('assignee')) == tech_name
+            and ep.get('fields', {}).get('status', {}).get('name', '').strip().lower() not in ('paused', 'pausado')
         )
         total_rest = novo_rest + upsell_rest
 
