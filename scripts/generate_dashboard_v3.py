@@ -756,10 +756,6 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         if _is_cloud_mig(epic):
             continue
 
-        # Pausado nao conta no backlog (tempo congelado)
-        if status.strip().lower() in ('paused', 'pausado'):
-            continue
-
         # Add to fila if not assigned to implementer or is in waiting
         if not impl or impl in EXCLUDE_ASSIGNEES:
             # Extract tipo (module) from summary
@@ -769,7 +765,9 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             if tipo == 'Novo':
                 continue
                 
-            estimated = MODULE_HOURS.get(tipo, MODULE_DEFAULT_HOURS)
+            # Pausado aparece na lista, mas com 0h (nao conta no backlog / total)
+            _fila_paused = status.strip().lower() in ('paused', 'pausado')
+            estimated = 0 if _fila_paused else MODULE_HOURS.get(tipo, MODULE_DEFAULT_HOURS)
             fila_yasmin.append({
                 'key': key,
                 'summary': summary,
