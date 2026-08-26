@@ -87,6 +87,16 @@ async def api_data():
         return _dashboard_cache
 
 
+@app.get("/api/sugestao-implantador")
+async def api_sugestao():
+    """Retorna o implantador com menor ocupação para receber o próximo cliente."""
+    async with _cache_lock:
+        if not _dashboard_cache:
+            return JSONResponse({"error": "Data not loaded yet"}, status_code=200)
+        sugestao = _dashboard_cache.get('sugestaoImplantador', {})
+        return sugestao
+
+
 @app.get("/api/refresh")
 async def api_refresh():
     await refresh_data()
