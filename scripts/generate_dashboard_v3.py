@@ -21,6 +21,7 @@ JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN')
 JIRA_BASE_URL = os.getenv('JIRA_BASE_URL')
 
 IMPLEMENTERS = ['Jessica', 'Daniel', 'Nino', 'Jorge', 'Anderson', 'Luiz', 'Fernanda']
+IMPLEMENTERS_NOVO = ['Fernanda', 'Nino', 'Jorge', 'Anderson']  # Só esses recebem cliente Novo
 EXCLUDE_ASSIGNEES = {'Yasmin', 'Michael', 'Iris', 'Fabio'}
 
 # Status mappings
@@ -790,12 +791,15 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         })
 
     # ── Sugestão de implantador para próximo cliente Novo ──
-    # Inclui todos os IMPLEMENTERS, mesmo os sem épicos ativos (ocupação 0%)
+    # Só IMPLEMENTERS_NOVO entram no ranking (Daniel, Jessica, Luiz = só Upsell)
     active_names = {t['name'] for t in capacity_table}
-    full_ranking = list(capacity_table)
-    for impl_name in IMPLEMENTERS:
-        if impl_name not in active_names:
-            full_ranking.append({
+    novo_ranking = []
+    for impl_name in IMPLEMENTERS_NOVO:
+        found = next((t for t in capacity_table if t['name'] == impl_name), None)
+        if found:
+            novo_ranking.append(found)
+        else:
+            novo_ranking.append({
                 'name': impl_name,
                 'epicsAbertos': '0 (0N + 0U)',
                 'horasNovo': 0, 'horasUpsell': 0,
@@ -804,14 +808,14 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
                 'ocupacao': 0, 'risco': 'BAIXO'
             })
     # Ordena por ocupação crescente (menor carga primeiro)
-    full_ranking.sort(key=lambda x: (x['ocupacao'], x['totalRestante']))
+    novo_ranking.sort(key=lambda x: (x['ocupacao'], x['totalRestante']))
     sugestao = {
-        'recomendado': full_ranking[0]['name'] if full_ranking else None,
-        'ocupacao': full_ranking[0]['ocupacao'] if full_ranking else 0,
-        'horasRestantes': full_ranking[0]['totalRestante'] if full_ranking else 0,
+        'recomendado': novo_ranking[0]['name'] if novo_ranking else None,
+        'ocupacao': novo_ranking[0]['ocupacao'] if novo_ranking else 0,
+        'horasRestantes': novo_ranking[0]['totalRestante'] if novo_ranking else 0,
         'ranking': [
             {'nome': t['name'], 'ocupacao': t['ocupacao'], 'horasRestantes': t['totalRestante']}
-            for t in full_ranking
+            for t in novo_ranking
         ]
     }
 
