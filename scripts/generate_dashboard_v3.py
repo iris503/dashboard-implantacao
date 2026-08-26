@@ -24,7 +24,7 @@ IMPLEMENTERS = ['Jessica', 'Daniel', 'Nino', 'Jorge', 'Anderson', 'Luiz', 'Ferna
 EXCLUDE_ASSIGNEES = {'Yasmin', 'Michael', 'Iris', 'Fabio'}
 
 # Status mappings
-STATUS_COMPLETED = {'ConcluÃÂÃÂ­do', 'Cancelado'}
+STATUS_COMPLETED = {'Concluido', 'Cancelado', 'Done'}
 STATUS_EM_ANDAMENTO = {'Em andamento'}
 STATUS_PAUSED = {'Paused'}
 STATUS_PENDENTE = {'Tarefas pendentes', 'Escalado'}
@@ -78,7 +78,7 @@ class JiraClient:
         fields = [
             'summary', 'status', 'assignee', 'customfield_10800',
             'aggregatetimespent', 'aggregatetimeestimate', 'created', 'duedate', 'timetracking', 'updated',
-            'customfield_10015', 'resolutiondate', 'customfield_10124'
+            'customfield_10015', 'resolutiondate'
         ]
 
         while True:
@@ -307,75 +307,6 @@ def is_cloud_migration(summary: str) -> bool:
     keywords = ['Migration Module', 'Autolac Cloud', 'MigraÃÂÃÂ§ÃÂÃÂ£o']
     summary_lower = summary.lower()
     return any(kw.lower() in summary_lower for kw in keywords)
-
-
-def _extract_upsell_module(cf) -> str:
-    """Extrai o valor do campo Jira 'Upsell Module' (customfield_10124).
-    Aceita dict {value:...}, lista de dicts/strings, ou string.
-    """
-    if cf is None:
-        return ''
-    if isinstance(cf, dict):
-        return (cf.get('value') or '').strip()
-    if isinstance(cf, list):
-        vals = []
-        for x in cf:
-            if isinstance(x, dict) and x.get('value'):
-                vals.append(x['value'])
-            elif isinstance(x, str) and x.strip():
-                vals.append(x.strip())
-        return ', '.join(vals).strip()
-    return str(cf).strip()
-
-
-def generate_tempo_modulos(epics: List[Dict]) -> List[Dict]:
-    """Monta a lista de epics de upsell CONCLUIDOS com tempo por modulo,
-    para alimentar a aba 'Tempo Modulos' do dashboard.
-
-    Regras (fonte: licoes aprendidas do dashboard original):
-    - Apenas concluidos (statusCategory = Done);
-    - Exclui templates (summary contendo 'template');
-    - Modulo = campo customizado customfield_10124 (Upsell Module). Epics sem
-      esse campo preenchido sao ignorados (nao sao upsell de modulo);
-    - Horas = aggregatetimespent (epic + subtarefas, vida toda do epic).
-
-    Cada item: {k: key, s: summary, m: modulo, h: horas, r: data de resolucao}.
-    """
-    result = []
-    for epic in epics:
-        fields = epic.get('fields', {})
-        status = fields.get('status', {}).get('name', '')
-        cat_key = fields.get('status', {}).get('statusCategory', {}).get('key', '')
-
-        if cat_key == 'done':
-            status_cat = 'completed'
-        else:
-            status_cat = get_status_category(status)
-        if status_cat != 'completed':
-            continue
-
-        summary = (fields.get('summary', '') or '').strip()
-        if 'template' in summary.lower():
-            continue
-
-        modulo = _extract_upsell_module(fields.get('customfield_10124'))
-        if not modulo:
-            continue  # sem modulo de upsell -> fora (regra do dashboard original)
-
-        resolution = parse_date(fields.get('resolutiondate', '')) or parse_date(fields.get('updated', ''))
-        time_spent = fields.get('aggregatetimespent', 0) or 0
-        hours = round(time_spent / 3600, 2)
-
-        result.append({
-            'k': epic.get('key', ''),
-            's': summary,
-            'm': modulo,
-            'h': hours,
-            'r': resolution,
-        })
-
-    result.sort(key=lambda x: x.get('r') or '', reverse=True)
-    return result
 
 
 def parse_date(date_str: str) -> str:
@@ -626,24 +557,13 @@ def detect_porte(summary: str) -> Tuple[str, int, int]:
         return ('N/D', 100, 0)
 
 
-def _is_cloud_mig(epic: Dict) -> bool:
-    """True se o epic for uma migração para o Autolac Cloud.
-    Usa o campo Upsell Module (customfield_10124) quando indica 'migração',
-    com fallback para detecção por palavras-chave no summary."""
-    fields = epic.get('fields', {})
-    mod = _extract_upsell_module(fields.get('customfield_10124')).lower()
-    if 'migra' in mod:
-        return True
-    return is_cloud_migration(fields.get('summary', '') or '')
-
-
 def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str) -> Dict:
     """Generate backlog-specific data for capacity planning"""
     CAPACITY_MONTHLY = 140
 
-    # Separate novo and upsell epics (migrações Autolac Cloud entram junto com os Novos)
-    novo_epics = [e for e in epics if classify_epic(e) == 'Novo' or _is_cloud_mig(e)]
-    upsell_epics = [e for e in epics if classify_epic(e) == 'Upsell' and not _is_cloud_mig(e)]
+    # Separate novo and upsell epics
+    novo_epics = [e for e in epics if classify_epic(e) == 'Novo']
+    upsell_epics = [e for e in epics if classify_epic(e) == 'Upsell']
 
     # Calculate remaining hours per epic
     novo_with_data = []
@@ -666,9 +586,6 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
 
         # Detect porte
         porte, meta, days = detect_porte(summary)
-        # Migração Autolac Cloud: porte dedicado e meta de 40h
-        if _is_cloud_mig(epic):
-            porte, meta, days = 'Cloud', 40, 60
         restante = max(meta - gasto, 10) if gasto < meta else max(meta - gasto, 10)
         progresso = (gasto / meta) if meta > 0 else 0
 
@@ -683,7 +600,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             prazo_wmi = 'Pausado'
             status_prazo = 'Pausado'
             status_prazo_type = 'paused'
-            restante = 0  # pausado nao conta tempo no backlog (tempo congelado)
+            restante = 0
         else:
             deadline = None
             if duedate:
@@ -752,10 +669,6 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
 
         impl = extract_implementer_name(assignee)
 
-        # Migrações Cloud já aparecem no Backlog Novo — não duplicar na fila
-        if _is_cloud_mig(epic):
-            continue
-
         # Add to fila if not assigned to implementer or is in waiting
         if not impl or impl in EXCLUDE_ASSIGNEES:
             # Extract tipo (module) from summary
@@ -765,9 +678,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             if tipo == 'Novo':
                 continue
                 
-            # Pausado aparece na lista, mas com 0h (nao conta no backlog / total)
-            _fila_paused = status.strip().lower() in ('paused', 'pausado')
-            estimated = 0 if _fila_paused else MODULE_HOURS.get(tipo, MODULE_DEFAULT_HOURS)
+            estimated = MODULE_HOURS.get(tipo, MODULE_DEFAULT_HOURS)
             fila_yasmin.append({
                 'key': key,
                 'summary': summary,
@@ -784,8 +695,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
     upsell_restante = sum(
         max(12 - (e.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600, 0)
         for e in upsell_epics
-        if e.get('fields', {}).get('status', {}).get('name', '') not in STATUS_COMPLETED
-        and e.get('fields', {}).get('status', {}).get('name', '').strip().lower() not in ('paused', 'pausado')
+        if e.get('fields', {}).get('status', {}).get('statusCategory', {}).get('key', '') != 'done'
     )
     yasmin_hours = sum(e['estimatedHours'] for e in fila_yasmin)
     total_restante = total_novo_restante + upsell_restante + yasmin_hours
@@ -813,7 +723,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             max(12 - (ep.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600, 0)
             for ep in upsell_epics
             if extract_implementer_name(ep.get('fields', {}).get('assignee')) == tech_name
-            and ep.get('fields', {}).get('status', {}).get('name', '').strip().lower() not in ('paused', 'pausado')
+            and ep.get('fields', {}).get('status', {}).get('statusCategory', {}).get('key', '') != 'done'
         )
         total_rest = novo_rest + upsell_rest
 
@@ -827,7 +737,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         novos_str = f"{novos_em_andamento} em andamento" if novos_em_andamento > 0 else "0"
 
         ocupacao = (total_rest / (CAPACITY_MONTHLY * 3)) * 100 if total_rest > 0 else 0
-        risco = 'ALTO' if ocupacao > 100 else 'MÉDIO' if ocupacao > 50 else 'BAIXO'
+        risco = 'ALTO' if ocupacao > 100 else 'MÃÂÃÂDIO' if ocupacao > 50 else 'BAIXO'
 
         capacity_table.append({
             'name': tech_name,
@@ -879,6 +789,32 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             'level': 'success'
         })
 
+    # ── Sugestão de implantador para próximo cliente Novo ──
+    # Inclui todos os IMPLEMENTERS, mesmo os sem épicos ativos (ocupação 0%)
+    active_names = {t['name'] for t in capacity_table}
+    full_ranking = list(capacity_table)
+    for impl_name in IMPLEMENTERS:
+        if impl_name not in active_names:
+            full_ranking.append({
+                'name': impl_name,
+                'epicsAbertos': '0 (0N + 0U)',
+                'horasNovo': 0, 'horasUpsell': 0,
+                'totalRestante': 0, 'meses': 0,
+                'novosSimultaneos': '0',
+                'ocupacao': 0, 'risco': 'BAIXO'
+            })
+    # Ordena por ocupação crescente (menor carga primeiro)
+    full_ranking.sort(key=lambda x: (x['ocupacao'], x['totalRestante']))
+    sugestao = {
+        'recomendado': full_ranking[0]['name'] if full_ranking else None,
+        'ocupacao': full_ranking[0]['ocupacao'] if full_ranking else 0,
+        'horasRestantes': full_ranking[0]['totalRestante'] if full_ranking else 0,
+        'ranking': [
+            {'nome': t['name'], 'ocupacao': t['ocupacao'], 'horasRestantes': t['totalRestante']}
+            for t in full_ranking
+        ]
+    }
+
     return {
         'backlogSummary': {
             'totalRestante': round(total_restante, 1),
@@ -894,7 +830,8 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         'capacityTable': capacity_table,
         'backlogNovo': novo_open,
         'filaYasmin': fila_yasmin,
-        'backlogInsights': insights
+        'backlogInsights': insights,
+        'sugestaoImplantador': sugestao
     }
 
 
@@ -970,7 +907,7 @@ def generate_dashboard_data(epics: List[Dict]) -> Dict:
         'backlogNovo': backlog_data['backlogNovo'],
         'filaYasmin': backlog_data['filaYasmin'],
         'backlogInsights': backlog_data['backlogInsights'],
-        'tempoModulos': generate_tempo_modulos(epics)
+        'sugestaoImplantador': backlog_data.get('sugestaoImplantador', {})
     }
 
 
@@ -1045,7 +982,7 @@ def generate_mock_data() -> Dict:
         'capacityTable': [
             {'name': 'Anderson', 'epicsAbertos': '7 (4N + 3U)', 'horasNovo': 540.0, 'horasUpsell': 6.0, 'totalRestante': 546.0, 'meses': 3.9, 'novosSimultaneos': '2 em andamento', 'ocupacao': 130.0, 'risco': 'ALTO'},
             {'name': 'Luiz', 'epicsAbertos': '4 (3N + 1U)', 'horasNovo': 537.0, 'horasUpsell': 2.0, 'totalRestante': 539.0, 'meses': 3.9, 'novosSimultaneos': '3 em andamento', 'ocupacao': 128.0, 'risco': 'ALTO'},
-            {'name': 'Jorge', 'epicsAbertos': '8 (3N + 5U)', 'horasNovo': 326.0, 'horasUpsell': 22.0, 'totalRestante': 348.0, 'meses': 2.5, 'novosSimultaneos': '3 em andamento', 'ocupacao': 83.0, 'risco': 'MÉDIO'},
+            {'name': 'Jorge', 'epicsAbertos': '8 (3N + 5U)', 'horasNovo': 326.0, 'horasUpsell': 22.0, 'totalRestante': 348.0, 'meses': 2.5, 'novosSimultaneos': '3 em andamento', 'ocupacao': 83.0, 'risco': 'MÃÂÃÂDIO'},
         ],
         'backlogNovo': [
             {'key': 'IWN-826', 'summary': 'DRA TÃÂÃÂNIA', 'assignee': 'Nino', 'porte': 'Large', 'status': 'Em andamento', 'gasto': 483.9, 'meta': 400.0, 'restante': 40.0, 'progresso': 1.21, 'criacao': '2025-10-10', 'prazoWmi': '2026-02-07', 'statusPrazo': '+72 dias', 'statusPrazoType': 'overdue'},
@@ -1073,14 +1010,6 @@ def generate_mock_data() -> Dict:
                         'totalHours': 3264.0, 'activeHours': 1019.0, 'avgHoursPerEpic': 88.2},
         'upsellSummary': {'total': 185, 'completed': 132, 'inProgress': 40, 'paused': 8, 'pending': 5,
                           'totalHours': 1946.0, 'activeHours': 591.0, 'avgHoursPerEpic': 10.5},
-        'tempoModulos': [
-            {'k': 'IWN-3290', 's': 'INTERLAC - MEGAENSAIO - 10053', 'm': 'Interlac', 'h': 16.98, 'r': '2026-01-22'},
-            {'k': 'IWN-3374', 's': 'INTERLAC - LAB ELION - 2959', 'm': 'Interlac', 'h': 4.0, 'r': '2026-01-22'},
-            {'k': 'IWN-3473', 's': 'NOTA FISCAL - LAB OSWALDO CRUZ - 3126', 'm': 'Nota Fiscal', 'h': 3.7, 'r': '2026-02-13'},
-            {'k': 'IWN-3059', 's': 'NEXO - 10097 - Finance Module', 'm': 'Financeiro', 'h': 9.75, 'r': '2026-03-18'},
-            {'k': 'IWN-489', 's': 'Implementation Upsell - Finance Module - WMI', 'm': 'Financeiro', 'h': 0.0, 'r': '2026-02-01'},
-            {'k': 'IWN-1034', 's': 'LABORATORIO SANTA RITA - 5693', 'm': 'Estoque', 'h': 4.9, 'r': '2026-03-25'},
-        ],
         **mock_backlog
     }
 
