@@ -179,11 +179,24 @@ tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
 <!-- TAB: RESUMO -->
 <div class="tab-panel active" id="panel-resumo">
   <div class="kpi-grid" id="kpiGrid"></div>
+  <!-- Card Sugestão Implantador -->
+  <div id="sugestaoCard" style="margin-bottom:24px;padding:20px 24px;border-radius:12px;background:linear-gradient(135deg,rgba(0,200,150,.12),rgba(0,150,255,.10));border:1px solid rgba(0,200,150,.3);display:none">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <span style="font-size:24px">🎯</span>
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.5)">Próximo Cliente Novo → Atribuir para</div>
+        <div id="sugestaoNome" style="font-size:22px;font-weight:700;color:#00c896"></div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-size:11px;color:rgba(255,255,255,.5)">Ocupação atual</div>
+        <div id="sugestaoOcupacao" style="font-size:20px;font-weight:600;color:#00c896"></div>
+      </div>
+    </div>
+    <div id="sugestaoRanking" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+  </div>
   <div class="section-header"><div class="section-number">01 — Insights</div><h2>Alertas e Recomendações</h2></div>
   <div class="insight-grid" id="insightsGrid"></div>
-  <div class="section-header"><div class="section-number">02 — Análise</div><h2>Análise do Coordenador</h2></div>
-  <div id="coordAnalysis"></div>
-  <div class="section-header"><div class="section-number">03 — Equipe</div><h2>Resumo por Implantador</h2></div>
+  <div class="section-header"><div class="section-number">02 — Equipe</div><h2>Resumo por Implantador</h2></div>
   <div id="resumoTable"></div>
 </div>
 
@@ -195,7 +208,7 @@ tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
 
 <!-- TAB: BACKLOG DETALHADO -->
 <div class="tab-panel" id="panel-backlog">
-  <div class="section-header"><div class="section-number">Backlog Novo</div><h2>Clientes Novos + Migrações Cloud</h2></div>
+  <div class="section-header"><div class="section-number">Backlog Novo</div><h2>Épicos Novos em Aberto</h2></div>
   <div id="backlogTable"></div>
   <div class="section-header" style="margin-top:2rem"><div class="section-number">Fila Yasmin</div><h2>Épicos sem Implantador</h2></div>
   <div id="filaYasminTable"></div>
@@ -204,8 +217,6 @@ tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
 <!-- TAB: CAPACITY -->
 <div class="tab-panel" id="panel-capacity">
   <div class="kpi-grid" id="capacityKpis"></div>
-  <div class="section-header" style="margin-top:1.5rem"><div class="section-number">Visão</div><h2>Ocupação e Backlog da Equipe</h2></div>
-  <div id="capacityCharts"></div>
   <div class="section-header"><div class="section-number">Capacity</div><h2>Capacity por Implantador</h2></div>
   <div id="capacityTable"></div>
 </div>
@@ -220,7 +231,6 @@ tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
     <label style="font-size:13px;color:var(--color-text-secondary)">Módulo:</label>
     <select id="tmFilterModule" style="padding:6px 12px;border-radius:8px;background:var(--color-surface);color:var(--color-text);border:1px solid rgba(255,255,255,0.1);font-size:13px"><option value="all">Todos os módulos</option></select>
   </div>
-  <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px">Dados em tempo real do Jira: epics concluídos classificados pelo campo <strong>Upsell Module</strong> (exclui templates e epics sem módulo). Horas = tempo total apontado no epic (aggregatetimespent). &quot;Tempo Mínimo&quot; = menor implantação registrada no módulo, desconsiderando epics com menos de 1h.</div>
   <div id="tempoMainTable"></div>
   <div class="section-header" style="margin-top:2rem"><div class="section-number">Comparativo</div><h2>Comparativo Mensal por Módulo</h2></div>
   <div id="tempoMonthlyTable"></div>
@@ -299,18 +309,35 @@ function prazoBadge(type, text) {
 // ─── Render All ────────────────────────────────
 function renderAll() {
   document.getElementById('timestamp').textContent = 'Atualizado: ' + DATA.timestamp;
+  renderSugestaoImplantador();
   renderKPIs();
   renderInsights();
-  renderCoordinatorAnalysis();
   renderResumoTable();
   renderTechCards();
   renderBacklogTable();
   renderFilaYasmin();
   renderCapacityKPIs();
   renderCapacityTable();
-  renderCapacityCharts();
-  TM_RAW = DATA.tempoModulos || [];
-  initTempoModulos();
+}
+
+// ─── Sugestão Implantador ──────────────────────
+function renderSugestaoImplantador() {
+  const s = DATA.sugestaoImplantador;
+  if (!s || !s.recomendado) return;
+  const card = document.getElementById('sugestaoCard');
+  card.style.display = 'block';
+  document.getElementById('sugestaoNome').textContent = s.recomendado;
+  document.getElementById('sugestaoOcupacao').textContent = s.ocupacao.toFixed(0) + '%';
+  const rankEl = document.getElementById('sugestaoRanking');
+  rankEl.innerHTML = (s.ranking || []).map((r, i) => {
+    const isTop = i === 0;
+    const bg = isTop ? 'rgba(0,200,150,.25)' : 'rgba(255,255,255,.06)';
+    const border = isTop ? 'rgba(0,200,150,.4)' : 'rgba(255,255,255,.1)';
+    return `<div style="padding:6px 12px;border-radius:8px;background:${bg};border:1px solid ${border};font-size:12px">
+      <span style="font-weight:600">${r.nome}</span>
+      <span style="opacity:.6;margin-left:4px">${r.ocupacao.toFixed(0)}% · ${r.horasRestantes}h</span>
+    </div>`;
+  }).join('');
 }
 
 // ─── KPIs ──────────────────────────────────────
@@ -358,33 +385,6 @@ function renderKPIs() {
 }
 
 // ─── Insights ──────────────────────────────────
-function renderCoordinatorAnalysis() {
-  const el = document.getElementById('coordAnalysis');
-  if (!el) return;
-  const techs = DATA.technicians || [];
-  const cap = DATA.capacityTable || [];
-  const s = DATA.backlogSummary || {};
-  if (!techs.length) { el.innerHTML = ''; return; }
-  const totalOpen = techs.reduce((a,t)=>a+t.openCount,0);
-  const totalComp = techs.reduce((a,t)=>a+t.completed,0);
-  const totalEpics = techs.reduce((a,t)=>a+t.total,0);
-  const compRate = totalEpics ? Math.round(totalComp/totalEpics*100) : 0;
-  const totalVencidos = techs.reduce((a,t)=>a+(t.overdueCount||0),0);
-  const over = cap.filter(t=>t.ocupacao>100).sort((a,b)=>b.ocupacao-a.ocupacao);
-  const livres = cap.filter(t=>t.ocupacao<70).sort((a,b)=>a.ocupacao-b.ocupacao);
-  const top = cap.slice().sort((a,b)=>b.meses-a.meses)[0];
-  const fmt = arr => arr.map(t=>t.name).join(', ');
-  const p = `O time tem <strong>${totalOpen} épicos abertos</strong> e <strong>${(s.totalRestante||0).toFixed(0)}h</strong> de backlog (≈ <strong>${s.backlogMonths} meses</strong> no ritmo atual). A taxa de conclusão geral está em <strong>${compRate}%</strong>. A carga está dividida em <strong>${s.novoPercent}% Novo</strong> e <strong>${s.upsellPercent}% Upsell</strong>${s.yasminEpics?`, com ${s.yasminEpics} épicos (${(s.yasminHours||0).toFixed(0)}h) ainda na fila de triagem`:''}.`;
-  const items = [];
-  if (over.length) items.push({lvl:'danger', t:`${over.length} implantador(es) acima da capacidade`, d:`${fmt(over)} ${over.length>1?'estão':'está'} com ocupação acima de 100% — risco de atraso e sobrecarga.`});
-  if (top) items.push({lvl: over.length?'warning':'neutral', t:`Maior fila: ${top.name}`, d:`${top.meses} meses de backlog (${top.totalRestante}h) — o gargalo mais crítico de prazo.`});
-  if (totalVencidos>0) items.push({lvl:'danger', t:`${totalVencidos} épicos vencidos no time`, d:`Há entregas que já passaram do prazo WMI distribuídas entre os implantadores.`});
-  if (livres.length) items.push({lvl:'success', t:`Capacidade disponível`, d:`${fmt(livres)} ${livres.length>1?'estão':'está'} abaixo de 70% — ${livres.length>1?'podem':'pode'} absorver novas demandas ou ajudar a desafogar os sobrecarregados.`});
-  const colors = {danger:'#ef4444', warning:'#f59e0b', success:'#22c55e', neutral:'var(--color-blue-400)'};
-  const bullets = items.map(i=>`<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)"><div style="width:8px;height:8px;border-radius:50%;background:${colors[i.lvl]};margin-top:5px;flex:0 0 auto"></div><div><div style="font-weight:600;font-size:13px">${i.t}</div><div style="font-size:12px;color:var(--color-gray-400)">${i.d}</div></div></div>`).join('');
-  el.innerHTML = `<div class="table-wrapper" style="padding:1.25rem;margin-bottom:2rem"><div style="font-size:13px;line-height:1.65;color:var(--color-gray-100);margin-bottom:8px">${p}</div>${bullets}</div>`;
-}
-
 function renderInsights() {
   const insights = DATA.backlogInsights || [];
   const icons = { danger: '🔴', warning: '🟡', success: '🟢' };
@@ -429,9 +429,7 @@ function renderResumoTable() {
 
 // ─── Tech Cards ────────────────────────────────
 function renderTechCards() {
-  const _grid = document.getElementById('techGrid');
-  const _openTechs = new Set([..._grid.querySelectorAll('details[data-tech]')].filter(d=>d.open).map(d=>d.getAttribute('data-tech')));
-  _grid.innerHTML = DATA.technicians.map(t => {
+  document.getElementById('techGrid').innerHTML = DATA.technicians.map(t => {
     const openCount = t.total - t.completed;
     const rate = t.total > 0 ? Math.round(t.completed / t.total * 100) : 0;
     return `
@@ -462,7 +460,7 @@ function renderTechCards() {
         <span>${t.overdueCount} vencido(s)</span>
       </div>
       ${t.openEpics.length > 0 ? `
-      <details data-tech="${t.name}" style="margin-top:0.75rem">
+      <details style="margin-top:0.75rem">
         <summary style="font-size:0.625rem;color:var(--color-blue-400);cursor:pointer;font-weight:600">Ver ${t.openEpics.length} épicos abertos</summary>
         <div style="margin-top:0.5rem;max-height:200px;overflow-y:auto">
           ${t.openEpics.map(e => `
@@ -478,7 +476,6 @@ function renderTechCards() {
       </details>` : ''}
     </div>`;
   }).join('');
-  _openTechs.forEach(name=>{const sel='details[data-tech="'+(window.CSS&&CSS.escape?CSS.escape(name):name)+'"]';const d=_grid.querySelector(sel);if(d)d.open=true;});
 }
 
 // ─── Backlog Table ─────────────────────────────
@@ -492,7 +489,6 @@ function renderBacklogTable() {
       <td>${statusBadge(e.status)}</td>
       <td class="td-right">${e.gasto}h</td>
       <td class="td-right">${e.meta}h</td>
-      <td class="td-right" style="color:var(--color-cyan-400);font-weight:600">${(/paus/i.test(e.status||'') ? 0 : Math.max(0,(e.meta||0)-(e.gasto||0))).toFixed(1)}h</td>
       <td>
         <div style="display:flex;align-items:center;gap:6px">
           <div class="progress-track" style="width:60px;height:4px">
@@ -504,23 +500,12 @@ function renderBacklogTable() {
       <td>${prazoBadge(e.statusPrazoType, e.statusPrazo)}</td>
     </tr>
   `).join('');
-  const _bn = DATA.backlogNovo || [];
-  const _tGasto = _bn.reduce((s,e)=>s+(e.gasto||0),0);
-  const _tMeta = _bn.reduce((s,e)=>s+(e.meta||0),0);
-  const _tRest = _bn.reduce((s,e)=>s+(/paus/i.test(e.status||'') ? 0 : Math.max(0,(e.meta||0)-(e.gasto||0))),0);
   document.getElementById('backlogTable').innerHTML = `
     <div class="table-wrapper">
-      <div class="table-header"><span class="table-title">Backlog Novo + Migrações Cloud (${_bn.length} épicos)</span></div>
+      <div class="table-header"><span class="table-title">Backlog Novo (${DATA.backlogNovo?.length || 0} épicos)</span></div>
       <table>
-        <thead><tr><th>Key</th><th>Épico</th><th>Responsável</th><th>Porte</th><th>Status</th><th>Gasto</th><th>Meta</th><th>Restante Est.</th><th>Progresso</th><th>Status Prazo</th></tr></thead>
+        <thead><tr><th>Key</th><th>Épico</th><th>Responsável</th><th>Porte</th><th>Status</th><th>Gasto</th><th>Meta</th><th>Progresso</th><th>Status Prazo</th></tr></thead>
         <tbody>${rows}</tbody>
-        <tfoot><tr style="border-top:2px solid var(--glass-border);font-weight:700;background:rgba(37,99,235,0.06)">
-          <td colspan="5" class="td-right" style="color:var(--color-gray-100)">Totais:</td>
-          <td class="td-right">${_tGasto.toFixed(1)}h</td>
-          <td class="td-right">${_tMeta.toFixed(1)}h</td>
-          <td class="td-right" style="color:var(--color-cyan-400)">${_tRest.toFixed(1)}h</td>
-          <td colspan="2"></td>
-        </tr></tfoot>
       </table>
     </div>
   `;
@@ -546,11 +531,6 @@ function renderFilaYasmin() {
       <table>
         <thead><tr><th>Key</th><th>Épico</th><th>Tipo</th><th>Status</th><th>Horas Est.</th><th>Criado</th><th>Due Date</th></tr></thead>
         <tbody>${rows}</tbody>
-        <tfoot><tr style="border-top:2px solid var(--glass-border);font-weight:700;background:rgba(37,99,235,0.06)">
-          <td colspan="4" class="td-right" style="color:var(--color-gray-100)">Total horas pendentes:</td>
-          <td class="td-right" style="color:var(--color-warning);font-weight:700">${totalEstimated.toFixed(1)}h</td>
-          <td colspan="2"></td>
-        </tr></tfoot>
       </table>
     </div>
   `;
@@ -583,54 +563,6 @@ function renderCapacityKPIs() {
   `;
 }
 
-// ─── Capacity Charts (inline, sem dependências) ─
-function renderCapacityCharts() {
-  const el = document.getElementById('capacityCharts');
-  if (!el) return;
-  const data = (DATA.capacityTable || []);
-  if (!data.length) { el.innerHTML = ''; return; }
-  const barRow = (name, valText, pct, color, markPct, markColor) => `
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <div style="width:84px;font-size:12px;color:var(--color-gray-400);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${name}</div>
-      <div style="flex:1;position:relative;height:22px;background:rgba(255,255,255,0.05);border-radius:6px">
-        <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${color};opacity:0.85;border-radius:6px"></div>
-        ${markPct != null ? `<div style="position:absolute;left:${markPct}%;top:-2px;height:calc(100% + 4px);border-left:2px dashed ${markColor || 'rgba(255,255,255,0.5)'}"></div>` : ''}
-        <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.6)">${valText}</span>
-      </div>
-    </div>`;
-  // Ocupação
-  const occ = data.slice().sort((a,b)=>b.ocupacao-a.ocupacao);
-  const maxOcc = Math.max(120, ...occ.map(t=>t.ocupacao));
-  const mark100 = Math.round((100/maxOcc)*100);
-  const occHtml = occ.map(t=>{
-    const c = t.ocupacao>100?'#ef4444':t.ocupacao>=70?'#f59e0b':'#22c55e';
-    return barRow(t.name, t.ocupacao+'%', Math.min(100,(t.ocupacao/maxOcc)*100), c, mark100, 'rgba(239,68,68,0.7)');
-  }).join('');
-  // Meses de backlog
-  const mb = data.slice().sort((a,b)=>b.meses-a.meses);
-  const maxM = Math.max(3.5, ...mb.map(t=>t.meses));
-  const mark3 = Math.round((3/maxM)*100);
-  const mbHtml = mb.map(t=>{
-    const c = t.meses>3?'#ef4444':t.meses>=2?'#f59e0b':'#22c55e';
-    return barRow(t.name, t.meses+' m', Math.min(100,(t.meses/maxM)*100), c, mark3, 'rgba(239,68,68,0.7)');
-  }).join('');
-  const overCap = data.filter(t=>t.ocupacao>100).length;
-  const avgOcc = Math.round(data.reduce((s,t)=>s+t.ocupacao,0)/data.length);
-  el.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:1.25rem;margin-bottom:1.5rem">
-      <div class="table-wrapper" style="padding:1.25rem;margin-bottom:0">
-        <div style="font-size:0.875rem;font-weight:700">Ocupação por Implantador</div>
-        <div style="font-size:0.625rem;color:var(--color-gray-400);margin-bottom:14px">Linha tracejada = 100% da capacidade trimestral · média ${avgOcc}% · ${overCap} acima de 100%</div>
-        ${occHtml}
-      </div>
-      <div class="table-wrapper" style="padding:1.25rem;margin-bottom:0">
-        <div style="font-size:0.875rem;font-weight:700">Meses de Backlog por Implantador</div>
-        <div style="font-size:0.625rem;color:var(--color-gray-400);margin-bottom:14px">Linha tracejada = 3 meses (trimestre)</div>
-        ${mbHtml}
-      </div>
-    </div>`;
-}
-
 // ─── Capacity Table ────────────────────────────
 function renderCapacityTable() {
   const rows = (DATA.capacityTable || []).map(t => `
@@ -658,7 +590,7 @@ function renderCapacityTable() {
 }
 
 // ─── Tempo Módulos Tab ─────────────────────────
-let TM_RAW = []; // preenchido dinamicamente via DATA.tempoModulos
+const TM_RAW = [{"k": "IWN-489", "s": "Implementation Upsell - Finance Module - WMI", "m": "Financeiro", "h": 0.0, "r": ""},{"k": "IWN-409", "s": " - Implementation Upsell - Stock Module - WMI", "m": "Estoque", "h": 0.0, "r": ""},{"k": "IWN-1034", "s": "LABORATORIO SANTA RITA - 5693", "m": "Estoque", "h": 4.9, "r": "2026-03-25"},{"k": "IWN-997", "s": "CONSAÚDE - 1366", "m": "Estoque", "h": 3.78, "r": "2026-03-24"},{"k": "IWN-3647", "s": "NOTA FISCAL ( 1 CNPJ ) - LABORATORIO LAPECCO - 1666", "m": "Nota Fiscal", "h": 2.65, "r": "2026-03-24"},{"k": "IWN-3628", "s": "NUALI - 10077", "m": "Estoque", "h": 2.05, "r": "2026-03-19"},{"k": "IWN-3059", "s": "NEXO - 10097 - Finance Module", "m": "Financeiro", "h": 9.75, "r": "2026-03-18"},{"k": "IWN-1361", "s": "BIOLAB - 7096 - Finance Module", "m": "Financeiro", "h": 10.62, "r": "2026-03-17"},{"k": "IWN-1150", "s": "BIOLAB - 7096 - Stock Module", "m": "Stock Module", "h": 2.17, "r": "2026-03-17"},{"k": "IWN-963", "s": "LABORBRAZ ANALISES - 857", "m": "Estoque", "h": 3.35, "r": "2026-03-16"},{"k": "IWN-898", "s": "LABORATORIO HM ANALISES - 10043", "m": "Financeiro", "h": 0.2, "r": "2026-03-16"},{"k": "IWN-3753", "s": "BIOSOFIA LABORATORIO - 7179", "m": "Autolac Cloud", "h": 5.0, "r": "2026-03-16"},{"k": "IWN-3262", "s": "AUTORIZAÇÃO ONLINE UNIMED SGU - LAB LINHARES", "m": "Autorização Online", "h": 1.5, "r": "2026-03-16"},{"k": "IWN-3141", "s": "Interlac - Laboratório Cliomel 2182", "m": "Interlac", "h": 5.33, "r": "2026-03-13"},{"k": "IWN-3685", "s": "INTERLAC - LAB ANTONIO NICOLIELLO", "m": "Interlac", "h": 7.5, "r": "2026-03-13"},{"k": "IWN-3406", "s": "APOIO AO CLIENTE - TRIAGEM MEDICINA 10090", "m": "Apoio-Suporte", "h": 56.67, "r": "2026-03-12"},{"k": "IWN-3833", "s": "APOIO AO CLIENTE - LABORATEC - 1914", "m": "Apoio HP", "h": 2.0, "r": "2026-03-12"},{"k": "IWN-3787", "s": "INTERLAC - PAX MINAS AVELAR", "m": "Interlac", "h": 6.0, "r": "2026-03-12"},{"k": "IWN-3803", "s": "CABO SERIAL MAX ION - LAB H KISHI - 4996", "m": "Confecção de Cabo", "h": 1.5, "r": "2026-03-12"},{"k": "IWN-3809", "s": "LOCAL DE CONTROLE INTERNO - LAB QUALITY DIAGNOSTICOS", "m": "Apoio-Suporte", "h": 0.83, "r": "2026-03-11"},{"k": "IWN-3778", "s": "B2B HP - IDESC LABORATORIOS", "m": "Apoio HP", "h": 3.0, "r": "2026-03-11"},{"k": "IWN-3798", "s": "INTERLAC - CID CENTRO DE INVESTIGACOES", "m": "Interlac", "h": 9.8, "r": "2026-03-10"},{"k": "IWN-3424", "s": "NOTA FISCAL - Laboratório BIOLAB", "m": "Nota Fiscal", "h": 7.57, "r": "2026-03-05"},{"k": "IWN-3682", "s": "FILA DE ATENDIMENTO - LAB CLAUDINO - 952", "m": "Fila de atendimento", "h": 3.87, "r": "2026-03-05"},{"k": "IWN-3683", "s": "INTERLAC - CID CENTRO DE INVESTIGACOES", "m": "Interlac", "h": 9.5, "r": "2026-03-04"},{"k": "IWN-3656", "s": "INTERLAC - HOSP FUNDACAO CASA DE CARIDADE", "m": "Interlac", "h": 8.67, "r": "2026-03-04"},{"k": "IWN-1045", "s": "LAB AN CLINICAS DE VICOSA DO CEARA - 3412", "m": "Estoque", "h": 6.32, "r": "2026-03-04"},{"k": "IWN-3189", "s": "LAB KLETT - 2789", "m": "Estoque", "h": 10.93, "r": "2026-03-04"},{"k": "IWN-3431", "s": "NOTA FISCAL - LAB CLINICA VITRA - 10140", "m": "Nota Fiscal", "h": 4.22, "r": "2026-03-04"},{"k": "IWN-3659", "s": "Solicitação de TAP - Laboratório Sandrini", "m": "TAP", "h": 1.5, "r": "2026-03-02"},{"k": "IWN-3359", "s": "INTERLAC DESENVOLVIMENTO - LAB GONTIJO GUIMARÃES", "m": "Interlac", "h": 1.08, "r": "2026-03-02"},{"k": "IWN-3505", "s": "NOTA FISCAL - LAB VITACENTER - 502", "m": "Nota Fiscal", "h": 4.07, "r": "2026-03-02"},{"k": "IWN-3539", "s": "Solicitação de TAP / LACOR", "m": "TAP", "h": 2.33, "r": "2026-02-26"},{"k": "IWN-3339", "s": "HEMOLABER - 294 (GMN) - INTERLAC", "m": "Interlac", "h": 3.67, "r": "2026-02-24"},{"k": "IWN-3412", "s": "NOTA FISCAL - LAB THIAGO HUGO - 4215", "m": "Nota Fiscal", "h": 3.57, "r": "2026-02-23"},{"k": "IWN-871", "s": "DRA TÂNIA MEDICINA DIAG - 10106 - Finance", "m": "Financeiro", "h": 0.0, "r": "2026-02-23"},{"k": "IWN-886", "s": "DRA TÂNIA MEDICINA DIAG - 10106 - Stock", "m": "Estoque", "h": 0.0, "r": "2026-02-23"},{"k": "IWN-3254", "s": "INTERLAC - PAX MINAS AVELAR", "m": "Interlac", "h": 4.67, "r": "2026-02-23"},{"k": "IWN-3522", "s": "TRIAGEM MEDICINA 10090 - KUALIZ AUTOMAÇÃO", "m": "Kualiz Automação", "h": 2.4, "r": "2026-02-23"},{"k": "IWN-3461", "s": "INTERLAC - Lab Padre Alberto - 10033", "m": "Interlac", "h": 5.5, "r": "2026-02-20"},{"k": "IWN-3473", "s": "NOTA FISCAL - LAB OSWALDO CRUZ - 3126", "m": "Nota Fiscal", "h": 3.7, "r": "2026-02-13"},{"k": "IWN-3469", "s": "AUDITORIA PRÉ FATURAMENTO - LAB FRANCISMAR MOREIRA", "m": "Autolac Cloud", "h": 4.58, "r": "2026-02-12"},{"k": "IWN-3363", "s": "LAUDOS/PESQ SATISFAÇÃO - LABORMINAS", "m": "Laudos Ilimitado", "h": 5.42, "r": "2026-02-11"},{"k": "IWN-3152", "s": "INTERLAC - LABCITO - 6204", "m": "Interlac", "h": 4.25, "r": "2026-02-11"},{"k": "IWN-3468", "s": "AUDITORIA PRÉ FATURAMENTO - LISARDO & NICOLATO", "m": "Autolac Cloud", "h": 8.33, "r": "2026-02-10"},{"k": "IWN-3466", "s": "INTERLAC - LAB LABORMONTE - 10066", "m": "Interlac", "h": 4.0, "r": "2026-02-10"},{"k": "IWN-3372", "s": "KUALIZ AUTOMAÇÃO - BIOLAB - 7096", "m": "Kualiz Automação", "h": 5.58, "r": "2026-02-10"},{"k": "IWN-3414", "s": "KUALIZ AUTOMAÇÃO - PAMER LAB - 3747", "m": "Kualiz Automação", "h": 3.8, "r": "2026-02-10"},{"k": "IWN-3308", "s": "FILA DE ATENDIMENTO - LAB VILA RICA 3113", "m": "Fila de atendimento", "h": 17.33, "r": "2026-02-10"},{"k": "IWN-3171", "s": "INTERLAC - LAB DIVINOPOLIS - 767", "m": "Interlac", "h": 1.33, "r": "2026-02-09"},{"k": "IWN-3348", "s": "NOTA FISCAL (2 CNPJs) - LAB LAPECCO - 1666", "m": "Nota Fiscal", "h": 7.08, "r": "2026-02-06"},{"k": "IWN-3463", "s": "Interlac - LAB SPINA MENDES (biolife) - 4602", "m": "Interlac", "h": 7.75, "r": "2026-02-05"},{"k": "IWN-3384", "s": "NOTA FISCAL - LAB SÃO JOSÉ - 1272", "m": "Nota Fiscal", "h": 8.15, "r": "2026-01-30"},{"k": "IWN-3345", "s": "NOTA FISCAL - LAB BIOCLÍNICA - 6189", "m": "Nota Fiscal", "h": 5.57, "r": "2026-01-29"},{"k": "IWN-3423", "s": "INTEGRAÇÃO HP - UNIDADE FILIAL - Lab Pamer", "m": "Apoio HP", "h": 1.0, "r": "2026-01-28"},{"k": "IWN-3420", "s": "ANALISE INTERLACs - BIOVIDA - 10103", "m": "Interlac", "h": 0.5, "r": "2026-01-28"},{"k": "IWN-3316", "s": "INTERLAC - VYTTRA DIAGNOSTICOS - 5365", "m": "Interlac", "h": 2.95, "r": "2026-01-28"},{"k": "IWN-3290", "s": "INTERLAC - MEGAENSAIO - 10053", "m": "Interlac", "h": 16.98, "r": "2026-01-22"},{"k": "IWN-3374", "s": "INTERLAC - LAB ELION - 2959", "m": "Interlac", "h": 4.0, "r": "2026-01-22"},{"k": "IWN-1022", "s": "LAB LINUS PAULING - 1702 - Stock", "m": "Stock Module", "h": 3.93, "r": "2026-01-19"},{"k": "IWN-914", "s": "BIOEXATA - 5136 - Stock Module", "m": "Stock Module", "h": 4.78, "r": "2026-01-19"},{"k": "IWN-3150", "s": "AUTORIZAÇÃO ONLINE UNIMED HRP - LABORMINAS", "m": "Autorização Online", "h": 6.27, "r": "2026-01-15"},{"k": "IWN-3361", "s": "Cabo serial - Lisardo & Nicolato - 317", "m": "Interlac", "h": 2.0, "r": "2026-01-15"},{"k": "IWN-3332", "s": "LAB CITO-CENTER-HOSP SAO PAULO - 2158 - Interlac", "m": "Interlac", "h": 12.5, "r": "2026-01-12"},{"k": "IWN-2284", "s": "JCA + SAUDE - 10070 - IMPLANTAÇÃO", "m": "Autolac Cloud", "h": 91.62, "r": "2026-01-09"},{"k": "IWN-3320", "s": "AUTORIZAÇÃO ONLINE ORIZON - ANACLIN - 2430", "m": "Autorização Online", "h": 35.35, "r": "2026-01-09"},{"k": "IWN-3155", "s": "INTERLAC - MULTIMED - 5182", "m": "Interlac", "h": 4.33, "r": "2026-01-08"},{"k": "IWN-3327", "s": "INTERLAC - LAB FRANCISMAR MOREIRA - 3608", "m": "Interlac", "h": 9.75, "r": "2026-01-08"},{"k": "IWN-1007", "s": "EXAME ANÁLISES CLÍNICAS - 216 - Stock", "m": "Estoque", "h": 4.63, "r": "2026-01-07"},{"k": "IWN-3181", "s": "B2B HP - PAMER LABORATORIO - 3747", "m": "Apoio HP", "h": 67.5, "r": "2026-01-07"},{"k": "IWN-3140", "s": "LAB AN CLINICAS DR AURELIO - 3123 - Interlac", "m": "Interlac", "h": 7.58, "r": "2026-01-07"},{"k": "IWN-3322", "s": "INTERLAC - LAB CLINICO PREVENCAO - 10028", "m": "Interlac", "h": 8.17, "r": "2025-12-31"},{"k": "IWN-1433", "s": "LAB PASTEUR - 791 - Finance Module", "m": "Financeiro", "h": 1.45, "r": "2025-12-30"},{"k": "IWN-3304", "s": "INTERLAC - GLAB GUARAPARI - 7201", "m": "Interlac", "h": 5.5, "r": "2025-12-30"},{"k": "IWN-3134", "s": "Lab Analise - 5292 - Fila de atendimento", "m": "Fila de atendimento", "h": 10.35, "r": "2025-12-29"},{"k": "IWN-3300", "s": "INTERLAC - LAB DR AURELIO", "m": "Interlac", "h": 11.5, "r": "2025-12-26"},{"k": "IWN-1942", "s": "Apoio CS - Financeiro - HUMANA ANALISES - 3201", "m": "Financeiro", "h": 21.5, "r": "2025-12-23"},{"k": "IWN-1943", "s": "Apoio CS - Estoque - HUMANA ANALISES - 3201", "m": "Estoque", "h": 1.42, "r": "2025-12-23"},{"k": "IWN-1944", "s": "Apoio CS - Financeiro - LAB.GONTIJO - 970", "m": "Financeiro", "h": 10.3, "r": "2025-12-23"},{"k": "IWN-1261", "s": "BIOOS SAÚDE INTEGRADA - 10088 - FINANCEIRO", "m": "Financeiro", "h": 0.0, "r": "2025-12-23"},{"k": "IWN-972", "s": "BIOOS SAÚDE INTEGRADA - 10088 - ESTOQUE", "m": "Estoque", "h": 0.42, "r": "2025-12-23"},{"k": "IWN-3306", "s": "LAUDO ILIMITADO - UNIDADE DE BIOANALISE - 407", "m": "Laudos Ilimitado", "h": 7.73, "r": "2025-12-22"},{"k": "IWN-3138", "s": "UNIRAD 6748 - Interlacs", "m": "Interlac", "h": 15.82, "r": "2025-12-18"},{"k": "IWN-3282", "s": "SEMEC 3351 - Autolac Cloud Migration", "m": "Migração - Autolac Cloud", "h": 28.75, "r": "2025-12-17"},{"k": "IWN-3249", "s": "NOTA FISCAL - GLAB GUARAPARI - 7201", "m": "Nota Fiscal", "h": 3.77, "r": "2025-12-16"},{"k": "IWN-3139", "s": "Lab Linhares - 3138 - Interlac", "m": "Interlac", "h": 31.0, "r": "2025-12-15"},{"k": "IWN-3241", "s": "CABO SERIAL - PENTRA 60 - CENTRO DIAG", "m": "Confecção de Cabo", "h": 1.0, "r": "2025-12-12"},{"k": "IWN-1661", "s": "LAB RIBEIRO CARVALHO - 462 - Configuração SOC", "m": "Integrações", "h": 0.67, "r": "2025-12-11"},{"k": "IWN-3166", "s": "CLINICA GERAL BIOANALISES - 1273 - Interlac", "m": "Interlac", "h": 6.0, "r": "2025-12-11"},{"k": "IWN-3169", "s": "INTERLAC - IDESC - 3671", "m": "Interlac", "h": 5.88, "r": "2025-12-10"},{"k": "IWN-3126", "s": "Monsenhor Messias 2745 - Fila de Atendimento", "m": "Fila de atendimento", "h": 0.17, "r": "2025-12-10"},{"k": "IWN-1377", "s": "CONECTLAB - 10004 - Finance Module", "m": "Financeiro", "h": 0.0, "r": "2025-12-10"},{"k": "IWN-949", "s": "CONECTLAB - 10004 - Stock Module", "m": "Stock Module", "h": 0.23, "r": "2025-12-10"},{"k": "IWN-3136", "s": "LAB CITO-CENTER-HOSP SAO PAULO - 2158 - Interlac", "m": "Interlac", "h": 19.02, "r": "2025-12-09"},{"k": "IWN-1286", "s": "LAB LINUS PAULING - 1702 - Finance Module", "m": "Finance Module", "h": 0.57, "r": "2025-12-05"},{"k": "IWN-3173", "s": "ESTOQUE - LAB KLETT", "m": "Estoque", "h": 0.5, "r": "2025-12-04"},{"k": "IWN-3142", "s": "Interlac - VYTTRA (Hosp Ribeirão)", "m": "Interlac", "h": 8.75, "r": "2025-12-04"},{"k": "IWN-3125", "s": "BIOMED 7193 - Interlac Labmax Plenno", "m": "Interlac", "h": 5.42, "r": "2025-11-26"},{"k": "IWN-1995", "s": "LABORBRAZ - 857 - FILA DE ATENDIMENTO", "m": "Fila de atendimento", "h": 1.5, "r": "2025-11-19"},{"k": "IWN-1100", "s": "LABORMONTE - 10066 - Stock Module", "m": "Stock Module", "h": 2.8, "r": "2025-11-19"},{"k": "IWN-1492", "s": "LAB AN CLINICAS FLOR - 10093 - Apoio HP", "m": "Apoio HP", "h": 6.0, "r": "2025-10-15"},{"k": "IWN-2334", "s": "LARBOS - 2708 - AUTORIZAÇÃO ONLINE", "m": "Autorização Online", "h": 11.38, "r": "2025-10-17"},{"k": "IWN-561", "s": "LABIMEDI - 4269 - CLOUD", "m": "Migração - Autolac Cloud", "h": 31.5, "r": "2025-10-22"},{"k": "IWN-1891", "s": "CLINICA PINHEIRO - 5277 - FILA DE ATENDIMENTO", "m": "Fila de atendimento", "h": 0.0, "r": "2025-10-23"},{"k": "IWN-2763", "s": "Integração Amplum - LAB.GONTIJO", "m": "Integrações", "h": 5.27, "r": "2025-10-27"},{"k": "IWN-577", "s": "EXAME MEDICINA LABORATORIAL - 5377 - CLOUD", "m": "Migração - Autolac Cloud", "h": 45.63, "r": "2025-10-30"},{"k": "IWN-2765", "s": "LABORMONTE - 10066 - Finance Module", "m": "Financeiro", "h": 2.37, "r": "2025-10-30"},{"k": "IWN-1447", "s": "LAB SPINA MENDES - 4602 - Finance Module", "m": "Financeiro", "h": 2.4, "r": "2025-10-30"},{"k": "IWN-2336", "s": "BIOLAB - 4656 - FILA DE ATENDIMENTO", "m": "Fila de atendimento", "h": 27.02, "r": "2025-10-31"},{"k": "IWN-1945", "s": "Apoio CS - Estoque - LAB.GONTIJO - 970", "m": "Estoque", "h": 1.65, "r": "2025-11-03"},{"k": "IWN-3045", "s": "VAZLAB - 10098 - NOTA FISCAL", "m": "Nota Fiscal", "h": 2.0, "r": "2025-11-06"},{"k": "IWN-1120", "s": "SENSUS MEDICINA LAB - 10062 - Stock", "m": "Stock Module", "h": 0.28, "r": "2025-11-10"},{"k": "IWN-1203", "s": "IMUNIZAR - 10096 - Finance Module", "m": "Finance Module", "h": 0.83, "r": "2025-11-10"},{"k": "IWN-2785", "s": "LAB GLAB - 7201 - Finance Module", "m": "Financeiro", "h": 1.75, "r": "2025-11-10"},{"k": "IWN-1108", "s": "CELULA DIAGNOSTICOS - 10087 - Stock", "m": "Stock Module", "h": 1.72, "r": "2025-11-10"},{"k": "IWN-2282", "s": "LARBOS - 2708 - AUTORIZAÇÃO ONLINE", "m": "Autorização Online", "h": 2.62, "r": "2025-11-11"},{"k": "IWN-2331", "s": "LAB O POSITIVO - 3237 - AUTORIZADOR UNIMED", "m": "Autorização Online", "h": 6.87, "r": "2025-11-11"},{"k": "IWN-1937", "s": "Kualiz Automação - LAB GLAB - 7201", "m": "Kualiz Automação", "h": 3.5, "r": "2025-11-12"},{"k": "IWN-1140", "s": "CENTRO HEMATOLOGIA DRA SUZANA - 4509 - Stock", "m": "Stock Module", "h": 1.78, "r": "2025-11-19"}];
 const TM_JIRA = 'https://wmi-solutions.atlassian.net/browse/';
 
 function tmGetMonth(d){return d?d.substring(0,7):'N/A'}
@@ -672,9 +604,7 @@ function tmProcess(data,fm,fmod){
   f.forEach(d=>{if(!mods[d.m])mods[d.m]=[];mods[d.m].push(d)});
   return Object.entries(mods).map(([mod,items])=>{
     const t=items.reduce((s,i)=>s+i.h,0);
-    const nz=items.filter(i=>i.h>=1).map(i=>i.h);
-    const minH=nz.length?Math.round(Math.min(...nz)*100)/100:null;
-    return{module:mod,count:items.length,totalHours:Math.round(t*100)/100,avgHours:Math.round((t/items.length)*100)/100,minHours:minH,items:items.sort((a,b)=>(b.r||'').localeCompare(a.r||''))}
+    return{module:mod,count:items.length,totalHours:Math.round(t*100)/100,avgHours:Math.round((t/items.length)*100)/100,items:items.sort((a,b)=>(b.r||'').localeCompare(a.r||''))}
   }).sort((a,b)=>b.avgHours-a.avgHours);
 }
 
@@ -725,18 +655,16 @@ function renderTempoModulos(){
       }
     }
 
-    const minCell=(mod.minHours===null||mod.minHours===undefined)?'<span style="color:var(--color-text-secondary)">—</span>':`<span style="color:var(--color-cyan-400);font-weight:600">${mod.minHours}h</span>`;
     rows+=`<tr class="tm-expand" data-mod="${mod.module}" style="cursor:pointer">
       <td><strong>${mod.module}</strong></td><td>${mod.count}</td>
       <td><div style="position:relative"><div style="position:absolute;left:0;top:50%;transform:translateY(-50%);height:20px;width:${barW}%;background:var(--color-brand);opacity:0.15;border-radius:4px"></div><span style="position:relative;font-weight:600">${mod.avgHours}h</span></div></td>
-      <td>${minCell}</td>
       <td>${mod.totalHours}h</td><td>${delta}</td><td>${badge}</td></tr>`;
     mod.items.forEach(item=>{
-      rows+=`<tr class="tm-detail" data-parent="${mod.module}" style="display:none"><td colspan="7" style="padding-left:2rem;font-size:12px;color:var(--color-text-secondary)"><a href="${TM_JIRA}${item.k}" target="_blank" style="color:var(--color-brand)">${item.k}</a> — ${item.s.substring(0,60)} — <strong>${item.h}h</strong> — ${item.r||'Sem data'}</td></tr>`;
+      rows+=`<tr class="tm-detail" data-parent="${mod.module}" style="display:none"><td colspan="6" style="padding-left:2rem;font-size:12px;color:var(--color-text-secondary)"><a href="${TM_JIRA}${item.k}" target="_blank" style="color:var(--color-brand)">${item.k}</a> — ${item.s.substring(0,60)} — <strong>${item.h}h</strong> — ${item.r||'Sem data'}</td></tr>`;
     });
   });
 
-  document.getElementById('tempoMainTable').innerHTML=`<div class="table-wrapper"><table><thead><tr><th>Módulo</th><th>Qtd Epics</th><th>Tempo Médio</th><th>Tempo Mínimo</th><th>Total</th><th>Var. Mês Ant.</th><th>Classificação</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  document.getElementById('tempoMainTable').innerHTML=`<div class="table-wrapper"><table><thead><tr><th>Módulo</th><th>Qtd Epics</th><th>Tempo Médio</th><th>Total</th><th>Var. Mês Ant.</th><th>Classificação</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 
   // Monthly comparison
   const allMods=[...new Set(TM_RAW.map(d=>d.m))].sort();
@@ -764,23 +692,18 @@ function renderTempoModulos(){
   });
 }
 
-// Popula filtros de Tempo Módulos (chamado após cada carga de dados)
-function initTempoModulos(){
-  const sel=document.getElementById('tmFilterMonth');
-  const sel2=document.getElementById('tmFilterModule');
-  if(!sel||!sel2)return;
-  const prevM=sel.value,prevMod=sel2.value;
-  sel.length=1;sel2.length=1;
+// Populate TM filters
+(function(){
   const ms=[...new Set(TM_RAW.filter(d=>d.r).map(d=>tmGetMonth(d.r)))].sort().reverse();
+  const sel=document.getElementById('tmFilterMonth');
   ms.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=tmMonthLabel(m);sel.appendChild(o)});
   const mods=[...new Set(TM_RAW.map(d=>d.m))].sort();
+  const sel2=document.getElementById('tmFilterModule');
   mods.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;sel2.appendChild(o)});
-  if([...sel.options].some(o=>o.value===prevM))sel.value=prevM;
-  if([...sel2.options].some(o=>o.value===prevMod))sel2.value=prevMod;
   sel.onchange=renderTempoModulos;
   sel2.onchange=renderTempoModulos;
   renderTempoModulos();
-}
+})();
 
 
 // ─── Init ──────────────────────────────────────
