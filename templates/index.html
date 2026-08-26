@@ -143,6 +143,34 @@ tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
   .tabs{overflow-x:auto;flex-wrap:nowrap}
   .tab{white-space:nowrap;font-size:0.625rem;padding:0.5rem 0.75rem}
 }
+
+/* Capacity bars */
+.capbar-wrap{background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;padding:1.25rem 1.5rem}
+.capbar-det{border-bottom:1px solid var(--glass-border);padding:6px 0}
+.capbar-det:last-child{border-bottom:none}
+.capbar-row{display:grid;grid-template-columns:170px 1fr 210px;align-items:center;gap:16px;cursor:pointer;list-style:none;padding:6px 0}
+.capbar-row::-webkit-details-marker{display:none}
+.capbar-det>summary::before{content:'\25B8';color:var(--color-gray-500);margin-right:2px;font-size:0.8rem}
+.capbar-det[open]>summary::before{content:'\25BE'}
+.capbar-name{font-weight:600;font-size:0.95rem}
+.capbar-track{position:relative;height:24px;background:rgba(255,255,255,.05);border:1px solid var(--glass-border);border-radius:8px}
+.capbar-fill{height:100%;border-radius:8px 0 0 8px;transition:width 1s ease}
+.capbar-line{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--color-cyan-glow);box-shadow:0 0 6px var(--color-cyan-glow)}
+.capbar-pct{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:0.72rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.capbar-meta{font-size:0.78rem;color:var(--color-gray-400);text-align:right}
+.dem-wrap{margin:4px 0 10px 24px;padding:8px 14px;background:rgba(255,255,255,.02);border-left:2px solid var(--glass-border);border-radius:0 8px 8px 0}
+.dem-row{display:grid;grid-template-columns:90px 1fr auto 60px;align-items:center;gap:12px;padding:5px 0;font-size:0.8rem;border-bottom:1px dashed rgba(255,255,255,.05)}
+.dem-row:last-child{border-bottom:none}
+.dem-upsell{opacity:.8}
+.dem-key{color:var(--color-blue-400);text-decoration:none;font-weight:600;font-size:0.75rem}
+.dem-key:hover{text-decoration:underline}
+.dem-name{color:var(--color-gray-300)}
+.dem-porte{color:var(--color-gray-500);font-size:0.68rem;border:1px solid var(--glass-border);border-radius:4px;padding:1px 5px;margin-left:4px}
+.dem-h{text-align:right;font-weight:700;color:#fff}
+.dem-note{font-size:0.78rem;color:var(--color-gray-500);padding:2px 0 6px}
+.capbar-legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--glass-border);font-size:0.75rem;color:var(--color-gray-400)}
+.lg-dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+@media(max-width:760px){.capbar-row{grid-template-columns:1fr;gap:4px}.capbar-meta{text-align:left}.dem-row{grid-template-columns:70px 1fr 50px}.dem-prazo{display:none}}
 </style>
 </head>
 <body>
@@ -208,6 +236,8 @@ tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
 
 <!-- TAB: BACKLOG DETALHADO -->
 <div class="tab-panel" id="panel-backlog">
+  <div class="section-header"><div class="section-number">Volume</div><h2>Volume do Backlog</h2></div>
+  <div class="kpi-grid" id="capacityKpis"></div>
   <div class="section-header"><div class="section-number">Backlog Novo</div><h2>Épicos Novos em Aberto</h2></div>
   <div id="backlogTable"></div>
   <div class="section-header" style="margin-top:2rem"><div class="section-number">Fila Yasmin</div><h2>Épicos sem Implantador</h2></div>
@@ -216,8 +246,9 @@ tbody td{padding:0.75rem 1rem;color:var(--color-gray-300)}
 
 <!-- TAB: CAPACITY -->
 <div class="tab-panel" id="panel-capacity">
-  <div class="kpi-grid" id="capacityKpis"></div>
-  <div class="section-header"><div class="section-number">Capacity</div><h2>Capacity por Implantador</h2></div>
+  <div class="section-header"><div class="section-number">Capacity</div><h2>Ocupação da Agenda no Trimestre</h2></div>
+  <div id="capacityBars"></div>
+  <div class="section-header" style="margin-top:2rem"><div class="section-number">Detalhe</div><h2>Capacity por Implantador</h2></div>
   <div id="capacityTable"></div>
 </div>
 
@@ -317,6 +348,7 @@ function renderAll() {
   renderBacklogTable();
   renderFilaYasmin();
   renderCapacityKPIs();
+  renderCapacityBars();
   renderCapacityTable();
 }
 
@@ -527,9 +559,7 @@ function renderBacklogTable() {
 
 // ─── Fila Yasmin ───────────────────────────────
 function renderFilaYasmin() {
-  const yasmEpics = DATA.filaYasmin || [];
-  const totalYasmHoras = yasmEpics.reduce((s,e) => s + (parseFloat(e.estimatedHours) || 0), 0);
-  const rows = yasmEpics.map(e => `
+  const rows = (DATA.filaYasmin || []).map(e => `
     <tr>
       <td class="td-key">${e.key}</td>
       <td class="td-main">${e.summary.substring(0,50)}${e.summary.length > 50 ? '...' : ''}</td>
@@ -547,11 +577,6 @@ function renderFilaYasmin() {
       <table>
         <thead><tr><th>Key</th><th>Épico</th><th>Tipo</th><th>Status</th><th>Horas Est.</th><th>Criado</th><th>Due Date</th></tr></thead>
         <tbody>${rows}</tbody>
-        <tfoot><tr style="font-weight:700;border-top:2px solid var(--color-cyan-400);background:rgba(0,200,255,.06)">
-          <td colspan="4" style="text-align:right;padding-right:12px">TOTAL</td>
-          <td class="td-right" style="color:var(--color-cyan-400);font-size:1.05em">${totalYasmHoras.toFixed(1)}h</td>
-          <td colspan="2"></td>
-        </tr></tfoot>
       </table>
     </div>
   `;
@@ -584,26 +609,107 @@ function renderCapacityKPIs() {
   `;
 }
 
+function renderCapacityBars() {
+  const caps = (DATA.backlogSummary && DATA.backlogSummary.capacityQuarter) || 480;
+  const capMes = (DATA.backlogSummary && DATA.backlogSummary.capacityMonthly) || 160;
+  const JIRA = 'https://wmi-solutions.atlassian.net/browse/';
+  const el = document.getElementById('capacityBars');
+  if (!el) return;
+  const techs = (DATA.capacityTable || []).slice().sort((a,b)=> b.totalRestante - a.totalRestante);
+  if (!techs.length) { el.innerHTML = ''; return; }
+  const maxTot = Math.max(caps, ...techs.map(t=>t.totalRestante));
+  const scale = maxTot * 1.06;
+  const linePct = caps / scale * 100;
+  const prazoMap = {overdue:'badge-error', warning:'badge-warning', paused:'badge-neutral', noporte:'badge-neutral', ok:'badge-success'};
+  const rowsHtml = techs.map((t, idx) => {
+    const ocup = t.ocupacao;
+    const saldo = caps - t.totalRestante;
+    const w = Math.min(t.totalRestante / scale * 100, 100);
+    let col, bg;
+    if (ocup > 100) { col='linear-gradient(90deg,#DC2626,#EF4444)'; bg='badge-error'; }
+    else if (ocup > 50) { col='linear-gradient(90deg,#D97706,#F59E0B)'; bg='badge-warning'; }
+    else { col='linear-gradient(90deg,#059669,#10B981)'; bg='badge-success'; }
+    const saldoTxt = saldo >= 0
+      ? `<span style="color:var(--color-success)">+${saldo.toFixed(0)}h livres</span>`
+      : `<span style="color:var(--color-error)">${saldo.toFixed(0)}h acima</span>`;
+    const novos = (DATA.backlogNovo || [])
+      .filter(e => e.assignee === t.name)
+      .sort((a,b)=> (b.restante||0) - (a.restante||0));
+    let dem = novos.map(e => {
+      const pz = e.statusPrazo ? `<span class="badge ${prazoMap[e.statusPrazoType]||'badge-neutral'}" style="font-size:0.58rem">${e.statusPrazo}</span>` : '';
+      const nome = (e.summary||'').trim().replace(/\s+/g,' ').slice(0,42);
+      return `<div class="dem-row">
+        <a class="dem-key" href="${JIRA}${e.key}" target="_blank">${e.key}</a>
+        <span class="dem-name">${nome} <span class="dem-porte">${e.porte||'—'}</span></span>
+        <span class="dem-prazo">${pz}</span>
+        <span class="dem-h">${(e.restante||0).toFixed(0)}h</span></div>`;
+    }).join('');
+    const um = /(\d+)U/.exec(t.epicsAbertos || '');
+    const ucount = um ? um[1] : '0';
+    dem += `<div class="dem-row dem-upsell">
+      <span class="dem-key" style="color:var(--color-gray-500)">Upsell</span>
+      <span class="dem-name">${ucount} demanda(s) de upsell em aberto</span>
+      <span class="dem-prazo"></span>
+      <span class="dem-h">${(t.horasUpsell||0).toFixed(0)}h</span></div>`;
+    if (!novos.length) dem = `<div class="dem-note">Sem demandas Novo — carga 100% upsell.</div>` + dem;
+    const openAttr = idx === 0 ? ' open' : '';
+    return `<details class="capbar-det"${openAttr}>
+      <summary class="capbar-row">
+        <div class="capbar-name">${t.name} <span class="badge ${bg}" style="margin-left:6px;font-size:0.6rem">${t.risco}</span></div>
+        <div class="capbar-track"><div class="capbar-fill" style="width:${w.toFixed(1)}%;background:${col}"></div>
+          <div class="capbar-line" style="left:${linePct.toFixed(1)}%"></div>
+          <span class="capbar-pct">${ocup.toFixed(0)}%</span></div>
+        <div class="capbar-meta">${t.totalRestante.toFixed(0)}h / ${caps}h &middot; ${saldoTxt}</div>
+      </summary>
+      <div class="dem-wrap">${dem}</div>
+    </details>`;
+  }).join('');
+  el.innerHTML = `<div class="capbar-wrap">${rowsHtml}
+    <div class="capbar-legend">
+      <span><span class="lg-dot" style="background:#10B981"></span>Baixo (&lt;50%)</span>
+      <span><span class="lg-dot" style="background:#F59E0B"></span>Médio (50–100%)</span>
+      <span><span class="lg-dot" style="background:#EF4444"></span>Alto (&gt;100%)</span>
+      <span><span class="lg-dot" style="background:var(--color-cyan-glow)"></span>Capacidade (${caps}h &middot; ${capMes}h/mês)</span>
+    </div>
+  </div>`;
+}
+
 // ─── Capacity Table ────────────────────────────
 function renderCapacityTable() {
-  const rows = (DATA.capacityTable || []).map(t => `
+  const dispTrim = (DATA.backlogSummary && DATA.backlogSummary.capacityQuarter) || 480;
+  const capMes = (DATA.backlogSummary && DATA.backlogSummary.capacityMonthly) || 160;
+  const rows = (DATA.capacityTable || []).map(t => {
+    const saldo = dispTrim - t.totalRestante;
+    const saldoCor = saldo >= 0 ? 'var(--color-success)' : 'var(--color-error)';
+    const barCls = t.ocupacao > 100 ? 'danger' : t.ocupacao > 50 ? 'warning' : 'success';
+    return `
     <tr>
       <td class="td-main">${t.name}</td>
       <td>${t.epicsAbertos}</td>
       <td class="td-right">${t.horasNovo}h</td>
       <td class="td-right">${t.horasUpsell}h</td>
       <td class="td-right" style="font-weight:600">${t.totalRestante}h</td>
+      <td class="td-right" style="color:var(--color-gray-400)">${dispTrim}h</td>
+      <td class="td-right" style="font-weight:600;color:${saldoCor}">${saldo >= 0 ? '+' : ''}${saldo.toFixed(0)}h</td>
       <td class="td-right">${t.meses}</td>
       <td>${t.novosSimultaneos}</td>
-      <td class="td-right">${t.ocupacao}%</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;min-width:120px">
+          <div class="progress-track" style="flex:1;height:6px"><div class="progress-fill ${barCls}" style="width:${Math.min(t.ocupacao, 100)}%"></div></div>
+          <span style="font-size:0.75rem;font-weight:600;min-width:40px;text-align:right">${t.ocupacao}%</span>
+        </div>
+      </td>
       <td>${riskBadge(t.risco)}</td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
   document.getElementById('capacityTable').innerHTML = `
     <div class="table-wrapper">
-      <div class="table-header"><span class="table-title">Capacity por Implantador</span></div>
+      <div class="table-header">
+        <span class="table-title">Capacity por Implantador</span>
+        <span style="font-size:0.7rem;color:var(--color-gray-500)">Base: ${capMes}h úteis/mês · ${dispTrim}h por trimestre</span>
+      </div>
       <table>
-        <thead><tr><th>Implantador</th><th>Épicos Abertos</th><th>Horas Novo</th><th>Horas Upsell</th><th>Total Restante</th><th>Meses</th><th>Novos Simult.</th><th>Ocupação</th><th>Risco</th></tr></thead>
+        <thead><tr><th>Implantador</th><th>Épicos Abertos</th><th>Horas Novo</th><th>Horas Upsell</th><th>Comprometido</th><th>Disponível (trim.)</th><th>Saldo</th><th>Meses</th><th>Novos Simult.</th><th>Ocupação</th><th>Risco</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
