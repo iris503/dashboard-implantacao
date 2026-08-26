@@ -560,7 +560,7 @@ def detect_porte(summary: str) -> Tuple[str, int, int]:
 
 def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str) -> Dict:
     """Generate backlog-specific data for capacity planning"""
-    CAPACITY_MONTHLY = 140
+    CAPACITY_MONTHLY = 160  # horas uteis/mes por implantador (validado por Iris 08/2026); trimestre = *3
 
     # Separate novo and upsell epics
     novo_epics = [e for e in epics if classify_epic(e) == 'Novo']
@@ -587,7 +587,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
 
         # Detect porte
         porte, meta, days = detect_porte(summary)
-        restante = max(meta - gasto, 10) if gasto < meta else max(meta - gasto, 10)
+        restante = max(meta - gasto, 10) if gasto < meta else 0
         progresso = (gasto / meta) if meta > 0 else 0
 
         # Calculate prazo — prioriza Data Limite (duedate) do Jira
@@ -738,7 +738,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         novos_str = f"{novos_em_andamento} em andamento" if novos_em_andamento > 0 else "0"
 
         ocupacao = (total_rest / (CAPACITY_MONTHLY * 3)) * 100 if total_rest > 0 else 0
-        risco = 'ALTO' if ocupacao > 100 else 'MÃÂÃÂDIO' if ocupacao > 50 else 'BAIXO'
+        risco = 'ALTO' if ocupacao > 100 else 'MÉDIO' if ocupacao > 50 else 'BAIXO'
 
         capacity_table.append({
             'name': tech_name,
@@ -829,7 +829,9 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             'yasminEpics': len(fila_yasmin),
             'yasminHours': round(yasmin_hours, 1),
             'yasminPercent': yasmin_pct,
-            'backlogMonths': round(backlog_months, 1)
+            'backlogMonths': round(backlog_months, 1),
+            'capacityMonthly': CAPACITY_MONTHLY,
+            'capacityQuarter': CAPACITY_MONTHLY * 3
         },
         'capacityTable': capacity_table,
         'backlogNovo': novo_open,
@@ -986,7 +988,7 @@ def generate_mock_data() -> Dict:
         'capacityTable': [
             {'name': 'Anderson', 'epicsAbertos': '7 (4N + 3U)', 'horasNovo': 540.0, 'horasUpsell': 6.0, 'totalRestante': 546.0, 'meses': 3.9, 'novosSimultaneos': '2 em andamento', 'ocupacao': 130.0, 'risco': 'ALTO'},
             {'name': 'Luiz', 'epicsAbertos': '4 (3N + 1U)', 'horasNovo': 537.0, 'horasUpsell': 2.0, 'totalRestante': 539.0, 'meses': 3.9, 'novosSimultaneos': '3 em andamento', 'ocupacao': 128.0, 'risco': 'ALTO'},
-            {'name': 'Jorge', 'epicsAbertos': '8 (3N + 5U)', 'horasNovo': 326.0, 'horasUpsell': 22.0, 'totalRestante': 348.0, 'meses': 2.5, 'novosSimultaneos': '3 em andamento', 'ocupacao': 83.0, 'risco': 'MÃÂÃÂDIO'},
+            {'name': 'Jorge', 'epicsAbertos': '8 (3N + 5U)', 'horasNovo': 326.0, 'horasUpsell': 22.0, 'totalRestante': 348.0, 'meses': 2.5, 'novosSimultaneos': '3 em andamento', 'ocupacao': 83.0, 'risco': 'MÉDIO'},
         ],
         'backlogNovo': [
             {'key': 'IWN-826', 'summary': 'DRA TÃÂÃÂNIA', 'assignee': 'Nino', 'porte': 'Large', 'status': 'Em andamento', 'gasto': 483.9, 'meta': 400.0, 'restante': 40.0, 'progresso': 1.21, 'criacao': '2025-10-10', 'prazoWmi': '2026-02-07', 'statusPrazo': '+72 dias', 'statusPrazoType': 'overdue'},
