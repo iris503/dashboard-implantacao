@@ -18,7 +18,7 @@ from contextlib import asynccontextmanager
 
 # ─── Import business logic from the working script ─────────
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
-from generate_dashboard_v3 import JiraClient, generate_dashboard_data
+from generate_dashboard_v3 import JiraClient, generate_dashboard_data, generate_tempo_modulos
 
 # ─── Logging ───────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -46,6 +46,8 @@ async def refresh_data():
         client = JiraClient(JIRA_EMAIL, JIRA_API_TOKEN, JIRA_BASE_URL)
         epics = await asyncio.to_thread(client.get_epics)
         data = await asyncio.to_thread(generate_dashboard_data, epics)
+        module_epics = await asyncio.to_thread(client.get_module_epics)
+        data['tempoModulos'] = generate_tempo_modulos(module_epics)
         async with _cache_lock:
             _dashboard_cache = data
         logger.info(f"Cache updated: {len(epics)} epics, {len(data.get('technicians', []))} technicians")
