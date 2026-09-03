@@ -21,7 +21,7 @@ JIRA_API_TOKEN = os.getenv('JIRA_API_TOKEN')
 JIRA_BASE_URL = os.getenv('JIRA_BASE_URL')
 
 IMPLEMENTERS = ['Jessica', 'Daniel', 'Nino', 'Jorge', 'Anderson', 'Luiz', 'Fernanda']
-IMPLEMENTERS_NOVO = ['Fernanda', 'Nino', 'Jorge', 'Anderson']  # Só esses recebem cliente Novo
+IMPLEMENTERS_NOVO = ['Fernanda', 'Nino', 'Jorge', 'Anderson', 'Luiz']  # Recebem cliente Novo (Luiz incluido 26/08/2026)
 EXCLUDE_ASSIGNEES = {'Yasmin', 'Michael', 'Iris', 'Fabio'}
 
 # Status mappings
@@ -114,37 +114,6 @@ class JiraClient:
                 print(f"Error fetching epics: {e}", file=sys.stderr)
                 raise
 
-        return epics
-
-    def get_module_epics(self) -> List[Dict]:
-        """Aba Tempo Modulos (ISOLADO — nao alimenta as outras abas).
-        Epics CONCLUIDOS criados desde 2025-12-01. Filtra o modulo em codigo."""
-        epics = []
-        max_results = 100
-        next_page_token = None
-        jql = ('project = IWN AND issuetype = Epic AND '
-               'statusCategory = Done AND created >= 2025-12-01')
-        fields = ['summary', 'status', 'created', 'resolutiondate',
-                  'aggregatetimespent', 'customfield_10124']
-        while True:
-            try:
-                url = f"{self.base_url}/rest/api/3/search/jql"
-                params = {'jql': jql, 'maxResults': max_results, 'fields': ','.join(fields)}
-                if next_page_token:
-                    params['nextPageToken'] = next_page_token
-                response = requests.get(url, headers=self.headers, params=params, timeout=30)
-                response.raise_for_status()
-                data = response.json()
-                issues = data.get('issues', [])
-                if not issues:
-                    break
-                epics.extend(issues)
-                next_page_token = data.get('nextPageToken')
-                if not next_page_token:
-                    break
-            except requests.exceptions.RequestException as e:
-                print(f"Error fetching module epics: {e}", file=sys.stderr)
-                raise
         return epics
 
     def get_epic_worklogs(self, issue_key: str) -> List[Dict]:
@@ -822,7 +791,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         })
 
     # ── Sugestão de implantador para próximo cliente Novo ──
-    # Só IMPLEMENTERS_NOVO entram no ranking (Daniel, Jessica, Luiz = só Upsell)
+    # Só IMPLEMENTERS_NOVO entram no ranking (Daniel, Jessica = só Upsell)
     active_names = {t['name'] for t in capacity_table}
     novo_ranking = []
     for impl_name in IMPLEMENTERS_NOVO:
@@ -870,50 +839,6 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         'backlogInsights': insights,
         'sugestaoImplantador': sugestao
     }
-
-
-MODULE_SINCE = '2025-12-01'  # aba Tempo Modulos: demandas criadas a partir desta data
-
-
-def _extract_upsell_module(fields: Dict) -> Optional[str]:
-    """Retorna o valor do campo Upsell Module (customfield_10124) ou None."""
-    cf = fields.get('customfield_10124')
-    if isinstance(cf, dict):
-        val = cf.get('value')
-        if isinstance(val, str) and val.strip():
-            return val.strip()
-    return None
-
-
-def generate_tempo_modulos(module_epics: List[Dict]) -> List[Dict]:
-    """Tempo por modulo de upsell (aba Tempo Modulos). Regra definida com Iris:
-    epics CRIADOS >= MODULE_SINCE E CONCLUIDOS, com Upsell Module preenchido.
-    Horas = aggregatetimespent (total do epic + filhos). Um item por epic.
-    Recebe a lista ISOLADA de get_module_epics — nao afeta as demais abas."""
-    rows = []
-    for e in module_epics or []:
-        f = e.get('fields', {}) or {}
-        if f.get('status', {}).get('statusCategory', {}).get('key', '') != 'done':
-            continue
-        created = (f.get('created') or '')[:10]
-        if not created or created < MODULE_SINCE:
-            continue
-        summary = f.get('summary', '') or ''
-        if 'template' in summary.lower():
-            continue
-        modulo = _extract_upsell_module(f)
-        if not modulo:
-            continue
-        secs = f.get('aggregatetimespent') or 0
-        rows.append({
-            'k': e.get('key', ''),
-            's': summary,
-            'm': modulo,
-            'h': round(secs / 3600, 2),
-            'r': (f.get('resolutiondate') or '')[:10],
-        })
-    rows.sort(key=lambda d: d.get('r') or '', reverse=True)
-    return rows
 
 
 def generate_dashboard_data(epics: List[Dict]) -> Dict:
