@@ -1071,6 +1071,7 @@ def generate_dashboard_data(epics: List[Dict]) -> Dict:
         'capacityTable': backlog_data['capacityTable'],
         'backlogNovo': backlog_data['backlogNovo'],
         'filaYasmin': backlog_data['filaYasmin'],
+        'upsellAndamento': backlog_data.get('upsellAndamento', []),
         'backlogInsights': backlog_data['backlogInsights'],
         'sugestaoImplantador': backlog_data.get('sugestaoImplantador', {})
     }
