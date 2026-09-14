@@ -32,18 +32,35 @@ STATUS_PENDENTE = {'Tarefas pendentes', 'Escalado'}
 STATUS_WAITING = {'AGUARDANDO CLIENTE'}
 
 # Estimated hours per module (menor média from historical data Jan-Mai/2026)
+# Tempo-padrão por tipo de módulo Upsell = MEDIANA REAL de épicos concluídos no Jira
+# (300 concluídos analisados, set/2026). Validado com Iris. Provisórios: Homologação (1 caso)
+# e Integração SOC (sem histórico, usa peso da SPData).
 MODULE_HOURS = {
-    'Interlac': 4.5,
-    'NF': 3.2,
-    'Upsell': 12.0,
-    'Integração': 24.7,
-    'Cloud': 47.0,
-    'Assinatura': 5.3,
-    'B2B': 12.0,
-    'TAP': 1.5,
+    'Interlac': 6.5,
+    'NF': 4.5,
+    'Autorização Online': 5.0,
+    'B2B': 3.0,
+    'TAP': 2.0,
+    'Módulo Estoque': 5.0,
+    'Módulo Financeiro': 12.0,
+    'Confere': 5.0,
+    'Cloud/Migração': 32.0,
+    'Laudos': 5.5,
+    'Assinatura Digital': 7.0,
+    'Homologação': 6.5,
+    'Monitoramento': 7.0,
+    'Acesso Simultâneo': 0.5,
+    'Kualiz': 4.0,
+    'Fila de Atendimento': 5.5,
+    'Reunião': 1.5,
+    'Projeto': 10.0,
+    'Integração SOC': 50.0,
+    'Integração SPData': 50.0,
+    'Integração API': 7.5,
     'Novo': 100.0,
+    'Outro': 2.0,
 }
-MODULE_DEFAULT_HOURS = 12.0
+MODULE_DEFAULT_HOURS = 2.0
 
 class JiraClient:
     """Client for Jira Cloud REST API"""
@@ -241,45 +258,73 @@ def fetch_q2_hours(client, epics: List[Dict], since_date: str) -> Dict[str, floa
 
     return q2_hours
 def extract_tipo_from_summary(summary: str) -> str:
-    """Extract module/type from epic summary for the unassigned queue table."""
+    """Classifica o tipo de módulo Upsell pelo resumo do épico.
+    Os rótulos retornados batem com as chaves de MODULE_HOURS (tempo-padrão por tipo)."""
     import re
-    s = summary.lower().strip()
+    s = (summary or '').lower().strip()
 
-    # Pattern: "Implementation Upsell - X Module - WMI" or "X Module - WMI"
-    m = re.search(r'(?:implementation\s+upsell\s*-\s*)?([\w\s]+?)\s+module\s*-?\s*wmi', s)
-    if m:
-        mod = m.group(1).strip().title()
-        if 'cloud' in mod.lower():
-            return 'Cloud'
-        return mod
-
-    # Pattern: "Implementation Project Plan" (= Novo)
     if 'implementation project plan' in s:
         return 'Novo'
-
-    # Keyword-based detection
+    if 'homologa' in s:
+        return 'Homologação'
     if 'interlac' in s:
         return 'Interlac'
-    if 'nota fiscal' in s:
+    if 'nota fiscal' in s or re.search(r'\bnf\b', s):
         return 'NF'
-    if re.search(r'integra[çc][ãa]o', s):
-        return 'Integração'
-    if 'tap' in s or 'solicitação de tap' in s or 'solicitacao de tap' in s:
-        return 'TAP'
+    if 'autoriza' in s:
+        return 'Autorização Online'
+    if 'soc ged' in s or 'soc/ged' in s:
+        return 'Integração SOC'
+    if 'spdata' in s:
+        return 'Integração SPData'
+    if re.search(r'integra[çc][ãa]o', s) or 'apoio x apoiado' in s or '(api)' in s or 'syslab' in s:
+        return 'Integração API'
     if 'b2b' in s:
         return 'B2B'
-    if 'fila de atendimento' in s:
-        return 'Fila'
-    if 'treinamento' in s or 'confere' in s:
-        return 'Treinamento'
+    if re.search(r'\btap\b', s) or 'solicitação de tap' in s or 'solicitacao de tap' in s:
+        return 'TAP'
+    if 'assinatura' in s:
+        return 'Assinatura Digital'
+    if 'cloud' in s or 'migration' in s or 'migração' in s or 'migracao' in s:
+        return 'Cloud/Migração'
+    if 'estoque' in s or 'stock module' in s:
+        return 'Módulo Estoque'
+    if 'financeiro' in s or 'finance module' in s:
+        return 'Módulo Financeiro'
+    if 'laudo' in s:
+        return 'Laudos'
+    if 'confere' in s:
+        return 'Confere'
     if 'kualiz' in s:
         return 'Kualiz'
-    if 'assinatura' in s:
-        return 'Assinatura'
-    if 'cloud' in s:
-        return 'Cloud'
+    if 'acesso simult' in s:
+        return 'Acesso Simultâneo'
+    if 'monitoramento' in s:
+        return 'Monitoramento'
+    if 'fila de atendimento' in s:
+        return 'Fila de Atendimento'
+    if 'reuni' in s:
+        return 'Reunião'
+    if 'projeto' in s or 'relat' in s:
+        return 'Projeto'
+    return 'Outro'
 
-    return 'Upsell'
+
+def _epic_spent_hours(epic):
+    return (epic.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600
+
+
+def upsell_remaining_hours(epic):
+    """Horas de backlog que um épico Upsell ainda representa, por tipo de módulo e status.
+    Regra validada com Iris (set/2026): Pausado / Aguardando cliente = 0; senão o
+    tempo-padrão do tipo (MODULE_HOURS, mediana real do histórico) menos o gasto, piso em 0."""
+    fields = epic.get('fields', {})
+    st = (fields.get('status', {}).get('name', '') or '').strip().lower()
+    if st in ('paused', 'pausado') or 'aguardando' in st:
+        return 0.0
+    tipo = extract_tipo_from_summary(fields.get('summary', '') or '')
+    est = MODULE_HOURS.get(tipo, MODULE_DEFAULT_HOURS)
+    return max(est - _epic_spent_hours(epic), 0.0)
 
 
 def classify_epic(epic: Dict) -> str:
@@ -711,26 +756,59 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
                 continue
                 
             estimated = MODULE_HOURS.get(tipo, MODULE_DEFAULT_HOURS)
+            st_l = (status or '').strip().lower()
+            restante_fila = 0.0 if (st_l in ('paused', 'pausado') or 'aguardando' in st_l) else max(estimated - hours, 0)
             fila_yasmin.append({
                 'key': key,
                 'summary': summary,
                 'tipo': tipo,
                 'status': status,
                 'hours': round(hours, 1),
-                'estimatedHours': estimated,
+                'estimatedHours': round(estimated, 1),
+                'restante': round(restante_fila, 1),
                 'criado': created,
                 'dueDate': duedate or '-'
             })
 
     # Calculate summary metrics (only open epics)
     total_novo_restante = sum(e['restante'] for e in novo_open)
+    # Upsell backlog = só os épicos JÁ distribuídos a um implantador (a fila da Yasmin
+    # entra em separado, sem dupla contagem). Em andamento/pendente conta o restante por
+    # tipo de módulo; pausada/aguardando = 0 (regra em upsell_remaining_hours).
     upsell_restante = sum(
-        max(12 - (e.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600, 0)
+        upsell_remaining_hours(e)
         for e in upsell_epics
-        if e.get('fields', {}).get('status', {}).get('statusCategory', {}).get('key', '') != 'done'
+        if extract_implementer_name(e.get('fields', {}).get('assignee'))
+        and extract_implementer_name(e.get('fields', {}).get('assignee')) not in EXCLUDE_ASSIGNEES
     )
-    yasmin_hours = sum(e['estimatedHours'] for e in fila_yasmin)
+    yasmin_hours = sum(e['restante'] for e in fila_yasmin)
     total_restante = total_novo_restante + upsell_restante + yasmin_hours
+
+    # Lista de Demandas em Andamento (Upsell já com implantador) que compõem o backlog.
+    # Diminui sozinha conforme o time entrega (o épico sai de 'Em andamento').
+    upsell_andamento = []
+    for ep in upsell_epics:
+        f = ep.get('fields', {})
+        impl = extract_implementer_name(f.get('assignee'))
+        if not impl or impl in EXCLUDE_ASSIGNEES:
+            continue
+        st = (f.get('status', {}).get('name', '') or '').strip().lower()
+        if 'em andamento' not in st:
+            continue
+        summ = f.get('summary', '') or ''
+        tp = extract_tipo_from_summary(summ)
+        upsell_andamento.append({
+            'key': ep.get('key', ''),
+            'summary': summ,
+            'assignee': impl,
+            'tipo': tp,
+            'status': f.get('status', {}).get('name', ''),
+            'gasto': round(_epic_spent_hours(ep), 1),
+            'estimado': MODULE_HOURS.get(tp, MODULE_DEFAULT_HOURS),
+            'restante': round(upsell_remaining_hours(ep), 1),
+            'dueDate': parse_date(f.get('duedate', '')) or '-'
+        })
+    upsell_andamento.sort(key=lambda x: -x['restante'])
 
     num_techs = len([t for t in technicians_dict.values() if t.get('total', 0) > 0])
     backlog_months = total_restante / (CAPACITY_MONTHLY * max(1, num_techs)) if num_techs > 0 else 0
@@ -752,10 +830,9 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
 
         novo_rest = sum(e['restante'] for e in novo_open if e['assignee'] == tech_name)
         upsell_rest = sum(
-            max(12 - (ep.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600, 0)
+            upsell_remaining_hours(ep)
             for ep in upsell_epics
             if extract_implementer_name(ep.get('fields', {}).get('assignee')) == tech_name
-            and ep.get('fields', {}).get('status', {}).get('statusCategory', {}).get('key', '') != 'done'
         )
         total_rest = novo_rest + upsell_rest
 
@@ -867,6 +944,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         'capacityTable': capacity_table,
         'backlogNovo': novo_open,
         'filaYasmin': fila_yasmin,
+        'upsellAndamento': upsell_andamento,
         'backlogInsights': insights,
         'sugestaoImplantador': sugestao
     }
