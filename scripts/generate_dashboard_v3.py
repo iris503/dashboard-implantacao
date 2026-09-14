@@ -1004,6 +1004,24 @@ def generate_dashboard_data(epics: List[Dict]) -> Dict:
     """Generate complete DATA object for dashboard"""
     today = datetime.now().strftime('%Y-%m-%d')
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M BRT')
+
+    # Garante o gasto real (worklogs Q2) em cada epic. A CLI (main) anexa _q2_hours, mas o
+    # app.py não — sem isso o Upsell cai no aggregatetimespent (≈0 nos Upsell, cujo tempo fica
+    # em issues vinculadas) e o backlog infla. Anexa aqui quando ainda não veio anexado.
+    if epics and not any('_q2_hours' in e for e in epics[:5]):
+        try:
+            _client = JiraClient(
+                os.environ.get('JIRA_EMAIL'),
+                os.environ.get('JIRA_API_TOKEN'),
+                os.environ.get('JIRA_BASE_URL', 'https://wmi-solutions.atlassian.net'),
+            )
+            _q2_start = f'{datetime.now().strftime("%Y")}-04-01'
+            _q2_map = fetch_q2_hours(_client, epics, _q2_start)
+            for _e in epics:
+                _e['_q2_hours'] = _q2_map.get(_e['key'], 0.0)
+        except Exception as _ex:
+            print(f"generate_dashboard_data: falha ao anexar _q2_hours: {_ex}", file=sys.stderr)
+
     technicians, yasmin_queue, cloud_migrations, excluded_open_hours = process_epics(epics, today)
     technicians_array = []
 
