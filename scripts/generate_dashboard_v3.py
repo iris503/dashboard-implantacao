@@ -311,6 +311,12 @@ def extract_tipo_from_summary(summary: str) -> str:
 
 
 def _epic_spent_hours(epic):
+    # Gasto real = horas de worklog Q2 mapeadas ao epic (_q2_hours), a mesma fonte que o
+    # resto do dashboard usa para "horas". O campo aggregatetimespent pode vir ~0 quando o
+    # tempo está lançado em issues vinculadas (comum nos Upsell); só usa ele como fallback.
+    q2 = epic.get('_q2_hours')
+    if q2:
+        return q2
     return (epic.get('fields', {}).get('aggregatetimespent', 0) or 0) / 3600
 
 
@@ -742,7 +748,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
         created = parse_date(fields.get('created', ''))
         duedate = parse_date(fields.get('duedate', ''))
         time_spent = fields.get('aggregatetimespent', 0) or 0
-        hours = time_spent / 3600
+        hours = epic.get('_q2_hours') or (time_spent / 3600)
 
         impl = extract_implementer_name(assignee)
 
