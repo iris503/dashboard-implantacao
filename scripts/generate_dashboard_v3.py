@@ -321,12 +321,15 @@ def _epic_spent_hours(epic):
 
 
 def upsell_remaining_hours(epic):
-    """Horas de backlog que um épico Upsell ainda representa, por tipo de módulo e status.
-    Regra validada com Iris (set/2026): Pausado / Aguardando cliente = 0; senão o
-    tempo-padrão do tipo (MODULE_HOURS, mediana real do histórico) menos o gasto, piso em 0."""
+    """Horas de backlog que um épico Upsell ATRIBUÍDO ainda representa.
+    Modelo validado com Iris (set/2026): conta só 'Em andamento' — tempo-padrão do tipo
+    (MODULE_HOURS, mediana real do histórico) menos o gasto, piso em 0. Qualquer outro
+    status (pendente, pausado, aguardando cliente, concluído/cancelado) = 0.
+    A fila da Yasmin entra à parte; assim o Upsell = Em andamento + Fila Yasmin, sem
+    horas fantasma de épicos já entregues."""
     fields = epic.get('fields', {})
     st = (fields.get('status', {}).get('name', '') or '').strip().lower()
-    if st in ('paused', 'pausado') or 'aguardando' in st:
+    if 'em andamento' not in st:
         return 0.0
     tipo = extract_tipo_from_summary(fields.get('summary', '') or '')
     est = MODULE_HOURS.get(tipo, MODULE_DEFAULT_HOURS)
@@ -778,17 +781,20 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
 
     # Calculate summary metrics (only open epics)
     total_novo_restante = sum(e['restante'] for e in novo_open)
-    # Upsell backlog = só os épicos JÁ distribuídos a um implantador (a fila da Yasmin
-    # entra em separado, sem dupla contagem). Em andamento/pendente conta o restante por
-    # tipo de módulo; pausada/aguardando = 0 (regra em upsell_remaining_hours).
-    upsell_restante = sum(
+    # Horas Upsell = o que está EM ANDAMENTO com um implantador + o que está na FILA DA
+    # YASMIN (a distribuir). Modelo validado com Iris (set/2026). Sem dupla contagem: a
+    # fila entra uma única vez, dentro do próprio Upsell. upsell_remaining_hours já zera
+    # tudo que não é 'Em andamento' (pendente/pausado/aguardando/concluído).
+    upsell_andamento_hours = sum(
         upsell_remaining_hours(e)
         for e in upsell_epics
         if extract_implementer_name(e.get('fields', {}).get('assignee'))
         and extract_implementer_name(e.get('fields', {}).get('assignee')) not in EXCLUDE_ASSIGNEES
     )
     yasmin_hours = sum(e['restante'] for e in fila_yasmin)
-    total_restante = total_novo_restante + upsell_restante + yasmin_hours
+    upsell_restante = upsell_andamento_hours + yasmin_hours
+    # Backlog Total = Novo + Upsell (Upsell já inclui a fila da Yasmin).
+    total_restante = total_novo_restante + upsell_restante
 
     # Lista de Demandas em Andamento (Upsell já com implantador) que compõem o backlog.
     # Diminui sozinha conforme o time entrega (o épico sai de 'Em andamento').
@@ -940,6 +946,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
             'novoPercent': novo_pct,
             'upsellRestante': round(upsell_restante, 1),
             'upsellPercent': upsell_pct,
+            'upsellAndamentoHours': round(upsell_andamento_hours, 1),
             'yasminEpics': len(fila_yasmin),
             'yasminHours': round(yasmin_hours, 1),
             'yasminPercent': yasmin_pct,
