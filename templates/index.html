@@ -627,12 +627,12 @@ function renderCapacityKPIs() {
     <div class="kpi-card">
       <div class="kpi-label">Horas Upsell</div>
       <div class="kpi-value" style="color:var(--color-cyan-400)">${s.upsellRestante.toFixed(0)}h</div>
-      <div class="kpi-sub">${s.upsellPercent}% do backlog</div>
+      <div class="kpi-sub">Em andamento ${(s.upsellAndamentoHours ?? 0).toFixed(0)}h + Fila Yasmin ${s.yasminHours.toFixed(0)}h</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Fila Yasmin</div>
       <div class="kpi-value" style="color:var(--color-warning)">${s.yasminEpics}</div>
-      <div class="kpi-sub">${s.yasminHours.toFixed(0)}h (${s.yasminPercent}%)</div>
+      <div class="kpi-sub">${s.yasminHours.toFixed(0)}h a distribuir (dentro do Upsell)</div>
     </div>
   `;
 }
