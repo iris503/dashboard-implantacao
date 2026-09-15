@@ -135,34 +135,42 @@ class JiraClient:
 
     def get_module_epics(self) -> List[Dict]:
         """Aba Tempo Modulos (ISOLADO — nao alimenta as outras abas).
-        Epics CONCLUIDOS criados desde 2025-12-01. Filtra o modulo em codigo."""
-        epics = []
-        max_results = 100
-        next_page_token = None
-        jql = ('project = IWN AND issuetype = Epic AND '
-               'statusCategory = Done AND created >= 2025-12-01')
-        fields = ['summary', 'status', 'created', 'resolutiondate',
-                  'aggregatetimespent', 'customfield_10124']
-        while True:
-            try:
-                url = f"{self.base_url}/rest/api/3/search/jql"
-                params = {'jql': jql, 'maxResults': max_results, 'fields': ','.join(fields)}
-                if next_page_token:
-                    params['nextPageToken'] = next_page_token
-                response = requests.get(url, headers=self.headers, params=params, timeout=30)
-                response.raise_for_status()
-                data = response.json()
-                issues = data.get('issues', [])
-                if not issues:
-                    break
-                epics.extend(issues)
-                next_page_token = data.get('nextPageToken')
-                if not next_page_token:
-                    break
-            except requests.exceptions.RequestException as e:
-                print(f"Error fetching module epics: {e}", file=sys.stderr)
-                raise
-        return epics
+        Concluidos criados desde 2025-12-01; o modulo e filtrado em codigo.
+        Regra especial 'Confeccao de Cabo' (validada com Iris): esse modulo e medido
+        pelas TAREFAS/SUBTAREFAS (que tem o campo Upsell Module preenchido), e nao pelos
+        poucos Epics — entao buscamos tambem os NAO-Epics desse modulo."""
+        fields = ['summary', 'status', 'created', 'resolutiondate', 'issuetype',
+                  'aggregatetimespent', 'timespent', 'customfield_10124']
+        jqls = [
+            # Epics de todos os modulos (comportamento original)
+            'project = IWN AND issuetype = Epic AND statusCategory = Done AND created >= 2025-12-01',
+            # Tarefas/Subtarefas do modulo Confeccao de Cabo (sem Epico)
+            ('project = IWN AND issuetype != Epic AND cf[10124] = "Confecção de Cabo" '
+             'AND statusCategory = Done AND created >= 2025-12-01'),
+        ]
+        out = []
+        for jql in jqls:
+            next_page_token = None
+            while True:
+                try:
+                    url = f"{self.base_url}/rest/api/3/search/jql"
+                    params = {'jql': jql, 'maxResults': 100, 'fields': ','.join(fields)}
+                    if next_page_token:
+                        params['nextPageToken'] = next_page_token
+                    response = requests.get(url, headers=self.headers, params=params, timeout=30)
+                    response.raise_for_status()
+                    data = response.json()
+                    issues = data.get('issues', [])
+                    if not issues:
+                        break
+                    out.extend(issues)
+                    next_page_token = data.get('nextPageToken')
+                    if not next_page_token:
+                        break
+                except requests.exceptions.RequestException as e:
+                    print(f"Error fetching module epics: {e}", file=sys.stderr)
+                    raise
+        return out
 
     def get_epic_worklogs(self, issue_key: str) -> List[Dict]:
         """Fetch all worklogs for an epic"""
@@ -995,7 +1003,19 @@ def generate_tempo_modulos(module_epics: List[Dict]) -> List[Dict]:
         modulo = _extract_upsell_module(f)
         if not modulo:
             continue
-        secs = f.get('aggregatetimespent') or 0
+        itype = ((f.get('issuetype') or {}).get('name') or '')
+        is_epic = (itype == 'Epic')
+        if modulo == 'Confecção de Cabo':
+            # Esse modulo e medido pelas TAREFAS/SUBTAREFAS (nao pelos Epics) — validado
+            # com Iris. Usa o timespent PROPRIO de cada tarefa (evita dupla contagem pai/filho).
+            if is_epic:
+                continue
+            secs = f.get('timespent') or 0
+        else:
+            # Demais modulos: um item por Epic, com aggregatetimespent (epic + filhos).
+            if not is_epic:
+                continue
+            secs = f.get('aggregatetimespent') or 0
         rows.append({
             'k': e.get('key', ''),
             's': summary,
