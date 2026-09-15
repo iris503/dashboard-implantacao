@@ -23,6 +23,10 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:var(--font-family);background:var(--color-bg-deep);color:var(--color-white);line-height:1.5;font-size:0.875rem;overflow-x:hidden;min-height:100vh}
+/* Selects: menu suspenso nativo legível no tema escuro (evita texto branco sobre fundo branco no Windows) */
+select{color-scheme:dark;background-color:#0D1B3E;color:#FFFFFF}
+select option,select optgroup{background-color:#0D1B3E;color:#FFFFFF}
+select option:checked,select option:hover{background-color:#2563EB;color:#FFFFFF}
 
 .aurora-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .aurora-bg::before{content:'';position:absolute;width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,0.12) 0%,transparent 70%);top:-200px;left:-200px;animation:a1 20s ease-in-out infinite}
@@ -766,7 +770,7 @@ function tmProcess(data,fm,fmod){
     const gt1=items.filter(i=>i.h>1).map(i=>i.h);
     const minH=gt1.length?Math.round(Math.min(...gt1)*100)/100:null;
     return{module:mod,count:items.length,totalHours:Math.round(t*100)/100,avgHours:Math.round((t/items.length)*100)/100,minHours:minH,items:items.sort((a,b)=>(b.r||'').localeCompare(a.r||''))}
-  }).sort((a,b)=>b.avgHours-a.avgHours);
+  }).sort((a,b)=>a.module.localeCompare(b.module,'pt-BR',{sensitivity:'base'}));
 }
 
 function tmMonthlyBreakdown(data){
@@ -831,7 +835,7 @@ function renderTempoModulos(){
   document.getElementById('tempoMainTable').innerHTML=`<div class="table-wrapper"><table><thead><tr><th>Módulo</th><th>Qtd Epics</th><th>Tempo Médio</th><th>Menor Tempo</th><th>Total</th><th>Var. Mês Ant.</th><th>Classificação</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 
   // Monthly comparison
-  const allMods=[...new Set(TM_RAW.map(d=>d.m))].sort();
+  const allMods=[...new Set(TM_RAW.map(d=>d.m))].sort((a,b)=>a.localeCompare(b,'pt-BR',{sensitivity:'base'}));
   let mHead=months.map(m=>`<th>${tmMonthLabel(m)}</th>`).join('');
   let mRows='';
   allMods.forEach(mod=>{
@@ -875,7 +879,7 @@ function tmPopulateFilters(rows){
   const sel2=document.getElementById('tmFilterModule');
   if(!sel||!sel2)return;
   const ms=[...new Set(rows.filter(d=>d.r).map(d=>tmGetMonth(d.r)))].sort().reverse();
-  const mods=[...new Set(rows.map(d=>d.m))].sort();
+  const mods=[...new Set(rows.map(d=>d.m))].sort((a,b)=>a.localeCompare(b,'pt-BR',{sensitivity:'base'}));
   tmSetOptions(sel,'Todos os meses',ms,tmMonthLabel);
   tmSetOptions(sel2,'Todos os módulos',mods,null);
   sel.onchange=renderTempoModulos;
