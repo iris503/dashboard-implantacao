@@ -856,18 +856,28 @@ function renderTempoModulos(){
   });
 }
 
-// Popula os filtros da aba Tempo Modulos a partir dos dados ao vivo (idempotente).
+// Popula os filtros da aba Tempo Modulos a partir dos dados ao vivo.
+// Idempotente: só reconstrói o <select> quando as opções realmente mudam (evita
+// que o refresh automático a cada 5 min "zere" o dropdown que o usuário abriu).
+function tmSetOptions(el,def,vals,labelFn){
+  if(!el)return;
+  // nunca apaga um filtro já populado só porque vieram dados vazios (janela de carga)
+  if(vals.length===0 && el.options.length>1) return;
+  const html='<option value="all">'+def+'</option>'+vals.map(v=>`<option value="${v}">${labelFn?labelFn(v):v}</option>`).join('');
+  if(el.getAttribute('data-sig')===html) return; // sem mudança: não mexe no DOM
+  const cur=el.value;
+  el.innerHTML=html;
+  el.setAttribute('data-sig',html);
+  if([...el.options].some(o=>o.value===cur))el.value=cur;
+}
 function tmPopulateFilters(rows){
   const sel=document.getElementById('tmFilterMonth');
   const sel2=document.getElementById('tmFilterModule');
   if(!sel||!sel2)return;
-  const curM=sel.value, curMod=sel2.value;
   const ms=[...new Set(rows.filter(d=>d.r).map(d=>tmGetMonth(d.r)))].sort().reverse();
-  sel.innerHTML='<option value="all">Todos os meses</option>'+ms.map(m=>`<option value="${m}">${tmMonthLabel(m)}</option>`).join('');
   const mods=[...new Set(rows.map(d=>d.m))].sort();
-  sel2.innerHTML='<option value="all">Todos os módulos</option>'+mods.map(m=>`<option value="${m}">${m}</option>`).join('');
-  if([...sel.options].some(o=>o.value===curM))sel.value=curM;
-  if([...sel2.options].some(o=>o.value===curMod))sel2.value=curMod;
+  tmSetOptions(sel,'Todos os meses',ms,tmMonthLabel);
+  tmSetOptions(sel2,'Todos os módulos',mods,null);
   sel.onchange=renderTempoModulos;
   sel2.onchange=renderTempoModulos;
 }
