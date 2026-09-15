@@ -65,7 +65,9 @@ async def periodic_refresh():
 # ─── FastAPI Lifespan ─────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await refresh_data()
+    # A primeira carga roda em background para o container abrir a porta imediatamente
+    # (o fetch de epics + worklogs Q2 leva alguns segundos e não pode travar o healthcheck).
+    asyncio.create_task(refresh_data())
     task = asyncio.create_task(periodic_refresh())
     yield
     task.cancel()
