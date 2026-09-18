@@ -33,8 +33,8 @@ STATUS_WAITING = {'AGUARDANDO CLIENTE'}
 
 # Estimated hours per module (menor média from historical data Jan-Mai/2026)
 # Tempo-padrão por tipo de módulo Upsell = MEDIANA REAL de épicos concluídos no Jira
-# (300 concluídos analisados, set/2026). Validado com Iris. Provisórios: Homologação (1 caso)
-# e Integração SOC (sem histórico, usa peso da SPData).
+# (300 concluídos analisados, set/2026). Validado com Iris. Provisórios: Homologação (1 caso).
+# Integração SOC e Integração SPData: 25h cada, definido manualmente por Iris (18/09/2026).
 MODULE_HOURS = {
     'Interlac': 6.5,
     'NF': 4.5,
@@ -54,8 +54,8 @@ MODULE_HOURS = {
     'Fila de Atendimento': 5.5,
     'Reunião': 1.5,
     'Projeto': 10.0,
-    'Integração SOC': 50.0,
-    'Integração SPData': 50.0,
+    'Integração SOC': 25.0,
+    'Integração SPData': 25.0,
     'Integração API': 7.5,
     'Novo': 100.0,
     'Outro': 2.0,
