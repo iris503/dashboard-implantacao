@@ -135,18 +135,22 @@ class JiraClient:
 
     def get_module_epics(self) -> List[Dict]:
         """Aba Tempo Modulos (ISOLADO — nao alimenta as outras abas).
-        Concluidos criados desde 2025-12-01; o modulo e filtrado em codigo.
+        Concluidos (RESOLVIDOS) desde 2025-12-01; o modulo e validado pelo campo
+        Upsell Module (cf[10124]) em codigo. O filtro e por RESOLUCAO, nao por criacao:
+        uma implantacao que comecou antes de dez/2025 mas foi concluida no periodo conta
+        no mes em que foi entregue (ex.: Integracao SOC IWN-3160, criada em 28/11, resolvida
+        em mar/2026). Assim a aba nao esconde entregas de epics de longa duracao.
         Regra especial 'Confeccao de Cabo' (validada com Iris): esse modulo e medido
         pelas TAREFAS/SUBTAREFAS (que tem o campo Upsell Module preenchido), e nao pelos
         poucos Epics — entao buscamos tambem os NAO-Epics desse modulo."""
         fields = ['summary', 'status', 'created', 'resolutiondate', 'issuetype',
                   'aggregatetimespent', 'timespent', 'customfield_10124']
         jqls = [
-            # Epics de todos os modulos (comportamento original)
-            'project = IWN AND issuetype = Epic AND statusCategory = Done AND created >= 2025-12-01',
+            # Epics de todos os modulos (concluidos/resolvidos no periodo)
+            'project = IWN AND issuetype = Epic AND statusCategory = Done AND resolutiondate >= 2025-12-01',
             # Tarefas/Subtarefas do modulo Confeccao de Cabo (sem Epico)
             ('project = IWN AND issuetype != Epic AND cf[10124] = "Confecção de Cabo" '
-             'AND statusCategory = Done AND created >= 2025-12-01'),
+             'AND statusCategory = Done AND resolutiondate >= 2025-12-01'),
         ]
         out = []
         for jql in jqls:
@@ -971,7 +975,7 @@ def generate_backlog_data(technicians_dict: Dict, epics: List[Dict], today: str)
     }
 
 
-MODULE_SINCE = '2025-12-01'  # aba Tempo Modulos: demandas criadas a partir desta data
+MODULE_SINCE = '2025-12-01'  # aba Tempo Modulos: demandas RESOLVIDAS (concluidas) a partir desta data
 
 
 def _extract_upsell_module(fields: Dict) -> Optional[str]:
@@ -986,16 +990,17 @@ def _extract_upsell_module(fields: Dict) -> Optional[str]:
 
 def generate_tempo_modulos(module_epics: List[Dict]) -> List[Dict]:
     """Tempo por modulo de upsell (aba Tempo Modulos). Regra definida com Iris:
-    epics CRIADOS >= MODULE_SINCE E CONCLUIDOS, com Upsell Module preenchido.
-    Horas = aggregatetimespent (total do epic + filhos). Um item por epic.
-    Recebe a lista ISOLADA de get_module_epics — nao afeta as demais abas."""
+    epics CONCLUIDOS (RESOLVIDOS) >= MODULE_SINCE, validados pelo campo Upsell Module
+    (cf[10124]). O filtro e por data de RESOLUCAO (nao de criacao), casando com o mes de
+    entrega usado no agrupamento mensal do front. Horas = aggregatetimespent (epic + filhos).
+    Um item por epic. Recebe a lista ISOLADA de get_module_epics — nao afeta as demais abas."""
     rows = []
     for e in module_epics or []:
         f = e.get('fields', {}) or {}
         if f.get('status', {}).get('statusCategory', {}).get('key', '') != 'done':
             continue
-        created = (f.get('created') or '')[:10]
-        if not created or created < MODULE_SINCE:
+        resolved = (f.get('resolutiondate') or '')[:10]
+        if not resolved or resolved < MODULE_SINCE:
             continue
         summary = f.get('summary', '') or ''
         if 'template' in summary.lower():
