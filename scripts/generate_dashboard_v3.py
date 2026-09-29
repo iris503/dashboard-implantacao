@@ -646,11 +646,11 @@ def detect_porte(summary: str) -> Tuple[str, int, int]:
     summary_lower = summary.lower()
 
     if 'large' in summary_lower or 'grande' in summary_lower:
-        return ('Large', 400, 120)
+        return ('Large', 350, 120)
     elif 'medium' in summary_lower or 'mÃÂÃÂ©dio' in summary_lower:
         return ('Medium', 200, 90)
     elif 'small' in summary_lower or 'pequeno' in summary_lower:
-        return ('Small', 150, 60)
+        return ('Small', 100, 60)
     else:
         return ('N/D', 100, 0)
 
