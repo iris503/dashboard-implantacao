@@ -147,10 +147,11 @@ class JiraClient:
                   'aggregatetimespent', 'timespent', 'customfield_10124']
         jqls = [
             # Epics de todos os modulos (concluidos/resolvidos no periodo)
-            'project = IWN AND issuetype = Epic AND statusCategory = Done AND resolutiondate >= 2025-12-01',
+            # status 10135 = 'Cancelado' (fica na categoria Done no Jira, mas NAO e entrega)
+            'project = IWN AND issuetype = Epic AND statusCategory = Done AND status != 10135 AND resolutiondate >= 2025-12-01',
             # Tarefas/Subtarefas do modulo Confeccao de Cabo (sem Epico)
             ('project = IWN AND issuetype != Epic AND cf[10124] = "Confecção de Cabo" '
-             'AND statusCategory = Done AND resolutiondate >= 2025-12-01'),
+             'AND statusCategory = Done AND status != 10135 AND resolutiondate >= 2025-12-01'),
         ]
         out = []
         for jql in jqls:
@@ -990,7 +991,7 @@ def _extract_upsell_module(fields: Dict) -> Optional[str]:
 
 def generate_tempo_modulos(module_epics: List[Dict]) -> List[Dict]:
     """Tempo por modulo de upsell (aba Tempo Modulos). Regra definida com Iris:
-    epics CONCLUIDOS (RESOLVIDOS) >= MODULE_SINCE, validados pelo campo Upsell Module
+    epics CONCLUIDOS (RESOLVIDOS, exceto Cancelados) >= MODULE_SINCE, validados pelo campo Upsell Module
     (cf[10124]). O filtro e por data de RESOLUCAO (nao de criacao), casando com o mes de
     entrega usado no agrupamento mensal do front. Horas = aggregatetimespent (epic + filhos).
     Um item por epic. Recebe a lista ISOLADA de get_module_epics — nao afeta as demais abas."""
@@ -998,6 +999,11 @@ def generate_tempo_modulos(module_epics: List[Dict]) -> List[Dict]:
     for e in module_epics or []:
         f = e.get('fields', {}) or {}
         if f.get('status', {}).get('statusCategory', {}).get('key', '') != 'done':
+            continue
+        # Cancelados NAO entram na analise de tempo (regra da Iris, 06/10/2026): so modulos
+        # efetivamente CONCLUIDOS. 'Cancelado' fica na categoria Done no Jira, por isso o filtro extra.
+        _st = f.get('status', {}) or {}
+        if str(_st.get('id', '')) == '10135' or 'cancel' in (_st.get('name') or '').lower():
             continue
         resolved = (f.get('resolutiondate') or '')[:10]
         if not resolved or resolved < MODULE_SINCE:
