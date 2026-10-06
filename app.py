@@ -18,7 +18,7 @@ from contextlib import asynccontextmanager
 
 # ─── Import business logic from the working script ─────────
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
-from generate_dashboard_v3 import JiraClient, generate_dashboard_data, generate_tempo_modulos
+from generate_dashboard_v3 import JiraClient, generate_dashboard_data, generate_tempo_modulos, apply_live_module_hours
 
 # ─── Logging ───────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -45,9 +45,17 @@ async def refresh_data():
             return
         client = JiraClient(JIRA_EMAIL, JIRA_API_TOKEN, JIRA_BASE_URL)
         epics = await asyncio.to_thread(client.get_epics)
-        data = await asyncio.to_thread(generate_dashboard_data, epics)
+        # Tempo Modulos ANTES do backlog: a mediana ao vivo de cada tipo vira o "Estimado".
         module_epics = await asyncio.to_thread(client.get_module_epics)
-        data['tempoModulos'] = generate_tempo_modulos(module_epics)
+        tempo_rows = generate_tempo_modulos(module_epics)
+        try:
+            module_hours_info = apply_live_module_hours(tempo_rows)
+        except Exception as ex:
+            logger.error(f"Estimado ao vivo falhou, usando tabela fixa: {ex}", exc_info=True)
+            module_hours_info = {}
+        data = await asyncio.to_thread(generate_dashboard_data, epics)
+        data['tempoModulos'] = tempo_rows
+        data['moduleHours'] = module_hours_info
         async with _cache_lock:
             _dashboard_cache = data
         logger.info(f"Cache updated: {len(epics)} epics, {len(data.get('technicians', []))} technicians")
