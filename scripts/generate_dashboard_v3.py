@@ -1038,6 +1038,47 @@ def generate_tempo_modulos(module_epics: List[Dict]) -> List[Dict]:
     return rows
 
 
+# ─── Estimado ao vivo (regra da Iris, 06/10/2026) ──────────────────────────────
+# A coluna "Estimado" do backlog passa a usar a MEDIANA REAL dos itens da aba Tempo Modulos
+# (concluidos, sem Cancelados, resolvidos desde MODULE_SINCE). O tipo de cada item e
+# classificado pelo MESMO classificador do backlog (extract_tipo_from_summary), para casar
+# com a coluna Tipo. Regras:
+#  - ajustes manuais da Iris prevalecem (MODULE_HOURS_MANUAL);
+#  - tipo com menos de MODULE_MIN_CASES itens (com horas > 0) mantem o valor fixo;
+#  - 'Novo' e 'Outro' mantem o valor fixo;
+#  - itens com 0h (sem timesheet) nao entram na mediana.
+MODULE_HOURS_FIXED = dict(MODULE_HOURS)
+MODULE_HOURS_MANUAL = {'Integração SOC': 25.0, 'Integração SPData': 25.0}
+MODULE_MIN_CASES = 3
+MODULE_LIVE_SKIP = {'Novo', 'Outro'}
+
+
+def apply_live_module_hours(tempo_rows: List[Dict]) -> Dict:
+    """Atualiza MODULE_HOURS (in place) com a mediana ao vivo da aba Tempo Modulos.
+    Retorna o detalhe por tipo: {tipo: {'h', 'fonte', 'n', 'fixo'}}."""
+    import statistics
+    by_tipo: Dict[str, List[float]] = {}
+    for r in tempo_rows or []:
+        h = r.get('h') or 0
+        if h <= 0:
+            continue
+        tipo = extract_tipo_from_summary(r.get('s', ''))
+        by_tipo.setdefault(tipo, []).append(h)
+    info = {}
+    for tipo in sorted(set(MODULE_HOURS_FIXED) | set(by_tipo)):
+        fixo = MODULE_HOURS_FIXED.get(tipo, MODULE_DEFAULT_HOURS)
+        vals = by_tipo.get(tipo, [])
+        if tipo in MODULE_HOURS_MANUAL:
+            h, fonte = MODULE_HOURS_MANUAL[tipo], 'manual'
+        elif tipo in MODULE_LIVE_SKIP or len(vals) < MODULE_MIN_CASES:
+            h, fonte = fixo, 'fixo'
+        else:
+            h, fonte = round(statistics.median(vals), 1), 'mediana'
+        MODULE_HOURS[tipo] = h
+        info[tipo] = {'h': h, 'fonte': fonte, 'n': len(vals), 'fixo': fixo}
+    return info
+
+
 def generate_dashboard_data(epics: List[Dict]) -> Dict:
     """Generate complete DATA object for dashboard"""
     today = datetime.now().strftime('%Y-%m-%d')
